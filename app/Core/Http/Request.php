@@ -250,7 +250,7 @@ class Request
      */
     protected function setQuery()
     {
-        if(!$_SERVER['QUERY_STRING']) return;
+        if(!isset($_SERVER['QUERY_STRING'])) return;
         
         $strings = explode('&',$_SERVER['QUERY_STRING']);
         $query = [];
@@ -294,7 +294,7 @@ class Request
             'HTTP_ACCEPT'          => $_SERVER['HTTP_ACCEPT'],
             'HTTP_USER_AGENT'      => $_SERVER['HTTP_USER_AGENT'],
             'HTTP_ACCEPT_ENCODING' => $_SERVER['HTTP_ACCEPT_ENCODING'],
-            'QUERY_STRING'         => $_SERVER['QUERY_STRING'],
+            'QUERY_STRING'         => isset($_SERVER['QUERY_STRING'])?$_SERVER['QUERY_STRING']:null,
             'PHP_SELF'             => $_SERVER['PHP_SELF'],
             'SCRIPT_NAME'          => $_SERVER['SCRIPT_NAME'],
             'SCRIPT_FILENAME'      => $_SERVER['SCRIPT_FILENAME'],

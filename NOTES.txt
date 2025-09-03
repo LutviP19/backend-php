@@ -1,0 +1,9 @@
+$ composer dump-autoload -o
+$ cd public
+$ php -S localhost:8000
+
+$ bin/console list
+
+curl --location 'http://localhost:8000/webhook' \
+--header 'X-Value: $2y$10$CWm7DuEQMXCrBfiEUEQbge7pxw4MzhTBgptWCU2yGmDNqzovQor3e'
+

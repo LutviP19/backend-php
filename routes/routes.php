@@ -8,6 +8,11 @@
  * Available router methods : get(), post(), put(), delete().
  */
 
+ // API - v1
+ $router->get('/webhook','Api\v1\WebhookController@index');
+
+ // WEB
 $router->get('/','PagesController@index');
 $router->get('/contact','PagesController@contact');
 $router->get('/about','PagesController@about');
+$router->get('/extra','PagesController@extra');

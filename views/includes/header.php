@@ -46,6 +46,9 @@
                     <li>
                         <a href="<?= url('/about') ?>">About</a>
                     </li>
+                    <li>
+                        <a href="<?= url('/extra') ?>">Extra</a>
+                    </li>
                 </ul>
                 <ul class="sidenav" id="mobile-nav">
                     <li>
@@ -64,6 +67,12 @@
                         <a href="<?= url('/about') ?>" class="waves-effect">
                             <i class="material-icons">info_outline</i>
                             About
+                        </a>
+                    </li>
+                    <li>
+                        <a href="<?= url('/extra') ?>" class="waves-effect">
+                            <i class="material-icons">info_outline</i>
+                            Extra
                         </a>
                     </li>
                 </ul>

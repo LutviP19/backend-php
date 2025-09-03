@@ -1,6 +1,7 @@
 <?php
 
 //Starting the session will be the first we do.
+ini_set('session.save_path', __DIR__.'/../../storage/framework/sessions');
 session_start();
 
 /* ----------------------------- Default settings START -------------------------------- */

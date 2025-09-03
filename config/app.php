@@ -12,7 +12,8 @@ return [
      */
     'app' => [
         'name' => 'My MVC App',
-        'url'  => 'localhost'
+        'url'  => 'localhost',
+        'logdir' => __DIR__.'/../storage/logs/',
     ],
 
     /**
@@ -20,7 +21,7 @@ return [
      */
     'database' => [
         'host'     => '127.0.0.1',
-        'name'     => 'myapp',
+        'name'     => 'lutvi',
         'username' => 'root',
         'password' => '',
         'port'     => '3306',

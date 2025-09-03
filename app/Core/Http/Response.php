@@ -94,8 +94,8 @@ class Response
      */
     public function json($data = [],$code = 200)
     {
-        $this->header("Content-Type","application/json",$code);
-        return json_encode($data);
+        $this->header("Content-Type","application/json; charset=utf-8",$code);
+        echo json_encode($data);
     }
 
     /**

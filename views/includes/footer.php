@@ -4,13 +4,13 @@
             <div class="row">
                 <div class="col l6 s12">
                     <h5 class="white-text">MVC App</h5>
-                    <p class="grey-text text-lighten-4">Built by <a href="https://www.github.com/sagarmaheshwary" class="white-text">Sagar Maheshwary</a></p>
+                    <p class="grey-text text-lighten-4">Built by <a href="https://www.github.com/lutvip19" class="white-text">LutviP19</a></p>
                 </div>
             </div>
         </div>
         <div class="footer-copyright">
             <div class="container">
-                <h6 class="center">© <?= date('Y') ?> Sagar Maheshwary</h6>
+                <h6 class="center">© <?= date('Y') ?> LutviP19</h6>
             </div>
         </div>
     </footer>

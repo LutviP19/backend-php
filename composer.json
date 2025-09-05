@@ -8,8 +8,12 @@
         "php-amqplib/php-amqplib": "^3.7",
         "amphp/amp": "^3.1",
         "symfony/console": "^7.3",
-        "monolog/monolog": "^3.9"
+        "monolog/monolog": "^3.9",
+        "vlucas/phpdotenv": "^5.6"
     },
+    "bin": [
+        "bin/console"
+    ],
     "autoload": {
         "psr-4": {
             "App\\": "app/"

@@ -12,7 +12,8 @@ class ApiController extends BaseController
      * used in every controller.
      */
   
-     protected function getPass() {
-        return 'abcde';
+     protected function getPass() 
+     {
+        return getenv('HEADER_TOKEN');
      }
 }

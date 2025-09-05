@@ -1,0 +1,7 @@
+- ENV configuration (done)
+- AES Encryptions (done)
+- Event Driven
+- Non Blocking Process
+- GraphQL
+- Caching Redis
+- No SQL (MongoDB)

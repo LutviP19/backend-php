@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\Http\{Request,Response};
+use App\Core\Security\Encryption;
 
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
@@ -58,7 +59,16 @@ class PagesController extends Controller
 
         // Producer
         $date = date('d-m-Y H:i:s');
-        $message = 'Testing MQ '.$date;
+        $data = [
+            ['id' => 1, 'title' => 'Title A', 'contents' => 'The default interactive shell is now zsh.'],
+            ['id' => 2, 'title' => 'Title B', 'contents' => 'To update your account to use zsh'],
+            ['id' => 3, 'title' => 'Title C', 'contents' => 'For more details, please visit'],
+        ];
+
+        $default = 'Testing MQ '.$date;
+        $default = json_encode($data);
+
+        $message = encryptData($default);
 
         $connection = new AMQPStreamConnection('127.0.0.1', '5672', 'guest', 'guest');
         $channel = $connection->channel();
@@ -67,7 +77,7 @@ class PagesController extends Controller
 
         $msg = new AMQPMessage($message);
         $channel->basic_publish($msg, 'mvc_queue');
-        echo ' [x] Sent: ', $message, "<br>\r\n";
+        echo ' [x] Sent: ', decryptData($message), "<br>\r\n";
 
         $channel->close();
         $connection->close();

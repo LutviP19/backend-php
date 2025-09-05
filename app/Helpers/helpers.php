@@ -8,6 +8,7 @@ use App\Core\Security\{Hash,CSRF};
 use App\Core\Validation\MessageBag;
 use App\Core\Support\{Session,App};
 
+
 /**
  * dump the data and kill the page.
  * 
@@ -130,3 +131,35 @@ function old($key)
 {
     return Session::getOldInput($key);
 }
+
+function encryptData($value) 
+{
+    $encryption = new \App\Core\Security\Encryption();
+    return $encryption->encrypt($value);
+}
+
+function decryptData($value) 
+{
+    $encryption = new \App\Core\Security\Encryption();
+    return $encryption->decrypt($value);
+}
+
+function isJson($value)
+{
+    if (! is_string($value)) {
+        return false;
+    }
+
+    if (function_exists('json_validate')) {
+        return json_validate($value, 512);
+    }
+
+    try {
+        json_decode($value, true, 512, JSON_THROW_ON_ERROR);
+    } catch (JsonException) {
+        return false;
+    }
+
+    return true;
+}
+

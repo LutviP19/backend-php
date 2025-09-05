@@ -6,6 +6,7 @@ use Monolog\Level;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\FirePHPHandler;
+use Monolog\Formatter\LineFormatter;
 
 /**
  * Handle all the stuff related to session.
@@ -22,6 +23,9 @@ class Log
         // $this->logdir = __DIR__.'/../../../storage/logs/';
 
         // dd($this->logdir);
+
+        
+
     }
 
     public static function getLogdir()
@@ -38,10 +42,26 @@ class Log
             $logfile = self::getLogdir().$renamed;
         }
 
+
+        // Define the desired date format
+        $dateFormat = "Y-m-d H:i:s"; // Example: "2025-09-05 17:03:00"
+
+        // Define the output format for the log message, including the datetime placeholder
+        $output = "[%datetime%] %channel%.%level_name%: %message% %context% %extra%\n";
+
+        // Create a LineFormatter instance with the custom output and date format
+        $formatter = new LineFormatter($output, $dateFormat);
+
+        // Create a StreamHandler to log to a file
+        $streamHandler = new StreamHandler($logfile, Logger::DEBUG);
+
+        // Set the formatter for the handler
+        $streamHandler->setFormatter($formatter);
+
         // Create the logger
         $logger = new Logger(self::$logname);
         // Now add some handlers
-        $logger->pushHandler(new StreamHandler($logfile, Level::Debug));
+        $logger->pushHandler($streamHandler);
         $logger->pushHandler(new FirePHPHandler());
 
         // You can now use your logger
@@ -51,7 +71,7 @@ class Log
 
     private static function __formatedString($logs) 
     {
-        if(is_array($logs)) 
+        if(is_array($logs) || is_object($logs)) 
             $logs = json_encode($logs);
 
         return $logs;

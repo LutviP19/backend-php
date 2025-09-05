@@ -3,8 +3,8 @@
         <div class="container">
             <div class="row">
                 <div class="col l6 s12">
-                    <h5 class="white-text">MVC App</h5>
-                    <p class="grey-text text-lighten-4">Built by <a href="https://www.github.com/lutvip19" class="white-text">LutviP19</a></p>
+                    <h5 class="white-text"><?= $_ENV['APP_NAME']; ?></h5>
+                    <p class="grey-text text-lighten-4">Debeloped by <a href="https://www.github.com/lutvip19" class="white-text">LutviP19</a></p>
                 </div>
             </div>
         </div>

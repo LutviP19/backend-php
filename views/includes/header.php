@@ -22,7 +22,7 @@
         }
     </style>
     <link rel="stylesheet" href="<?= url('/css/materialize.min.css') ?>">
-    <title>MVC App</title>
+    <title><?= $_ENV['APP_NAME']; ?></title>
 </head>
 <body class="grey-text text-darken-2">
     <header>
@@ -35,7 +35,7 @@
                         </a>
                     </li>
                 </ul>
-                <a href="<?= url('/') ?>" class="brand-logo">MVC App</a>
+                <a href="<?= url('/') ?>" class="brand-logo"><?= $_ENV['APP_NAME']; ?></a>
                 <ul class="right hide-on-med-and-down">
                     <li>
                         <a href="<?= url('/') ?>">Home</a>

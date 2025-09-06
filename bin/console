@@ -17,8 +17,6 @@ date_default_timezone_set("Asia/Jakarta");
 $dotenv = Dotenv\Dotenv::createUnsafeImmutable(__DIR__.'/..');
 $dotenv->load();
 /* ----------------------------- Default settings END -------------------------------- */
- 
-// require_once __DIR__ . '/../app/Helpers/helpers.php';
 
 use Symfony\Component\Console\Application;
 use App\Console\Commands\TestCommand;

@@ -9,6 +9,8 @@ use App\Core\Http\{Request,Response};
 
 class BaseController
 {
+    public function __construct() {}
+
     /**
      * Path to views directory.
      * 
@@ -119,6 +121,16 @@ class BaseController
     protected function response()
     {
         return new Response();
+    }
+
+    /**
+     * Get the request object.
+     * 
+     * @return \App\Core\Http\Request
+     */
+    protected function request()
+    {
+        return new Request();
     }
 
 }

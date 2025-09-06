@@ -10,6 +10,10 @@ use App\Core\Support\Log;
 
 class WebhookController extends ApiController
 {
+    public function __construct() {
+        parent::__construct();
+    }
+
      /**
      * Show the home page.
      * 
@@ -19,34 +23,17 @@ class WebhookController extends ApiController
      */
     public function index(Request $request,Response $response)
     {
-        // $response->header('X-Value','eyJpdiI6InhmMHhXTGpvZ24wN1lIRmI2TlBKTlE9PSIsInZhbHVlIjoiSnFEajVxWnMwWEQ5aVI5NEd0Y200MDhPVjZKa21jV0lQNk9vWlBRSjdCMD0iLCJtYWMiOiI3ZmY1NmQwNzI0MmU0OTFjNzJjY2YwMzk3MTE2NzA0MmQzZDI3NjA2YWQzZWI0YzJjMjI2NzU2ZDExYjAyOTc0IiwidGFnIjoiIn0=');
-
-        //get the request headers.
-        $header = $request->headers();
-
         $hash = new Hash();
-        $encryption = new Encryption();
-        // $pass = '$2y$10$CWm7DuEQMXCrBfiEUEQbge7pxw4MzhTBgptWCU2yGmDNqzovQor3e';
 
-        if(!isset($header['X-Value']) || 
-            !$encryption->match($this->getPass(), $header['X-Value'])) {
-                return $response->json([
-                    'token' => $this->getPass(),
-                    'message' => 'token missmatch!',
-                ], 403);
-        }
-
-        // die(Log::getLogdir());
-
-        Log::info($header, false);
-
-        return $response->json([
-            'message' => 'hello world!', 
-            'genkey' => Encryption::generateKey(),
-            'pass' => $encryption->encrypt('fX9&c3@8kLp#5ZqT7v$W!'),
-            'strlen' => strlen('fX9&c3@8kLp#5ZqT7v$W!yR2N%hQ8m'),
-            'hash' => $hash->make($this->getPass()),
-            'unique' => $hash->unique(30),
-        ], 200);
+        return $response->json(
+            $this->getOutput(true, 200, [
+                'message' => 'Hello world!', 
+                'genkey' => Encryption::generateKey(),
+                'pass' => encryptData($this->getPass()),
+                'strlen' => strlen('3d1aea28467e1910344e924bee486a7ec4fdc9506ab1d3d7d68bdfc37b874055'),
+                'hash' => $hash->make($this->getPass()),
+                'unique' => $hash->unique(32),
+            ]), 
+            200);
     }
 }

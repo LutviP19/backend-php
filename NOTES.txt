@@ -1,9 +1,13 @@
 $ composer dump-autoload -o
 $ cd public
 $ php -S localhost:8000
+$ php -S localhost:8080 -t public/
 
 $ bin/console list
+$ bin/console app:testing 1
 
 curl --location 'http://localhost:8000/webhook' \
---header 'X-Value: $2y$10$CWm7DuEQMXCrBfiEUEQbge7pxw4MzhTBgptWCU2yGmDNqzovQor3e'
+--header 'X-Value: eyJpdiI6InhmMHhXTGpvZ24wN1lIRmI2TlBKTlE9PSIsInZhbHVlIjoiSnFEajVxWnMwWEQ5aVI5NEd0Y200MDhPVjZKa21jV0lQNk9vWlBRSjdCMD0iLCJtYWMiOiI3ZmY1NmQwNzI0MmU0OTFjNzJjY2YwMzk3MTE2NzA0MmQzZDI3NjA2YWQzZWI0YzJjMjI2NzU2ZDExYjAyOTc0IiwidGFnIjoiIn0='
+
+dd(gettype($this->encryptionKey));
 

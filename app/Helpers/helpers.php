@@ -132,16 +132,58 @@ function old($key)
     return Session::getOldInput($key);
 }
 
+function matchEncryptedData($value, $encryptedData) 
+{
+    try {
+        $encryption = new \App\Core\Security\Encryption();
+        return $encryption->match($value, $encryptedData);
+    }
+    catch(Throwable $ex) {
+        \App\Core\Support\Log::error([
+           'message' => $ex->getMessage(),
+           'file' => $ex->getFile(),
+           'line' => $ex->getLine(),
+           // 'trace' => $ex->getTraceAsString(),
+       ], 'Helper.matchEncryptedData');
+
+       return false;
+    }    
+}
+
 function encryptData($value) 
 {
-    $encryption = new \App\Core\Security\Encryption();
-    return $encryption->encrypt($value);
+    try {
+        $encryption = new \App\Core\Security\Encryption();
+        return $encryption->encrypt($value);
+    }
+    catch(Throwable $ex) {
+        \App\Core\Support\Log::error([
+           'message' => $ex->getMessage(),
+           'file' => $ex->getFile(),
+           'line' => $ex->getLine(),
+           // 'trace' => $ex->getTraceAsString(),
+       ], 'Helper.encryptData');
+
+       return null;
+    }
 }
 
 function decryptData($value) 
 {
-    $encryption = new \App\Core\Security\Encryption();
-    return $encryption->decrypt($value);
+    try {
+        $encryption = new \App\Core\Security\Encryption();
+        return $encryption->decrypt($value);
+    }
+    catch(Throwable $ex) {
+        \App\Core\Support\Log::error([
+           'message' => $ex->getMessage(),
+           'file' => $ex->getFile(),
+           'line' => $ex->getLine(),
+           // 'trace' => $ex->getTraceAsString(),
+       ], 'Helper.decryptData');
+
+       return null;
+    }
 }
 
 function isJson($value)

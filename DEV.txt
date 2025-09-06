@@ -1,5 +1,6 @@
 - ENV configuration (done)
 - AES Encryptions (done)
+- Middleware
 - Event Driven
 - Non Blocking Process
 - GraphQL

@@ -66,6 +66,7 @@ class PagesController extends Controller
         ];
 
         $default = 'Testing MQ '.$date;
+        $default = getenv('HEADER_TOKEN');
         $default = json_encode($data);
 
         $message = encryptData($default);

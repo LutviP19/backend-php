@@ -72,7 +72,7 @@ class TestCommand extends Command
                 // \App\Core\Support\Log::info($this->id);
                 // \App\Core\Support\Log::info(gettype($data));
                 foreach($data as $key => $val){
-                    \App\Core\Support\Log::info(gettype($val));
+                    // \App\Core\Support\Log::info(gettype($val));
                     if(is_array($val)) {
                         // Filtered ID
                         if(isset($val['id']) && 

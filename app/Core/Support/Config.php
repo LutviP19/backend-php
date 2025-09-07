@@ -13,7 +13,7 @@ class Config
      * @param string $key
      * @return mixed
      */
-    public function get($key)
+    public static function get($key)
     {
         $config = App::get('config');
         $keys = explode('.',$key);

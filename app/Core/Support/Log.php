@@ -90,7 +90,7 @@ class Log
     private static function __formatedString($logs) 
     {
         if(is_array($logs) || is_object($logs)) 
-            $logs = json_encode($logs);
+            $logs = json_encode($logs, JSON_UNESCAPED_SLASHES);
 
         return $logs;
     }

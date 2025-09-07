@@ -16,6 +16,17 @@ return [
         'logdir' => __DIR__.'/../storage/logs/',
     ],
 
+    'trusted_ips' => [
+        '::1',
+        '127.0.0.1',
+    ],
+
+    'valid_headers' => [
+        // 'Accept',
+        'Content-Type',
+        'Api-Token',
+    ],
+
     /**
      * Database Credentials.
      */

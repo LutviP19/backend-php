@@ -11,7 +11,14 @@ class ApiController extends BaseController
    public function __construct() {
       parent::__construct();
 
-      $this->validateHeader($this->request(), $this->response());
+      // Middlewares
+      (new \App\Core\Security\Middleware\EnsureIpIsValid())
+         ->handle($this->request(), $this->response());
+      (new \App\Core\Security\Middleware\EnsureHeaderIsValid())
+         ->handle($this->request(), $this->response());
+
+      // Validate token
+      $this->validateToken($this->request(), $this->response());
    }
 
    /**
@@ -42,7 +49,7 @@ class ApiController extends BaseController
       }
    }
 
-   public function validateHeader(Request $request, Response $response) 
+   public function validateToken(Request $request, Response $response) 
    {
       $header = $request->headers();
       // dd(isset($header['Api-Token']));

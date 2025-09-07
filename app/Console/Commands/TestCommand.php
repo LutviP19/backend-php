@@ -30,15 +30,6 @@ class TestCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        // $output->writeln([
-        //     'User Creator',
-        //     '============',
-        //     '',
-        // ]);
-    
-        // $output->writeln('Username: '.$input->getArgument('username'));
-        // return Command::SUCCESS;
-
         $this->id = $input->getArgument('userid');
 
         $output->writeln(" [*] Waiting for messages ".$this->id.". To exit press CTRL+C\n");
@@ -54,7 +45,7 @@ class TestCommand extends Command
 
         $connection = new AMQPStreamConnection('127.0.0.1', '5672', 'guest', 'guest');
         $channel = $connection->channel();
-        // $channel->exchange_declare($queueName, 'fanout', false, false, false);
+        $channel->exchange_declare($queueName, 'fanout', false, false, false);
         list($queue_name, ,) = $channel->queue_declare("", false, false, true, false);
 
         $channel->queue_bind($queue_name, $queueName);
@@ -78,7 +69,7 @@ class TestCommand extends Command
                         if(isset($val['id']) && 
                             $val['id'] == $this->id) {
                             
-                            foreach($val as $k => $v) {                            
+                            foreach($val as $k => $v) {
                                 echo "$k: $v\n";
                             }
                         }

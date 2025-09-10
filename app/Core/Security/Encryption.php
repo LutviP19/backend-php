@@ -31,7 +31,7 @@ class Encryption
 
     public function __construct($cipher = 'aes-256-cbc')
     {
-        $key = str_replace('base64:', '', (string) getenv('ENCRYPTION_KEY'));
+        $key = str_replace('base64:', '', (string) config('app.key'));
         $key = base64_decode($key);
         $this->encryptionKey = $key;
 

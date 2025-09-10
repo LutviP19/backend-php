@@ -7,7 +7,28 @@ use App\Core\Http\Request;
 use App\Core\Security\{Hash,CSRF};
 use App\Core\Validation\MessageBag;
 use App\Core\Support\{Session,App};
+use App\Core\Support\Config;
 
+/**
+ * get environment varible.
+ * 
+ * @param array $data
+ * @return void
+ */
+function env($key, $alt='') 
+{
+    return isset($_ENV[$key]) ? $_ENV[$key] : $alt;
+}
+
+function config($key) 
+{
+    return Config::get($key);
+}
+
+function database_path($db_name)
+{
+    return BASE_PATH . 'storage/database/'.$db_name;
+}
 
 /**
  * dump the data and kill the page.

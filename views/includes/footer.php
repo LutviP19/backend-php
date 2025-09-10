@@ -1,9 +1,9 @@
     </main>
-    <footer class="page-footer purple lighten-1">
+    <footer class="page-footer blue darken-3">
         <div class="container">
             <div class="row">
                 <div class="col l6 s12">
-                    <h5 class="white-text"><?= $_ENV['APP_NAME']; ?></h5>
+                    <h5 class="white-text"><?= config('app.name'); ?></h5>
                     <p class="grey-text text-lighten-4">Debeloped by <a href="https://www.github.com/lutvip19" class="white-text">LutviP19</a></p>
                 </div>
             </div>

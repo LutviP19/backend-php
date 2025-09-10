@@ -22,11 +22,11 @@
         }
     </style>
     <link rel="stylesheet" href="<?= url('/css/materialize.min.css') ?>">
-    <title><?= $_ENV['APP_NAME']; ?></title>
+    <title><?= config('app.name'); ?></title>
 </head>
 <body class="grey-text text-darken-2">
     <header>
-        <nav class="nav-wrapper purple lighten-1">
+        <nav class="nav-wrapper blue darken-3">
             <div class="container">
                 <ul class="show-on-med-and-small">
                     <li class="waves-effect">
@@ -35,7 +35,7 @@
                         </a>
                     </li>
                 </ul>
-                <a href="<?= url('/') ?>" class="brand-logo"><?= $_ENV['APP_NAME']; ?></a>
+                <a href="<?= url('/') ?>" class="brand-logo"><?= config('app.name'); ?></a>
                 <ul class="right hide-on-med-and-down">
                     <li>
                         <a href="<?= url('/') ?>">Home</a>

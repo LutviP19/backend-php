@@ -9,27 +9,43 @@ use App\Core\Support\Config;
 class Connection
 {
     
-    public function make()
+    public static function make()
     {
         try{
-            $name     = Config::get('database.name');
-            $host     = Config::get('database.host');
-            $port     = Config::get('database.port');
-            $username = Config::get('database.username');
-            $password = Config::get('database.password');
-            $options  = Config::get('database.options');
+            $driver = Config::get('default_db');
 
-            $pdo = new PDO(
-                "mysql:host={$host};port={$port};dbname={$name}",
-                $username,
-                $password,
-                $options
-            );
+            
+            if($driver !== 'sqlite') 
+            {
+                $name     = Config::get("database.{$driver}.dbname");
+                $host     = Config::get("database.{$driver}.host");
+                $port     = Config::get("database.{$driver}.port");
+                $username = Config::get("database.{$driver}.username");
+                $password = Config::get("database.{$driver}.password");
+                $options  = Config::get("database.{$driver}.options");
+                // dd("{$driver}:host={$host};port={$port};dbname={$name}");
+
+                $pdo = new PDO(
+                    "{$driver}:host={$host};port={$port};dbname={$name}",
+                    $username,
+                    $password,
+                    $options
+                );
+
+            } else {
+                $databaseFile = Config::get("database.{$driver}.dbname");
+                // dd("sqlite:{$databaseFile}");
+
+                $pdo = new PDO("sqlite:{$databaseFile}");
+                // $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION); // Set error mode for better error handling
+            }
+            // dd($pdo->getAttribute(PDO::ATTR_DRIVER_NAME));
+            
             
             return $pdo;
 
         }catch(PDOException $e){
-            $e->getMessage();
+            die($e->getMessage());
         }
     }
 

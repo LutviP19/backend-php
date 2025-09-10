@@ -6,7 +6,6 @@ use App\Controllers\Api\ApiController;
 use App\Core\Http\{Request,Response};
 use App\Core\Security\Hash;
 use App\Core\Security\Encryption;
-use App\Core\Support\Log;
 
 class WebhookController extends ApiController
 {

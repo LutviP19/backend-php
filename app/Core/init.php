@@ -11,20 +11,19 @@ ini_set("html_errors", 1);
 ini_set("error_prepend_string", "<pre style='color: #333; font-face:monospace; font-size:14px;'>");
 ini_set("error_append_string ", "</pre>");
 
-date_default_timezone_set("Asia/Jakarta");
+// Looking for .env at the root directory
+$dotenv = Dotenv\Dotenv::createUnsafeImmutable(__DIR__.'/../..');
+$dotenv->load();
+
+date_default_timezone_set(env('APP_TIMEZONE', 'Asia/Jakarta'));
 /* ----------------------------- Default settings END -------------------------------- */
 
 /**
  * Bootstrap the Application
  */
-
 use App\Core\Support\{App,Session};
 use App\Core\Http\{Router,Request};
 use App\Core\Validation\MessageBag;
-
-// Looing for .env at the root directory
-$dotenv = Dotenv\Dotenv::createUnsafeImmutable(__DIR__.'/../..');
-$dotenv->load();
 
 //register configuration to the app.
 App::register('config',require __DIR__.'/../../config/app.php');

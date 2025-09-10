@@ -2,8 +2,11 @@
 
 namespace App\Controllers;
 
+use App\Core\Events\Event;
+use App\Core\Message\Broker;
+use App\Models\User;
+use App\Core\Support\Config;
 use App\Core\Http\{Request,Response};
-use App\Core\Security\Encryption;
 
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
@@ -24,7 +27,9 @@ class PagesController extends Controller
      */
     public function index(Request $request,Response $response)
     {
-        $this->view('home');
+        $users = (new User())->all();
+
+        $this->view('home', ['users' => $users]);
     }
 
     /**
@@ -57,6 +62,8 @@ class PagesController extends Controller
         // $get =  Request::get('get');
         // $this->view('extra', ['low' => 'lower', 'get' => $get]);
 
+        
+
         // Producer
         $date = date('d-m-Y H:i:s');
         $data = [
@@ -66,24 +73,42 @@ class PagesController extends Controller
         ];
 
         $default = 'Testing MQ '.$date;
-        $default = getenv('HEADER_TOKEN');
+        $default = config('app.token');
         $default = json_encode($data);
 
         $message = encryptData($default);
 
-        $connection = new AMQPStreamConnection('127.0.0.1', '5672', 'guest', 'guest');
-        $channel = $connection->channel();
+        
 
-        $channel->exchange_declare('mvc_queue', 'fanout', false, false, false);
+        // $default_mb = Config::get('default_mb');
+        // $queueName = Config::get("broker.{$default_mb}.queue_name");
 
-        $msg = new AMQPMessage($message);
-        $channel->basic_publish($msg, 'mvc_queue');
+        // // $connection = new AMQPStreamConnection('127.0.0.1', '5672', 'guest', 'guest');
+        // $connection = new AMQPStreamConnection(Config::get("broker.{$default_mb}.host"), Config::get("broker.{$default_mb}.port"), Config::get("broker.{$default_mb}.username"), Config::get("broker.{$default_mb}.password"));
+        // $channel = $connection->channel();
+
+        // $channel->exchange_declare($queueName, 'fanout', false, false, false);
+
+        // $msg = new AMQPMessage($message);
+        // $channel->basic_publish($msg, $queueName);
+        
+
+        // $channel->close();
+        // $connection->close();
+
+        $broker = new Broker();
+        $broker->sendMessage($message);
+
         echo ' [x] Sent: ', decryptData($message), "<br>\r\n";
-
-        $channel->close();
-        $connection->close();
-
         echo "Sending message to RabbitMQ: {$message}";
+
+        Event::listen('message.queue', function($param) {
+            echo "Event '. $param .' [message.queue]<br>\r\n";
+        });
+
+        if(true) {
+            Event::trigger('message.queue', $message);
+        }
 
         //=====================================
 

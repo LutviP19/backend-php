@@ -1,13 +1,16 @@
 <?php
 namespace App\Console\Commands;
 
-
+use App\Core\Events\Event;
+use App\Core\Message\Broker;
+use App\Core\Security\Encryption;
+use App\Core\Support\Config;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputArgument;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
-use App\Core\Security\Encryption;
+
 
 
 class TestCommand extends Command
@@ -33,26 +36,25 @@ class TestCommand extends Command
         $this->id = $input->getArgument('userid');
 
         $output->writeln(" [*] Waiting for messages ".$this->id.". To exit press CTRL+C\n");
+
+        // Event Listener
+        Event::listen('message.queue', function($body) {
+            echo "EventListener[message.queue]: {$body}\n";
+        });
         
-        $this->getMessage();
+        $this->getMessageBroker();
 
         return self::SUCCESS;
     }
 
-    private function getMessage()
+    private function getMessageBroker()
     {
-        $queueName = 'mvc_queue';
-
-        $connection = new AMQPStreamConnection('127.0.0.1', '5672', 'guest', 'guest');
-        $channel = $connection->channel();
-        $channel->exchange_declare($queueName, 'fanout', false, false, false);
-        list($queue_name, ,) = $channel->queue_declare("", false, false, true, false);
-
-        $channel->queue_bind($queue_name, $queueName);
-
         // Consume body
         $callback = function ($msg) {
             $body = decryptData($msg->getBody());
+
+            // Trigger Event
+            Event::trigger('message.queue', $body);
 
             if(isJson($body)) {
                 $data = json_decode($body, true);
@@ -60,10 +62,10 @@ class TestCommand extends Command
 
                 echo ' [x] ', $date, "\n";
 
-                // \App\Core\Support\Log::info($this->id);
-                // \App\Core\Support\Log::info(gettype($data));
-                foreach($data as $key => $val){
-                    // \App\Core\Support\Log::info(gettype($val));
+                // \App\Core\Support\Log::info($this->id, 'TestCommand.getMessage');
+                // \App\Core\Support\Log::info(gettype($data), 'TestCommand.getMessage');
+                foreach($data as $key => $val) {
+                    // \App\Core\Support\Log::info(gettype($val), 'TestCommand.getMessage');
                     if(is_array($val)) {
                         // Filtered ID
                         if(isset($val['id']) && 
@@ -82,7 +84,62 @@ class TestCommand extends Command
             }
             else {
                 echo ' [x] ', $body, "\n";
-                // \Log::info('RabbitMQ artisan message received: '.$msg->getBody());
+                // \App\Core\Support\Log::info('RabbitMQ message received: '.$body, 'TestCommand.getMessage');
+            }
+        };
+
+        $broker = new Broker();
+        $broker->getMessage($callback);
+    }
+
+    private function getMessage()
+    {
+        $default_mb = Config::get('default_mb');
+
+        $queueName = Config::get("broker.{$default_mb}.queue_name");
+        // echo $queueName;
+
+        $connection = new AMQPStreamConnection(Config::get("broker.{$default_mb}.host"), Config::get("broker.{$default_mb}.port"), Config::get("broker.{$default_mb}.username"), Config::get("broker.{$default_mb}.password"));
+
+        $channel = $connection->channel();
+        $channel->exchange_declare($queueName, 'fanout', false, false, false);
+        list($queue_name, ,) = $channel->queue_declare("", false, false, true, false);
+
+        $channel->queue_bind($queue_name, $queueName);
+
+        // Consume body
+        $callback = function ($msg) {
+            $body = decryptData($msg->getBody());
+
+            if(isJson($body)) {
+                $data = json_decode($body, true);
+                $date = date('d-m-Y H:i:s');
+
+                echo ' [x] ', $date, "\n";
+
+                // \App\Core\Support\Log::info($this->id, 'TestCommand.getMessage');
+                // \App\Core\Support\Log::info(gettype($data), 'TestCommand.getMessage');
+                foreach($data as $key => $val) {
+                    // \App\Core\Support\Log::info(gettype($val), 'TestCommand.getMessage');
+                    if(is_array($val)) {
+                        // Filtered ID
+                        if(isset($val['id']) && 
+                            $val['id'] == $this->id) {
+                            
+                            foreach($val as $k => $v) {
+                                echo "$k: $v\n";
+                            }
+                        }
+                    }
+                    else
+                        echo "$key: $val\n";
+                }
+                
+                echo "=====\n";
+            }
+            else {
+                echo ' [x] ', $body, "\n";
+                // \App\Core\Support\Log::info('RabbitMQ message received: '.$body, 'TestCommand.getMessage');
             }
         };
 

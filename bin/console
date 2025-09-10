@@ -10,13 +10,20 @@ session_start();
  * Bootstrap the Application.
  */
 /* ----------------------------- Default settings START -------------------------------- */
+ // Looking for .env at the root directory
+ $dotenv = Dotenv\Dotenv::createUnsafeImmutable(__DIR__.'/..');
+ $dotenv->load();
 
-date_default_timezone_set("Asia/Jakarta");
-
-// Looing for .env at the root directory
-$dotenv = Dotenv\Dotenv::createUnsafeImmutable(__DIR__.'/..');
-$dotenv->load();
+date_default_timezone_set(env('APP_TIMEZONE', 'Asia/Jakarta'));
 /* ----------------------------- Default settings END -------------------------------- */
+
+/**
+ * Bootstrap the Application
+ */
+ use App\Core\Support\App;
+ 
+ //register configuration to the app.
+ App::register('config',require __DIR__.'/../config/app.php');
 
 use Symfony\Component\Console\Application;
 use App\Console\Commands\TestCommand;

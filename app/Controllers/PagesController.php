@@ -62,8 +62,6 @@ class PagesController extends Controller
         // $get =  Request::get('get');
         // $this->view('extra', ['low' => 'lower', 'get' => $get]);
 
-        
-
         // Producer
         $date = date('d-m-Y H:i:s');
         $data = [
@@ -78,24 +76,7 @@ class PagesController extends Controller
 
         $message = encryptData($default);
 
-        
-
-        // $default_mb = Config::get('default_mb');
-        // $queueName = Config::get("broker.{$default_mb}.queue_name");
-
-        // // $connection = new AMQPStreamConnection('127.0.0.1', '5672', 'guest', 'guest');
-        // $connection = new AMQPStreamConnection(Config::get("broker.{$default_mb}.host"), Config::get("broker.{$default_mb}.port"), Config::get("broker.{$default_mb}.username"), Config::get("broker.{$default_mb}.password"));
-        // $channel = $connection->channel();
-
-        // $channel->exchange_declare($queueName, 'fanout', false, false, false);
-
-        // $msg = new AMQPMessage($message);
-        // $channel->basic_publish($msg, $queueName);
-        
-
-        // $channel->close();
-        // $connection->close();
-
+        // sendMessage
         $broker = new Broker();
         $broker->sendMessage($message);
 
@@ -110,7 +91,7 @@ class PagesController extends Controller
             Event::trigger('message.queue', $message);
         }
 
-        //=====================================
+        //===================================== concurrent 
 
         // $future1 = async(function () {
         //     echo 'Hello ';

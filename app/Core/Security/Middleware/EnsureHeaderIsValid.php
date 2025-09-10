@@ -28,9 +28,11 @@ class EnsureHeaderIsValid
         if($status === false) {
             die(
                 $response->json([
+                    'status' => false,
+                    'statusCode' => 500,
                     'message' => 'invalid header!',
                 ], 
-                403)
+                500)
             );
         }
 
@@ -38,6 +40,8 @@ class EnsureHeaderIsValid
         if(!isset($headers['Api-Token'])) {
             die(
                 $response->json([
+                    'status' => false,
+                    'statusCode' => 403,
                     'message' => 'missing token!',
                 ], 
                 403)

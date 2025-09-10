@@ -160,12 +160,14 @@ function matchEncryptedData($value, $encryptedData)
         return $encryption->match($value, $encryptedData);
     }
     catch(Throwable $ex) {
-        \App\Core\Support\Log::error([
-           'message' => $ex->getMessage(),
-           'file' => $ex->getFile(),
-           'line' => $ex->getLine(),
-           // 'trace' => $ex->getTraceAsString(),
-       ], 'Helper.matchEncryptedData');
+        if(config('app.debug')) {
+            \App\Core\Support\Log::error([
+                'message' => $ex->getMessage(),
+                'file' => $ex->getFile(),
+                'line' => $ex->getLine(),
+                // 'trace' => $ex->getTraceAsString(),
+            ], 'Helper.matchEncryptedData');
+        }
 
        return false;
     }    
@@ -178,12 +180,14 @@ function encryptData($value)
         return $encryption->encrypt($value);
     }
     catch(Throwable $ex) {
-        \App\Core\Support\Log::error([
-           'message' => $ex->getMessage(),
-           'file' => $ex->getFile(),
-           'line' => $ex->getLine(),
-           // 'trace' => $ex->getTraceAsString(),
-       ], 'Helper.encryptData');
+        if(config('app.debug')) {
+            \App\Core\Support\Log::error([
+                'message' => $ex->getMessage(),
+                'file' => $ex->getFile(),
+                'line' => $ex->getLine(),
+                // 'trace' => $ex->getTraceAsString(),
+            ], 'Helper.encryptData');
+        }
 
        return null;
     }
@@ -196,12 +200,14 @@ function decryptData($value)
         return $encryption->decrypt($value);
     }
     catch(Throwable $ex) {
-        \App\Core\Support\Log::error([
-           'message' => $ex->getMessage(),
-           'file' => $ex->getFile(),
-           'line' => $ex->getLine(),
-           // 'trace' => $ex->getTraceAsString(),
-       ], 'Helper.decryptData');
+        if(config('app.debug')) {
+            \App\Core\Support\Log::error([
+                'message' => $ex->getMessage(),
+                'file' => $ex->getFile(),
+                'line' => $ex->getLine(),
+                // 'trace' => $ex->getTraceAsString(),
+            ], 'Helper.decryptData');
+        }
 
        return null;
     }

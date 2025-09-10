@@ -2,6 +2,7 @@
 
 namespace App\Core\Security;
 
+use App\Core\Support\Config;
 use Exception;
 use RuntimeException;
 
@@ -31,7 +32,7 @@ class Encryption
 
     public function __construct($cipher = 'aes-256-cbc')
     {
-        $key = str_replace('base64:', '', (string) config('app.key'));
+        $key = str_replace('base64:', '', (string) Config::get('app.key'));
         $key = base64_decode($key);
         $this->encryptionKey = $key;
 
@@ -98,8 +99,6 @@ class Encryption
             : $this->hash($iv, $value, $this->encryptionKey);
 
         $json = json_encode(compact('iv', 'value', 'mac', 'tag'), JSON_UNESCAPED_SLASHES);
-        // \App\Core\Support\Log::debug($json, 'Encryption.encrypt');
-        // \App\Core\Support\Log::debug($this->cipher, 'Encryption.encrypt');
 
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw new RuntimeException('Could not encrypt the data.');
@@ -114,7 +113,6 @@ class Encryption
     public function decrypt(string $encryptedData): string
     {
         $payload = $this->getJsonPayload($encryptedData);
-        // \App\Core\Support\Log::debug($payload, 'Encryption.decrypt');
 
         $iv = base64_decode($payload['iv']);
         
@@ -135,7 +133,6 @@ class Encryption
             $decrypted = \openssl_decrypt(
                 $payload['value'], strtolower($this->cipher), $key, 0, $iv, $tag ?? ''
             );
-            // \App\Core\Support\Log::debug($decrypted, 'Encryption.decrypted');
 
             if ($decrypted !== false) {
                 break;

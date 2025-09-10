@@ -11,6 +11,10 @@ class ApiController extends BaseController
    public function __construct() {
       parent::__construct();
 
+      // Accepted type is JSON
+      if(false === $this->request()->isJsonRequest())
+         die('Only accepted JSON.');
+
       // Middlewares
       (new \App\Core\Security\Middleware\EnsureIpIsValid())
          ->handle($this->request(), $this->response());
@@ -27,7 +31,7 @@ class ApiController extends BaseController
    */
    protected function getPass() 
    {
-    return getenv('HEADER_TOKEN');
+      return config('app.token');
    }
 
    protected function getOutput(bool $status, int $statusCode, array $data)
@@ -52,7 +56,6 @@ class ApiController extends BaseController
    public function validateToken(Request $request, Response $response) 
    {
       $header = $request->headers();
-      // dd(isset($header['Api-Token']));
 
       if(isset($header['Api-Token']) === false || 
       matchEncryptedData($this->getPass(), $header['Api-Token']) === false) {

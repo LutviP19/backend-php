@@ -1,8 +1,14 @@
 - ENV configuration (done)
 - AES Encryptions (done)
-- Middleware (stamps, token, pin, IP-address)
+- Middleware [stamps, client-token, header-api-token, IP-address]
 - Event Driven
 - Non Blocking Process
-- GraphQL
 - Caching Redis
-- No SQL (MongoDB)
+- GraphQL
+- No SQL [MongoDB]
+- Rate Limiter 
+- JWT
+- Sanitize Input [XSS, SQL Injection]
+- Health checks [Auto recovery]
+- Tools monitoring [Prometheus, ELK Stack, Jaeger]
+

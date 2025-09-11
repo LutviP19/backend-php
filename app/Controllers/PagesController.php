@@ -8,12 +8,6 @@ use App\Models\User;
 use App\Core\Support\Config;
 use App\Core\Http\{Request,Response};
 
-use PhpAmqpLib\Connection\AMQPStreamConnection;
-use PhpAmqpLib\Message\AMQPMessage;
-
-use Amp\Future;
-use function Amp\async;
-use function Amp\delay;
 
 class PagesController extends Controller
 {
@@ -80,48 +74,17 @@ class PagesController extends Controller
         $broker = new Broker();
         $broker->sendMessage($message);
 
-        echo ' [x] Sent: ', decryptData($message), "<br>\r\n";
+        echo "[x] Sent[$date]: ", decryptData($message), "<br>\r\n";
         echo "Sending message to RabbitMQ: {$message}";
 
-        Event::listen('message.queue', function($param) {
-            echo "Event '. $param .' [message.queue]<br>\r\n";
+        // Simulate Event with param as array
+        Event::listen('message.producer', function($date, $message) {
+            echo "Event[message.producer][$date]: $message<br>\r\n";
         });
 
         if(true) {
-            Event::trigger('message.queue', $message);
+            Event::trigger('message.producer', [$date, $message]);
         }
-
-        //===================================== concurrent 
-
-        // $future1 = async(function () {
-        //     echo 'Hello ';
-        
-        //     // delay() is a non-blocking version of PHP's sleep() function,
-        //     // which only pauses the current fiber instead of blocking the whole process.
-        //     delay(2);
-        
-        //     echo 'the future! ';
-        // });
-        
-        // $future2 = async(function () {
-        //     echo 'World ';
-        
-        //     // Let's pause for only 1 instead of 2 seconds here,
-        //     // so our text is printed in the correct order.
-        //     delay(1);
-        
-        //     echo 'from ';
-        // });
-        
-        // // Our functions have been queued, but won't be executed until the event-loop gains control.
-        // echo "Let's start: ";
-        
-        // // Awaiting a future outside a fiber switches to the event loop until the future is complete.
-        // // Once the event loop gains control, it executes our already queued functions we've passed to async()
-        // $future1->await();
-        // $future2->await();
-        
-        // echo PHP_EOL;
     }
 
 }

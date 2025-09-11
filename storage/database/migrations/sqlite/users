@@ -1,0 +1,4 @@
+CREATE TABLE "users" ("id" integer primary key autoincrement not null, "ulid" varchar, "name" varchar not null, "email" varchar not null, "email_verified_at" datetime, "password" varchar not null, "remember_token" varchar, "current_team_id" integer, "profile_photo_path" varchar, "created_at" datetime, "updated_at" datetime, "two_factor_secret" text, "two_factor_recovery_codes" text, "two_factor_confirmed_at" datetime, "first_name" varchar, "last_name" varchar, "phone" varchar, "address_line1" varchar, "address_line2" varchar, "city" varchar, "default_url" varchar, "status" tinyint(1) not null default '1', "deleted_at" datetime);
+
+CREATE UNIQUE INDEX "users_email_unique" on "users" ("email");
+

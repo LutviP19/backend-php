@@ -19,7 +19,9 @@ class Broker
 
     public static function sendMessage($message=null, $method=null)
     {
-        
+        if (is_null($message)) 
+            return;
+
         if(self::$driver === 'rabbitmq') {
 
             if (is_null($message)) {
@@ -37,6 +39,8 @@ class Broker
 
     public static function getMessage($callback=null, $method=null)
     {
+        if (is_null($callback)) 
+            return;
         
         if(self::$driver === 'rabbitmq') {
 
@@ -76,6 +80,10 @@ class Broker
 
     private static function getMessageRabbitMq($callback, $method='fanout')
     {
+        if (!is_callable($callback)) {
+            throw new Exception('Invalid callback function.');
+        }
+        
         $default_mb = self::$driver;
         $queueName = Config::get("broker.{$default_mb}.queue_name");
 

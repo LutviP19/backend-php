@@ -15,11 +15,12 @@ return [
     'app' => [
         'name' => env('APP_NAME', 'Backend PHP'),
         'key' => env('ENCRYPTION_KEY'),
+        'hash_key' => env('HASH_KEY'),
         'token' => env('HEADER_TOKEN'),
         'url' => env('APP_URL', 'http://localhost'),
         'env' => env('APP_ENV', 'production'),
         'debug' => (bool) env('APP_DEBUG', false),
-        'logdir' => __DIR__.'/../storage/logs/',        
+        'logdir' => __DIR__.'/../storage/logs/',
     ],
 
     'trusted_ips' => [
@@ -30,7 +31,7 @@ return [
     'valid_headers' => [
         // 'Accept',
         'Content-Type',
-        'Api-Token',
+        'X-Api-Token',
     ],
 
     /**

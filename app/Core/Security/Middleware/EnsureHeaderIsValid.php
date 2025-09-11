@@ -37,7 +37,7 @@ class EnsureHeaderIsValid
         }
 
         // Specific Header
-        if(!isset($headers['Api-Token'])) {
+        if(!isset($headers['X-Api-Token'])) {
             die(
                 $response->json([
                     'status' => false,

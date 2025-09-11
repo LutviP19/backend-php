@@ -153,10 +153,15 @@ function old($key)
     return Session::getOldInput($key);
 }
 
-function matchEncryptedData($value, $encryptedData) 
+function clientIP()
+{
+    return  (new \App\Core\Security\Middleware\EnsureIpIsValid)->ip();
+}
+
+function matchEncryptedData($value, $encryptedData, $key = null) 
 {
     try {
-        $encryption = new \App\Core\Security\Encryption();
+        $encryption = new \App\Core\Security\Encryption($key);
         return $encryption->match($value, $encryptedData);
     }
     catch(Throwable $ex) {
@@ -173,10 +178,10 @@ function matchEncryptedData($value, $encryptedData)
     }    
 }
 
-function encryptData($value) 
+function encryptData($value, $key = null) 
 {
     try {
-        $encryption = new \App\Core\Security\Encryption();
+        $encryption = new \App\Core\Security\Encryption($key);
         return $encryption->encrypt($value);
     }
     catch(Throwable $ex) {
@@ -193,10 +198,10 @@ function encryptData($value)
     }
 }
 
-function decryptData($value) 
+function decryptData($value, $key = null) 
 {
     try {
-        $encryption = new \App\Core\Security\Encryption();
+        $encryption = new \App\Core\Security\Encryption($key);
         return $encryption->decrypt($value);
     }
     catch(Throwable $ex) {
@@ -211,6 +216,11 @@ function decryptData($value)
 
        return null;
     }
+}
+
+function generateRandomString($len = 60)
+{
+    return \App\Core\Security\Hash::randomString($len);
 }
 
 function isJson($value)

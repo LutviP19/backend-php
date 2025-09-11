@@ -30,9 +30,9 @@ class Encryption
         'aes-256-gcm' => ['size' => 32, 'aead' => true],
     ];
 
-    public function __construct($cipher = 'aes-256-cbc')
+    public function __construct(#[\SensitiveParameter] $key = null, $cipher = 'aes-256-cbc')
     {
-        $key = str_replace('base64:', '', (string) Config::get('app.key'));
+        $key = str_replace('base64:', '', (string) $key ?: Config::get('app.key'));
         $key = base64_decode($key);
         $this->encryptionKey = $key;
 
@@ -79,7 +79,7 @@ class Encryption
     /**
      * Encrypts data.
      */
-    public function encrypt(string $data): string
+    public function encrypt(#[\SensitiveParameter] string $data): string
     {
         $iv = random_bytes(openssl_cipher_iv_length(strtolower($this->cipher)));
 
@@ -110,7 +110,7 @@ class Encryption
     /**
      * Decrypts encrypted data.
      */
-    public function decrypt(string $encryptedData): string
+    public function decrypt(#[\SensitiveParameter] string $encryptedData): string
     {
         $payload = $this->getJsonPayload($encryptedData);
 
@@ -153,7 +153,7 @@ class Encryption
     /**
      * Match encrypted data.
      */
-    public function match($value, $encryptedData): bool
+    public function match(#[\SensitiveParameter] $value, $encryptedData): bool
     {
         if(empty($value) || empty($encryptedData))
             return false;
@@ -218,7 +218,7 @@ class Encryption
      * @param  array  $payload
      * @return bool
      */
-    protected function validMac(array $payload)
+    protected function validMac(#[\SensitiveParameter] array $payload)
     {
         return $this->validMacForKey($payload, $this->encryptionKey);
     }

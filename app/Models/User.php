@@ -23,4 +23,10 @@ class User extends Model
 
 	//user model code....
 	
+	public static function updateClientToken($id)
+	{
+		$token = generateRandomString();
+
+		self::update(['client_token' => $token], $id);
+	}
 }

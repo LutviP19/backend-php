@@ -1,6 +1,6 @@
 <?php
 
-define('MVC_START',microtime(true));
+define('APP_START', microtime(true));
 
 /**
  * Require the composer autoload File.

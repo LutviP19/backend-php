@@ -7,7 +7,22 @@ $ php bin/console list
 $ php bin/console app:testing 1
 
 curl --location 'http://localhost:8000/webhook' \
---header 'X-Value: eyJpdiI6InhmMHhXTGpvZ24wN1lIRmI2TlBKTlE9PSIsInZhbHVlIjoiSnFEajVxWnMwWEQ5aVI5NEd0Y200MDhPVjZKa21jV0lQNk9vWlBRSjdCMD0iLCJtYWMiOiI3ZmY1NmQwNzI0MmU0OTFjNzJjY2YwMzk3MTE2NzA0MmQzZDI3NjA2YWQzZWI0YzJjMjI2NzU2ZDExYjAyOTc0IiwidGFnIjoiIn0='
+--header 'Accept: application/json' \
+--header 'Content-Type: application/json' \
+--header 'X-Api-Token: eyJpdiI6Im9Nbm5STk9FYWhhTE12SEhKT2pNanc9PSIsInZhbHVlIjoiUGRSQ0g5cCtKTEU2NGd5MDVJa3J1WDJkUTBML3I1cG94TDVxeHBOaEpOWT0iLCJtYWMiOiIwYWU1NWNlOTllZGMxZDFjYmJhZTE2MzgyMmNiNzYzNjEzYjY3Yjc0MDFlYjgxYzJiN2VjNzk1ZDIzNTNhYTNkIiwidGFnIjoiIn0='
 
 dd(gettype($this->encryptionKey));
+\App\Core\Support\Log::info(gettype($val), 'TestCommand.getMessage');
+\App\Core\Support\Log::debug($this->sql, 'QueryBuilder.appendSQL');
 
+admin@example.com
+password123
+
+
+envelope
+========
+private const STAMP_HEADER_PREFIX = 'X-Message-Stamp-';
+
+['body] = base64_encode()
+['headers']['Content-Type'] = json | xml
+['headers']['X-Message-Stamp-XXX'] = custom value

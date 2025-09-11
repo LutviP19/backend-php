@@ -57,16 +57,35 @@ class ApiController extends BaseController
    {
       $header = $request->headers();
 
-      if(isset($header['Api-Token']) === false || 
-      matchEncryptedData($this->getPass(), $header['Api-Token']) === false) {
+      if(isset($header['X-Api-Token']) === false || 
+      matchEncryptedData($this->getPass(), $header['X-Api-Token']) === false) {
          die(
             $response->json(
                $this->getOutput(false, 403, [
-                  // 'token' => $this->getPass(),
-                  'message' => 'token missmatch!',
+                  'message' => 'Invalid api token!',
                ])
             , 403)
          );
+      }
+   }
+
+   public function validateClientToken(Request $request, Response $response) 
+   {
+      $header = $request->headers();
+
+      $clientId = '01JP9MA549R9NNVNGHTHJFTNXJ';  // Get from session
+      $validateClient = new \App\Core\Security\Middleware\ValidateClient($clientId);
+      // $clientToken = $validateClient->getToken();
+
+      if(isset($header['X-Client-Token']) === false || 
+         $validateClient->matchToken($header['X-Client-Token']) === false) {
+            die(
+               $response->json(
+                  $this->getOutput(false, 403, [
+                     'message' => 'Invalid client PIN!',
+                  ])
+               , 403)
+            );
       }
    }
 }

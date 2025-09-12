@@ -224,6 +224,6 @@ class EnsureIpIsValid
      */
     public function getClientIp(): ?string
     {
-        return $this->getClientIps()[0];
+        return $this->getClientIps()[0] === '::1' ? '127.0.0.1' : $this->getClientIps()[0];
     }
 }

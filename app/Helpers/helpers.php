@@ -218,9 +218,18 @@ function decryptData($value, $key = null)
     }
 }
 
-function generateRandomString($len = 60)
+function generateRandomString($len = 64)
 {
     return \App\Core\Security\Hash::randomString($len);
+}
+
+function generateUlid($lowercased = false, $timestamp = null): string
+{
+    if(! is_null($timestamp)) {
+        return (string) \Ulid\Ulid::fromTimestamp($timestamp, $lowercased);
+    }
+    
+    return (string) \Ulid\Ulid::generate($lowercased);
 }
 
 function isJson($value)
@@ -242,3 +251,25 @@ function isJson($value)
     return true;
 }
 
+function slug($title, $separator = '-', $language = 'en', $dictionary = ['@' => 'at'])
+{
+    // Convert all dashes/underscores into separator
+    $flip = $separator === '-' ? '_' : '-';
+
+    $title = preg_replace('!['.preg_quote($flip).']+!u', $separator, $title);
+
+    // Replace dictionary words
+    foreach ($dictionary as $key => $value) {
+        $dictionary[$key] = $separator.$value.$separator;
+    }
+
+    $title = str_replace(array_keys($dictionary), array_values($dictionary), $title);
+
+    // Remove all characters that are not the separator, letters, numbers, or whitespace
+    $title = preg_replace('![^'.preg_quote($separator).'\pL\pN\s]+!u', '', strtolower($title));
+
+    // Replace all separator characters and whitespace by a single separator
+    $title = preg_replace('!['.preg_quote($separator).'\s]+!u', $separator, $title);
+
+    return trim($title, $separator);
+}

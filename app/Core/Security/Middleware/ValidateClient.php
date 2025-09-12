@@ -3,6 +3,7 @@
 namespace App\Core\Security\Middleware;
 
 use App\Models\User;
+use App\Core\Support\Config;
 use App\Core\Security\Hash;
 use Exception;
 use RuntimeException;
@@ -12,27 +13,45 @@ class ValidateClient
     protected $clientId;
     protected $columnId;
     protected $hash;
+    protected $redis;
 
     public function __construct($clientId, $columnId = 'ulid')
     {
         $this->clientId = $clientId;
         $this->columnId = $columnId;
         $this->hash = new Hash();
+
+        $this->redis = new \Predis\Client([
+                            'host' => Config::get('redis.cache.host'),
+                            'port' => Config::get('redis.cache.port'),
+                            'database' => Config::get('redis.cache.database')
+                        ]);
+        $this->redis->set('client_token', 'predis');
     }
 
     public function getToken()
     {
+        // get cache from redis
+        $token = $this->redis->mget(['client_token:'.$this->clientId]);
+
+        if(! is_null($token) && isset($token[0])) {
+
+            return $token[0];
+        }
+
         $this->__checkColumnId($this->columnId);
-        
         $user = User::select(['client_token'])
             ->where($this->columnId, '=', $this->clientId)
             ->whereAnd('status', '=', 1)
             ->first();
+
         
-        // dd($user);
         if($user && 
            isset($user->client_token) && 
            $user->client_token != '') {
+
+            // cache to redis
+            $this->redis->mset(['client_token:'.$this->clientId => $user->client_token]);
             
             return $user->client_token;
         }

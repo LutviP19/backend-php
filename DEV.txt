@@ -3,12 +3,14 @@
 - Middleware [stamps, client-token, header-api-token, IP-address]
 - Event Driven
 - Non Blocking Process
-- Caching Redis
+- ULID (done)
+- JWT (done)
+- Rate Limiter (done)
+- Caching Redis (done)
+- Sanitize Input [XSS, SQL Injection]
 - GraphQL
 - No SQL [MongoDB]
-- Rate Limiter 
-- JWT
-- Sanitize Input [XSS, SQL Injection]
+
 - Health checks [Auto recovery]
 - Tools monitoring [Prometheus, ELK Stack, Jaeger]
 

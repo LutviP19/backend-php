@@ -1,6 +1,7 @@
 <?php
 
 //Starting the session will be the first we do.
+session_name('BACKENDPHPSESSID'); // Set a custom session name
 ini_set('session.save_path', __DIR__.'/../../storage/framework/sessions');
 session_start();
 

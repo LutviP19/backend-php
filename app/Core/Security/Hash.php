@@ -72,9 +72,9 @@ class Hash
      * @param int $len
      * @return string
      */
-    public static function randomString($len = 60) 
+    public static function randomString($len = 64) 
     {
-        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ*&!@%^#$';
         $strings = [];
         $max = mb_strlen($characters, '8bit') - 1;
         

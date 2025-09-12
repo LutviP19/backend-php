@@ -18,6 +18,12 @@ dd(gettype($this->encryptionKey));
 admin@example.com
 password123
 
+// __construct($rateLimitName, $maxUsages, $period, $bucketSize) 
+// (new \App\Core\Security\Middleware\RateLimiterRateLimiter('webhook_request', 1, 60, 60))->setup();
+
+
+// Encode Header to Base64Url String
+$base64UrlHeader = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($header));
 
 envelope
 ========

@@ -20,16 +20,12 @@ use ReallySimpleJWT\Token;
 
 class WebhookController extends ApiController
 {
-    protected $rateLimitProvider;
-    protected $throttler;
-
-
     public function __construct() {
         parent::__construct();
 
         // Middlewares
         try {
-            (new \App\Core\Security\Middleware\RateLimiter('webhook_request', 3, 900, 1200))->setup();
+            (new \App\Core\Security\Middleware\RateLimiter('webhook_request', 3, 500, 1200))->setup();
         } catch(Exception $exception) {
             die($exception->getMessage());
         }
@@ -44,8 +40,6 @@ class WebhookController extends ApiController
      */
     public function index(Request $request,Response $response)
     {
-        // User::updateClientToken(3);        
-
         $hash = new Hash();
         $unik = $hash->unique(32);
         $unik = $this->getPass();
@@ -56,6 +50,7 @@ class WebhookController extends ApiController
         $password = $hash->makePassword($pass);
 
         $clientId = '01JP9MA549R9NNVNGHTHJFTNXJ';
+        (new User())->updateClientToken('ulid', $clientId);
         $validateClient = new ValidateClient($clientId);
         // $validateClient = new ValidateClient(1, 'id');
         $clientToken = $validateClient->generateToken();

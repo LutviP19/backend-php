@@ -191,6 +191,31 @@ class QueryBuilder
     }
 
     /**
+     * Update a row.
+     * 
+     * @param array $params
+     * @param int $pk
+     * @return bool
+     */
+    public static function updateWhere(array $params, $col, $val)
+    {
+        try{
+            $builder = self::instance();
+        
+            $builder->setParams($params);
+            $params = $builder->updateParams();
+
+            return $builder->setSQL("UPDATE {$builder->table} SET {$params} ")
+                ->where($col, "=", $val)
+                ->setParams([ "{$col}" => $val])
+                ->query() ? true : false;
+
+        }catch(PDOException $e){
+            throw $e;
+        }
+    }
+
+    /**
      * Delete a row.
      * 
      * @param int $pk

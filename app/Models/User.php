@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Core\Database\Model;
+use App\Core\Database\QueryBuilder; // import the class.
 
 class User extends Model
 {
@@ -26,8 +27,8 @@ class User extends Model
 	public static function updateClientToken($columnId, $id)
 	{
 		$token = generateRandomString();
-		$this->pk = $columnId !== $this->pk ? $columnId : $this->pk;
-
-		self::update(['client_token' => $token], $id);
+		
+		self::primaryKey($columnId);
+		self::updateWhere(['client_token' => $token], $columnId, $id);
 	}
 }

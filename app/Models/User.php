@@ -23,12 +23,28 @@ class User extends Model
 
 
 	//user model code....
+
+	public static function getUlid($id)
+	{
+		$data = self::select(['ulid'])->where('id', '=', $id)->first();
+		\App\Core\Support\Log::debug($data, 'UserModel.getUlid');
+
+		if($data)
+			return $data->ulid;
+		
+		return false;
+	}
 	
 	public static function updateClientToken($columnId, $id)
 	{
 		$token = generateRandomString();
 		
 		self::primaryKey($columnId);
-		self::updateWhere(['client_token' => $token], $columnId, $id);
+		$update = self::updateWhere(['client_token' => $token], $columnId, $id);
+
+		if(true === $update)
+			return $token;
+		else
+			return null;
 	}
 }

@@ -69,6 +69,16 @@ class ValidateClient
         return null;
     }
 
+    public function updateToken()
+    {
+        $token = User::updateClientToken($this->columnId, $this->clientId);
+
+        if (!is_null($token)) // cache to redis
+            $this->redis->mset(['client_token:'.$this->clientId => $token]);
+
+        return $token;
+    }
+
     public function matchToken($clientToken): bool
     {
         $token = $this->getToken($this->columnId);

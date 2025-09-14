@@ -13,10 +13,6 @@ use Exception;
 
 use ReallySimpleJWT\Token;
 
-// use Maba\GentleForce\RateLimit\UsageRateLimit;
-// use Maba\GentleForce\RateLimitProvider;
-// use Maba\GentleForce\Throttler;
-// use Maba\GentleForce\Exception\RateLimitReachedException;
 
 class WebhookController extends ApiController
 {
@@ -42,23 +38,33 @@ class WebhookController extends ApiController
     {
         $hash = new Hash();
         $unik = $hash->unique(32);
-        $unik = $this->getPass();
-        $unik = '01JP9MA549R9NNVNGHTHJFTNXJ';
+        // $unik = $this->getPass();
+        // $unik = '01JP9MA549R9NNVNGHTHJFTNXJ';
         $myhash = $hash->create($unik);
 
         $pass = 'password123';
         $password = $hash->makePassword($pass);
 
-        $clientId = '01JP9MA549R9NNVNGHTHJFTNXJ';
-        (new User())->updateClientToken('ulid', $clientId);
-        $validateClient = new ValidateClient($clientId);
-        // $validateClient = new ValidateClient(1, 'id');
-        $clientToken = $validateClient->generateToken();
+        $clientId =  User::getUlid(1) ?: null;
+        // $clientId =  '01JP9MA549R9NNVNGHTHJFTNXJ';
 
+        // Init ValidateClient
+        // $validateClient = new ValidateClient(1, 'id');
+        $validateClient = new ValidateClient($clientId);
+
+        // Update Token
+        // $validateClient->updateToken();
+        // (new User())->updateClientToken('ulid', $clientId);
+
+        // Get Token
+        $clientToken = $validateClient->generateToken();
+        $clientStrToken = $validateClient->getToken();
+
+        // $ulid = User::getUlid(1);
         $ulid = generateUlid();
 
         // JWT
-        $userId = '01JP9MA549R9NNVNGHTHJFTNXJ';
+        $userId = $clientId;
         $secret = '3hrdBZGheOXrk%73Wvh%!!zbSRzfGj5Q%Q3!X9ib$16AP3HNFXe3pReTPdAy*Q%o';
         $expiration = time() + 3600;
         $issuer = clientIP();
@@ -72,7 +78,7 @@ class WebhookController extends ApiController
                 'token_jwt' => $tokenJwt,
                 'match_jwt' => Token::validate($tokenJwt, $secret),
                 'token' => $clientToken,
-                'new_token' => generateRandomString(),
+                'str_token' =>  $clientStrToken,
                 'match_token' => $validateClient->matchToken($clientToken),
                 'strlen' => strlen('5gbSVtgMFs96tGNGyBKVyjwREtj6uzPHmVnauvyhFpkLuZXEW4GIh8HGM2lW'),
                 'genkey' => Encryption::generateKey(),

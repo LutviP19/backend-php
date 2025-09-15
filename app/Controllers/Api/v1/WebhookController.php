@@ -4,7 +4,10 @@ namespace App\Controllers\Api\v1;
 
 use App\Core\Support\Config;
 use App\Models\User;
+
 use App\Core\Security\Middleware\ValidateClient;
+use App\Core\Security\Middleware\JwtToken;
+
 use App\Controllers\Api\ApiController;
 use App\Core\Http\{Request,Response};
 use App\Core\Security\Hash;
@@ -60,23 +63,29 @@ class WebhookController extends ApiController
         $clientToken = $validateClient->generateToken();
         $clientStrToken = $validateClient->getToken();
 
-        // $ulid = User::getUlid(1);
+        // generate ULID
         $ulid = generateUlid();
 
         // JWT
         $userId = $clientId;
-        $secret = '3hrdBZGheOXrk%73Wvh%!!zbSRzfGj5Q%Q3!X9ib$16AP3HNFXe3pReTPdAy*Q%o';
-        $expiration = time() + 3600;
+        $secret = $clientStrToken;
+        $expirationTime = 3600;
+        $jwtId = generateUlid();
         $issuer = clientIP();
-        $tokenJwt = Token::create($userId, $secret, $expiration, $issuer);
+        $audience = Config::get('app.url');
+        // Init JwtToken
+        $jwtToken = new JwtToken($secret, $expirationTime, $jwtId, $issuer, $audience);
+        // create specific Token
+        $info = 'Webhook jwt';
+        $subject = 'Access Webhook API';
+        $tokenJwt = $jwtToken->createToken($userId, $info, $subject);
 
-
-        $output = $this->getOutput(true, 200, [ 
+        $output = $this->getOutput(true, 200, [
                 'message' => 'Hello world!', 
                 'client_ip' => clientIP(),
                 'ulid' => $ulid,
                 'token_jwt' => $tokenJwt,
-                'match_jwt' => Token::validate($tokenJwt, $secret),
+                'match_jwt' => $jwtToken->validateToken($tokenJwt),
                 'token' => $clientToken,
                 'str_token' =>  $clientStrToken,
                 'match_token' => $validateClient->matchToken($clientToken),
@@ -86,10 +95,11 @@ class WebhookController extends ApiController
                 'myhash' => $myhash,
                 'check_hash' => $hash->matchHash($unik, $myhash),
                 'password' => $password,
-                'check' => $hash->matchPassword($pass, $password),
+                'check_pass' => $hash->matchPassword($pass, $password),
+                'rand_str' => generateRandomString(16),
                 'unique' => $hash->unique(32),
             ]);
-        // \App\Core\Support\Log::debug($output, 'WebhookController');
+        \App\Core\Support\Log::debug($output, 'WebhookController');
 
         return $response->json($output, 200);
     }

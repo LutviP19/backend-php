@@ -1,8 +1,8 @@
 - ENV configuration (done)
 - AES Encryptions (done)
-- Middleware [stamps, client-token, header-api-token, IP-address]
+- Middleware [JWT, RateLimiter, client-token, header-api-token, IP-whitelist] (done)
 - Event Driven
-- Non Blocking Process
+- Non Blocking Process(done)
 - ULID (done)
 - JWT (done)
 - Rate Limiter (done)

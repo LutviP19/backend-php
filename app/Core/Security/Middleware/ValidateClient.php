@@ -35,8 +35,7 @@ class ValidateClient
         $token = $this->redis->mget(['client_token:'.$this->clientId]);
 
         if(! is_null($token) && isset($token[0])) {
-
-            return $token[0];
+            return base64_decode($token[0]);
         }
 
         $this->__checkColumnId($this->columnId);
@@ -51,7 +50,7 @@ class ValidateClient
            $user->client_token != '') {
 
             // cache to redis
-            $this->redis->mset(['client_token:'.$this->clientId => $user->client_token]);
+            $this->redis->mset(['client_token:'.$this->clientId => base64_encode($user->client_token)]);
             
             return $user->client_token;
         }
@@ -63,7 +62,7 @@ class ValidateClient
     {
         $token = $this->getToken($this->columnId);
 
-        if (!is_null($token))
+        if (! is_null($token))
             return $this->hash->create($token);
 
         return null;
@@ -73,8 +72,8 @@ class ValidateClient
     {
         $token = User::updateClientToken($this->columnId, $this->clientId);
 
-        if (!is_null($token)) // cache to redis
-            $this->redis->mset(['client_token:'.$this->clientId => $token]);
+        if (! is_null($token)) // cache to redis
+            $this->redis->mset(['client_token:'.$this->clientId => base64_encode($token)]);
 
         return $token;
     }
@@ -85,7 +84,7 @@ class ValidateClient
 
         if (is_null($token) || 
             false === $clientToken || 
-            !is_string($clientToken)) {
+            ! is_string($clientToken)) {
             
             return false;
         }

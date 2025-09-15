@@ -13,13 +13,6 @@ use Exception;
 class RateLimiter 
 {
     /**
-     * Bucket size, measured in tokens.
-     *
-     * @var float
-     */
-    private $bucketSize;
-
-    /**
      * Count of usages available in specified period.
      *
      * @var float
@@ -33,15 +26,29 @@ class RateLimiter
      */
     private $period;
 
+    /**
+     * Bucket size, measured in tokens.
+     *
+     * @var float
+     */
+    private $bucketSize;
+
+    /**
+     * Unique name for specific module.
+     *
+     * @var string
+     */
     protected $rateLimitName;
-    protected $rateLimitProvider;
-    protected $throttler;
+
+    // Object class
+    protected RateLimitProvider $rateLimitProvider;
+    protected Throttler $throttler;
 
     public function __construct($rateLimitName, $maxUsages, $period, $bucketSize) 
     {
-        $this->maxUsages = (int) $maxUsages ?: 3;
-        $this->period = (int) $period ?: 900;
-        $this->bucketSize = (int) $bucketSize ?: 1200;
+        $this->maxUsages = (int) $maxUsages ?: 30;
+        $this->period = (int) $period ?: 60;
+        $this->bucketSize = (int) $bucketSize ?: 1800;
         
         $this->rateLimitName = (string) $rateLimitName ?: 'api_request_'.date('Ymd');
 

@@ -21,7 +21,7 @@ class WebhookController extends ApiController
 
         // Middlewares
         try {
-            (new \App\Core\Security\Middleware\RateLimiter('webhook_request', 3, 500, 1200))->setup();
+            (new \App\Core\Security\Middleware\RateLimiter('webhook_request', 5, 500, 1200))->setup();
         } catch(Exception $exception) {
             die($exception->getMessage());
         }

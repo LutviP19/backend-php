@@ -27,7 +27,7 @@ class User extends Model
 	public static function getUlid($id)
 	{
 		$data = self::select(['ulid'])->where('id', '=', $id)->first();
-		\App\Core\Support\Log::debug($data, 'UserModel.getUlid');
+		// \App\Core\Support\Log::debug($data, 'UserModel.getUlid');
 
 		if($data)
 			return $data->ulid;

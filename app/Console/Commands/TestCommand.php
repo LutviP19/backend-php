@@ -113,9 +113,11 @@ class TestCommand extends Command
         
             // delay() is a non-blocking version of PHP's sleep() function,
             // which only pauses the current fiber instead of blocking the whole process.
-            delay(1);
+            // delay(1);
+            for($i=0; $i <= 10000; $i++)
+                $counter = $i;
         
-            return $data['id'];
+            return $data['id']." counter: {$counter}x";;
         });
         
         $future2 = async(function () use($data) {
@@ -124,9 +126,11 @@ class TestCommand extends Command
         
             // Let's pause for only 1 instead of 2 seconds here,
             // so our text is printed in the correct order.
-            delay(2);
+            // delay(2);
+            for($i=0; $i <= 2000; $i++)
+                $counter = $i;
         
-            return $data['title'];
+            return $data['title']." counter: {$counter}x";;
         });
 
         $future3 = async(function () use($data) {
@@ -135,9 +139,11 @@ class TestCommand extends Command
         
             // Let's pause for only 1 instead of 3 seconds here,
             // so our text is printed in the correct order.
-            delay(3);
+            // delay(3);
+            for($i=0; $i <= 15000; $i++)
+                $counter = $i;
 
-            return $data['contents'];
+            return $data['contents']." counter: {$counter}x";
         });
         
         // Our functions have been queued, but won't be executed until the event-loop gains control.

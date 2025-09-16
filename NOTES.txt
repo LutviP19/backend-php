@@ -6,10 +6,21 @@ $ php -S localhost:8000 -t public/
 $ php bin/console list
 $ php bin/console app:testing 1
 
-curl --location 'http://localhost:8000/webhook' \
---header 'Accept: application/json' \
+curl --location --request GET 'http://localhost:8000/webhook' \
 --header 'Content-Type: application/json' \
---header 'X-Api-Token: eyJpdiI6Im9Nbm5STk9FYWhhTE12SEhKT2pNanc9PSIsInZhbHVlIjoiUGRSQ0g5cCtKTEU2NGd5MDVJa3J1WDJkUTBML3I1cG94TDVxeHBOaEpOWT0iLCJtYWMiOiIwYWU1NWNlOTllZGMxZDFjYmJhZTE2MzgyMmNiNzYzNjEzYjY3Yjc0MDFlYjgxYzJiN2VjNzk1ZDIzNTNhYTNkIiwidGFnIjoiIn0='
+--header 'X-Api-Token: eyJpdiI6Im9Nbm5STk9FYWhhTE12SEhKT2pNanc9PSIsInZhbHVlIjoiUGRSQ0g5cCtKTEU2NGd5MDVJa3J1WDJkUTBML3I1cG94TDVxeHBOaEpOWT0iLCJtYWMiOiIwYWU1NWNlOTllZGMxZDFjYmJhZTE2MzgyMmNiNzYzNjEzYjY3Yjc0MDFlYjgxYzJiN2VjNzk1ZDIzNTNhYTNkIiwidGFnIjoiIn0=' \
+--data-raw '{
+    "email" : "admin@example.com",
+    "password" : "password123"
+}'
+
+curl --location 'http://localhost:8000/auth/login' \
+--header 'Content-Type: application/json' \
+--header 'X-Api-Token: eyJpdiI6Im9Nbm5STk9FYWhhTE12SEhKT2pNanc9PSIsInZhbHVlIjoiUGRSQ0g5cCtKTEU2NGd5MDVJa3J1WDJkUTBML3I1cG94TDVxeHBOaEpOWT0iLCJtYWMiOiIwYWU1NWNlOTllZGMxZDFjYmJhZTE2MzgyMmNiNzYzNjEzYjY3Yjc0MDFlYjgxYzJiN2VjNzk1ZDIzNTNhYTNkIiwidGFnIjoiIn0=' \
+--data-raw '{
+    "email" : "admin@example.com",
+    "password" : "password123"
+}'
 
 dd(gettype($this->encryptionKey));
 \App\Core\Support\Log::info(gettype($val), 'TestCommand.getMessage');
@@ -17,6 +28,16 @@ dd(gettype($this->encryptionKey));
 
 admin@example.com
 password123
+
+{
+    "email" : "admin@example.com",
+    "password" : "password123",
+    "credentials" : {
+        "read" : true,
+        "write" : true,
+        "delete" : false
+    }
+}
 
 // __construct($rateLimitName, $maxUsages, $period, $bucketSize) 
 // (new \App\Core\Security\Middleware\RateLimiterRateLimiter('webhook_request', 1, 60, 60))->setup();

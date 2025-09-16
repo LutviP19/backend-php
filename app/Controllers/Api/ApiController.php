@@ -12,8 +12,15 @@ class ApiController extends BaseController
       parent::__construct();
 
       // Accepted type is JSON
-      if(false === $this->request()->isJsonRequest())
-         die('Only accepted JSON.');
+      if(! $this->request()->isJsonRequest()) {
+         die(
+            $response->json(
+               $this->getOutput(false, 403, [
+                  'message' => 'Only accepted JSON.',
+               ])
+            , 403)
+         );
+      }
 
       // Middlewares
       (new \App\Core\Security\Middleware\EnsureIpIsValid())

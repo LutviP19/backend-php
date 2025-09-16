@@ -107,6 +107,9 @@ function csrfField()
  */
 function e($str)
 {
+    if(is_array($str))
+        return json_encode($str);
+
     return htmlentities($str,ENT_QUOTES,'UTF-8');
 }
 
@@ -249,6 +252,23 @@ function isJson($value)
     }
 
     return true;
+}
+
+function readJson($key = null, $payload = null, $default = null)
+{
+    if(empty($key) || empty($payload))
+        return null;
+
+    $keys = explode('.',$key);
+    foreach($keys as $key){
+        if(isset($payload[$key])) {
+            $payload = $payload[$key];
+        } else {
+            return $default;
+        }
+    }
+
+    return $payload;
 }
 
 function slug($title, $separator = '-', $language = 'en', $dictionary = ['@' => 'at'])

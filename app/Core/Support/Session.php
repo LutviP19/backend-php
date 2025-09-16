@@ -7,6 +7,26 @@ namespace App\Core\Support;
  */
 class Session
 {
+    /**
+     * Get all value.
+     * 
+     * 
+     * @return mixed
+     */
+    public static function all()
+    {
+        $sessions = [];
+        $escaped = ['password', 'errors', '_previous_uri', '_old_input'];
+        foreach($_SESSION as $key => $value) {
+            if(in_array($key, $escaped))
+                continue;
+
+            $sessions[$key] = $value;
+        }
+
+        return $sessions;
+    }
+
     
     /**
      * Get a value.

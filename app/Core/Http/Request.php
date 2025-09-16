@@ -2,9 +2,9 @@
 
 namespace App\Core\Http;
 
-use Exception;
 use App\Core\Support\Session;
 use App\Core\Validation\Validator;
+use Exception;
 
 class Request
 {
@@ -58,6 +58,7 @@ class Request
      */
     public function __construct()
     {
+        $this->setPayload();
         $this->setAttributes();
         $this->setCookies();
         $this->setServer();
@@ -111,6 +112,60 @@ class Request
             throw new Exception("Invalid Request Method!");
         }
         return self::method() == $method ? true : false;
+    }
+
+    /**
+     * get an body value.
+     * 
+     * @param string $key
+     * @return mixed
+     */
+    public static function getBody()
+    {
+        if(true === self::isJsonRequest())
+            return file_get_contents('php://input');
+
+        return null;
+    }
+
+    /**
+     * Gets the decoded form or json request body.
+     *
+     * @throws Exception When the body cannot be decoded to an array
+     */
+    public function setPayload()
+    {
+        $content = self::getBody();
+        // \App\Core\Support\Log::debug($content, 'Request.getPayload.content.'.time());
+
+        if(! empty($content)) {
+            try {
+                $content = json_decode($content, true, 512, \JSON_BIGINT_AS_STRING | \JSON_THROW_ON_ERROR);
+                
+            } catch (JsonException $e) {
+                throw new JsonException('Could not decode request body.', $e->getCode(), $e);
+            }
+    
+            if (! is_array($content)) {
+                throw new JsonException(sprintf('JSON content was expected to decode to an array, "%s" returned.', gettype($content)));
+            }
+    
+            // \App\Core\Support\Log::debug($content, 'Request.getPayload.content.'.time());
+            foreach($content as $key => $value) {
+                if(is_array($value)) {
+                    foreach($value as $i => $val)
+                        $_REQUEST[$key][$i] = $val;
+                } else {
+                    $_REQUEST[$key] = $value;
+                }
+            }
+            // \App\Core\Support\Log::debug($_REQUEST, 'Request.getPayload.$_REQUEST.'.time());
+
+            $this->setAttributes();
+            // \App\Core\Support\Log::debug($this->attributes, 'Request.setPayload.attributes.'.time());
+        }
+
+        return $this;
     }
 
     /**
@@ -210,6 +265,16 @@ class Request
     public static function previousUrl()
     {
         return url(Session::getPreviousUri());
+    }
+
+    /**
+     * Get all the request.
+     *
+     * @return array
+     */
+    public function all()
+    {
+        return $this->attributes;
     }
 
     /**
@@ -356,11 +421,18 @@ class Request
      */
     protected function setAttributes()
     {
-        $inputs = array_merge($_GET,$_POST);
+        $inputs = array_merge($_GET,$_POST,$_REQUEST);
+        // \App\Core\Support\Log::debug($inputs, 'Request.setAttributes.inputs.'.time());
+
         $request = [];
 
         foreach ($inputs as $key => $value) {
-            $request[e($key)] = e($value);
+            if(is_array($value)) {
+                foreach($value as $i => $val)
+                    $request[e($key)][e($i)] = gettype($val) === 'boolean' ? $val : e($val);
+            } else {
+                $request[e($key)] = gettype($value) === 'boolean' ? $value : e($value);
+            }
         }
 
         $this->attributes = $request;

@@ -107,7 +107,7 @@ class Rules
      * @param string $field
      * @return void
      */
-    protected function validateEmail($field)
+    public function validateEmail($field)
     {
         if(!filter_var($this->value($field),FILTER_VALIDATE_EMAIL)){
             $this->error($field,'should be a valid email!');

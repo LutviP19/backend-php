@@ -26,7 +26,6 @@ class ValidateClient
                             'port' => Config::get('redis.cache.port'),
                             'database' => Config::get('redis.cache.database')
                         ]);
-        $this->redis->set('client_token', 'predis');
     }
 
     public function getToken()

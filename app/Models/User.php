@@ -24,6 +24,15 @@ class User extends Model
 
 	//user model code....
 
+	public static function getUserByEmail($email)
+	{
+		return self::select(['ulid', 'name', 'email', 'password', 'client_token', 'current_team_id', 
+							'profile_photo_path', 'first_name', 'last_name', 'default_url'])
+				->where('email', '=', $email)
+				->whereAnd('status', '=', 1)
+				->first();
+	}
+
 	public static function getUlid($id)
 	{
 		$data = self::select(['ulid'])->where('id', '=', $id)->first();

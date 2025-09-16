@@ -23,14 +23,14 @@ class WebhookController extends ApiController
     public function __construct() {
         parent::__construct();
 
-        // // Middlewares
-        // try {
-        //     (new \App\Core\Security\Middleware\RateLimiter('webhook_request'))
-        //         ->setup(clientIP(), 5, 500, 1200);
-        // } 
-        // catch(Exception $exception) {
-        //     die($exception->getMessage());
-        // }
+        // Middlewares
+        try {
+            (new \App\Core\Security\Middleware\RateLimiter('webhook_request'))
+                ->setup(clientIP(), 5, 500, 1200);
+        } 
+        catch(Exception $exception) {
+            die($exception->getMessage());
+        }
     }
 
      /**
@@ -79,10 +79,10 @@ class WebhookController extends ApiController
 
         $status = $canRead;
         if($status)
-        \App\Core\Support\Log::debug($status, 'WebhookController.index.CREDENTIAL');
+        // \App\Core\Support\Log::debug($status, 'WebhookController.index.CREDENTIAL');
 
         $user = User::getUserByEmail($email);
-        \App\Core\Support\Log::debug($user, 'WebhookController.index.user');
+        // \App\Core\Support\Log::debug($user, 'WebhookController.index.user');
 
 
         $hash = new Hash();

@@ -13,6 +13,7 @@
  $router->post('/webhook','Api\v1\WebhookController@index');
 
  $router->post('/auth/login','Api\v1\Auth\AuthController@login');
+ $router->post('/auth/logout','Api\v1\Auth\AuthController@logout');
 //========== END API - v1
 
 

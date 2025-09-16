@@ -53,3 +53,31 @@ private const STAMP_HEADER_PREFIX = 'X-Message-Stamp-';
 ['body] = base64_encode()
 ['headers']['Content-Type'] = json | xml
 ['headers']['X-Message-Stamp-XXX'] = custom value
+
+
+$client = new Predis\Client();
+
+// Delete a single key
+$client->del('mykey');
+
+// Delete multiple keys
+$client->del(['key1', 'key2', 'key3']);
+
+
+// Using SCAN (recommended for production)
+$cursor = '0';
+do {
+    list($cursor, $keys) = $client->scan($cursor, ['MATCH' => 'prefix:*', 'COUNT' => 100]);
+    if (!empty($keys)) {
+        $client->del($keys);
+    }
+} while ($cursor !== '0');
+
+SET:
+The SET command stores a single key-value pair, where both the key and the value are strings.
+It's used for basic caching or storing individual pieces of data.
+Example: SET user:1:name "Alice"
+HSET:
+The HSET command operates on a Redis Hash data structure. A Hash is a collection of field-value pairs stored under a single key.
+It's used to represent objects or structured data, where you have multiple related attributes for a single entity.
+Example: HSET user:1 name "Alice" email "alice@example.com"

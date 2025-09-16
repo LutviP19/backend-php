@@ -107,7 +107,6 @@ class RateLimiter
         $response = new Response();
         $request = new Request();
 
-        // $id = $request::input('username') ?: clientIP();
         $id = $id ?: clientIP();
         
         $this->rateLimitName = (string) 'credentials_'.$this->rateLimitName;
@@ -130,8 +129,6 @@ class RateLimiter
 
         } 
         catch (RateLimitReachedException $exception) {
-            
-            // echo sprintf('Too much password tries for user. Please try after %s seconds', $exception->getWaitForInSeconds());
 
             die(
                 $response->json([
@@ -141,18 +138,13 @@ class RateLimiter
                 ], 
                 500)
             );
-
-            // throw new Exception('Too much tries, Please try after: '.$exception->getWaitForInSeconds().' seconds.');
-            // return;
         }
-
-        // $callback = checkCredentials($request::get('username'), $request::get('password'));
 
         if ($callback) {
             // as we've increased error count in advance, we need to decrease it if everything went fine
             $credentialsResult->decrease();
             
-            // log user into system
+            // passed into system
         }
     }
 }

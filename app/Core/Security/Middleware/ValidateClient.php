@@ -91,6 +91,17 @@ class ValidateClient
         return $this->hash->matchHash($token, $clientToken);
     }
 
+    public function delToken(): void
+    {
+        // get cache from redis
+        $token = $this->redis->mget(['client_token:'.$this->clientId]);
+
+        if(! is_null($token) && isset($token[0])) {
+            // delete cache from redis
+            $this->redis->del(['client_token:'.$this->clientId]);
+        }
+    }
+
     private function __checkColumnId($column) 
     {
         $this->clientId = $column === 'id' && gettype($this->clientId) === 'string' ? null : $this->clientId;

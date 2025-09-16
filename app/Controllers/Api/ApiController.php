@@ -2,12 +2,18 @@
 
 namespace App\Controllers\Api;
 
+use App\Core\Support\Session;
+use App\Core\Support\Config;
+use App\Core\Security\Middleware\JwtToken;
 use App\Core\Http\{Request,Response};
 use App\Core\Security\Encryption;
 use App\Core\Http\BaseController;
 
 class ApiController extends BaseController
 {
+
+   protected $jwtToken;
+
    public function __construct() {
       parent::__construct();
 
@@ -30,6 +36,18 @@ class ApiController extends BaseController
 
       // Validate token
       $this->validateToken($this->request(), $this->response());
+
+      // JWT
+      if(Session::has('secret') && Session::has('jwtId')) {
+         $secret = Session::get('secret');
+         $expirationTime = 3600;
+         $jwtId = Session::get('jwtId');
+         $issuer = clientIP();
+         $audience = Config::get('app.url');
+
+         // Init JwtToken
+         $this->jwtToken = new JwtToken($secret, $expirationTime, $jwtId, $issuer, $audience);
+      }
    }
 
    /**

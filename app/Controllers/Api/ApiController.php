@@ -20,7 +20,7 @@ class ApiController extends BaseController
       // Accepted type is JSON
       if(! $this->request()->isJsonRequest()) {
          die(
-            $response->json(
+            $this->response()->json(
                $this->getOutput(false, 403, [
                   'message' => 'Only accepted JSON.',
                ])
@@ -37,16 +37,10 @@ class ApiController extends BaseController
       // Validate token
       $this->validateToken($this->request(), $this->response());
 
-      // JWT
-      if(Session::has('secret') && Session::has('jwtId')) {
-         $secret = Session::get('secret');
-         $expirationTime = 3600;
-         $jwtId = Session::get('jwtId');
-         $issuer = clientIP();
-         $audience = Config::get('app.url');
-
-         // Init JwtToken
-         $this->jwtToken = new JwtToken($secret, $expirationTime, $jwtId, $issuer, $audience);
+      // Validate with session data
+      if(Session::has('uid') && Session::has('secret') && Session::has('jwtId')) {
+         // JWT
+         $this->jwtToken = $this->initJwtToken();
       }
    }
 
@@ -59,20 +53,30 @@ class ApiController extends BaseController
       return config('app.token');
    }
 
-   protected function getOutput(bool $status, int $statusCode, array $data)
+   protected function getBearerToken() 
+   {
+      $headers = $this->request()->headers();
+
+      if(! isset($headers['Authorization']))
+         return false;
+
+      return str_replace('Bearer ', '', $headers['Authorization']);
+   }
+
+   protected function getOutput(bool $status, int $statusCode, array $data, string $message = null)
    {
       if($status) {
          return [
             'status' => true,
             'statusCode' => $statusCode,
-            'message' => 'success',
+            'message' => $message ?: 'success',
             'data' => $data
          ];
       } else {
          return [
             'status' => false,
             'statusCode' => $statusCode,
-            'message' => 'failed',
+            'message' => $message ?: 'failed',
             'errors' => $data
          ];
       }
@@ -87,8 +91,8 @@ class ApiController extends BaseController
          die(
             $response->json(
                $this->getOutput(false, 403, [
-                  'message' => 'Invalid api token!',
-               ])
+                  'token' => 'Invalid token!',
+               ], 'Invalid api token!')
             , 403)
          );
       }
@@ -98,7 +102,7 @@ class ApiController extends BaseController
    {
       $header = $request->headers();
 
-      $clientId = '01JP9MA549R9NNVNGHTHJFTNXJ';  // Get from session
+      $clientId = Session::get('uid');  // Get from session
       $validateClient = new \App\Core\Security\Middleware\ValidateClient($clientId);
       // $clientToken = $validateClient->getToken();
 
@@ -107,10 +111,22 @@ class ApiController extends BaseController
             die(
                $response->json(
                   $this->getOutput(false, 403, [
-                     'message' => 'Invalid client PIN!',
-                  ])
+                     'client_token' => 'Invalid token!',
+                  ], 'Invalid client token!')
                , 403)
             );
       }
+   }
+
+   public function initJwtToken() 
+   {
+      $secret = Session::get('secret');
+      $expirationTime = 3600;
+      $jwtId = Session::get('jwtId');
+      $issuer = clientIP();
+      $audience = Config::get('app.url');
+
+      // Init JwtToken
+      return (new JwtToken($secret, $expirationTime, $jwtId, $issuer, $audience));
    }
 }

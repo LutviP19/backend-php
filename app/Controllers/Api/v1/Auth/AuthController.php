@@ -43,7 +43,7 @@ class AuthController extends ApiController
                 $callback = false;
             } else {
 
-                $status = 429;
+                $status = 401;
                 $errors = ['auth' => 'Invalid credentials,',];
                 
                 $payload = $request->all();
@@ -104,29 +104,22 @@ class AuthController extends ApiController
         if(false === $validateClient->matchToken($clientToken)) {
             die(
                 $response->json(
-                   $this->getOutput(false, 429, [
+                   $this->getOutput(false, 401, [
                       'message' => 'Invalid client Id!',
                    ])
-                , 429)
+                , 401)
              );
         }
 
-        // JWT
-        $secret = $user->client_token;
-        $expirationTime = 3600;
-        $jwtId = generateUlid();
-        $issuer = clientIP();
-        $audience = Config::get('app.url');
-        // Init JwtToken
-        $this->jwtToken = new JwtToken($secret, $expirationTime, $jwtId, $issuer, $audience);
+        // initJwtToken
+        Session::set('secret', $user->client_token);
+        Session::set('jwtId', generateUlid());
+        $this->jwtToken = $this->initJwtToken();        
 
-        // Create specific data
+        // Create specific data for jwt
         $info = 'Api jwt-'.$userId;
-        $subject = 'Access API for user: '.$userId;
+        $subject = 'Access API for user:'.$userId;
         $tokenJwt =  $this->jwtToken->createToken($userId, $info, $subject);
-        
-        Session::set('secret', $secret);
-        Session::set('jwtId', $jwtId);
         Session::set('tokenJwt', $tokenJwt);
 
         return $response->json($this->getOutput(true, 201, [
@@ -137,22 +130,42 @@ class AuthController extends ApiController
 
     public function logout(Request $request,Response $response)
     {
+        // Validate header X-Client-Token
+        $this->validateClientToken($request, $response);
+
         $user = Session::all();
-        
+
         $tokenJwt = Session::get('tokenJwt');
+        $bearerToken = $this->getBearerToken();
+
+        if(empty($user ) || 
+            is_null($this->jwtToken) || 
+            $bearerToken !== $tokenJwt || 
+            false === $this->jwtToken->validateToken($bearerToken)) {
+
+            die(
+                $response->json(
+                   $this->getOutput(false, 401, [
+                      'jwt' => 'Invalid jwt!',
+                   ])
+                , 401)
+            );
+        }
         
         // dd($tokenJwt);
-        dd($this->jwtToken->validateToken($tokenJwt));
+        // dd($bearerToken);
+        // dd($this->jwtToken->validateToken($bearerToken));
 
         // clear cache token
+        $userId = Session::get('uid');
         $validateClient = new ValidateClient($userId);
         $validateClient->delToken();
 
-        // Session::destroy();
-        return $response->json($this->getOutput(true, 204, [
-            // 'token' => $tokenJwt,
-            // 'account' => Session::all()
-        ]), 204);
+        Session::destroy();
+
+        return $response->json($this->getOutput(true, 200, [
+            'auth' => 'You are logged out!',
+        ]), 200);
     }
 
     private function checkCredentials($user, $password): bool

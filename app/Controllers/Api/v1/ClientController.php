@@ -21,6 +21,9 @@ class ClientController extends ApiController
 
         // // Validate JWT
         // $this->validateJwt($request, $response);
+
+        (new \App\Core\Security\Middleware\ValidateSession())
+            ->handle($this->request(), $this->response());
     }
 
     public function profile()

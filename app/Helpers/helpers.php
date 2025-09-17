@@ -5,14 +5,17 @@
  */
 
 use App\Core\Http\Request;
-use App\Core\Security\{Hash, CSRF};
-use App\Core\Validation\MessageBag;
-use App\Core\Support\{Session, App};
+
+use App\Core\Security\CSRF;
+
+use App\Core\Support\App;
 use App\Core\Support\Config;
+use App\Core\Support\Session;
+use App\Core\Validation\MessageBag;
 
 /**
  * get environment varible.
- * 
+ *
  * @param array $data
  * @return void
  */
@@ -33,7 +36,7 @@ function database_path($db_name)
 
 /**
  * dump the data and kill the page.
- * 
+ *
  * @param array $data
  * @return void
  */
@@ -45,7 +48,7 @@ function dd($data = [])
 
 /**
  * Create a url from a given uri.
- * 
+ *
  * @param string $uri
  * @return string
  */
@@ -57,7 +60,7 @@ function url($uri = '')
 
 /**
  * Get the current url.
- * 
+ *
  * @return string
  */
 function currentUrl()
@@ -67,13 +70,15 @@ function currentUrl()
 
 /**
  * Sanitize the given uri.
- * 
+ *
  * @param string $uri
  * @return string
  */
 function sanitizeUri($uri)
 {
-    if (strpos($uri, '/') == 0) $uri = ltrim($uri, '/');
+    if (strpos($uri, '/') == 0) {
+        $uri = ltrim($uri, '/');
+    }
 
     return filter_var(
         $uri,
@@ -83,7 +88,7 @@ function sanitizeUri($uri)
 
 /**
  * get the csrf token.
- * 
+ *
  * @return string
  */
 function token()
@@ -93,7 +98,7 @@ function token()
 
 /**
  * get the csrf hidden field
- * 
+ *
  * @return string
  */
 function csrfField()
@@ -103,21 +108,22 @@ function csrfField()
 
 /**
  * Convert specialchars to html entities.
- * 
+ *
  * @param string $str
  * @return string
  */
 function e($str)
 {
-    if (is_array($str))
+    if (is_array($str)) {
         return json_encode($str);
+    }
 
     return htmlentities($str, ENT_QUOTES, 'UTF-8');
 }
 
 /**
  * Get a session value.
- * 
+ *
  * @param string $key
  * @return string|bool
  */
@@ -128,7 +134,7 @@ function session($key)
 
 /**
  * Set/Get a flash message.
- * 
+ *
  * @param string $key
  * @param string|int $value
  * @return string|bool
@@ -140,7 +146,7 @@ function flash($key, $value = null)
 
 /**
  * Errors from messagebag (Validation errors).
- * 
+ *
  * @return \App\Core\Validation\MessageBag
  */
 function errors()
@@ -150,7 +156,7 @@ function errors()
 
 /**
  * Get the input value from the previous request.
- * 
+ *
  * @return mixed
  */
 function old($key)
@@ -160,7 +166,27 @@ function old($key)
 
 function clientIP()
 {
-    return (new \App\Core\Security\Middleware\EnsureIpIsValid)->ip();
+    // return (new \App\Core\Security\Middleware\EnsureIpIsValid)->ip();
+
+    // Get real visitor IP behind CDN such as Cloudflare
+    if (isset($_SERVER["HTTP_CF_CONNECTING_IP"])) {
+        $_SERVER['REMOTE_ADDR'] = $_SERVER["HTTP_CF_CONNECTING_IP"];
+        $_SERVER['HTTP_CLIENT_IP'] = $_SERVER["HTTP_CF_CONNECTING_IP"];
+    }
+
+    $client = @$_SERVER['HTTP_CLIENT_IP'];
+    $forward = @$_SERVER['HTTP_X_FORWARDED_FOR'];
+    $remote = $_SERVER['REMOTE_ADDR'];
+
+    if (filter_var($client, FILTER_VALIDATE_IP)) {
+        $ip = $client;
+    } elseif (filter_var($forward, FILTER_VALIDATE_IP)) {
+        $ip = $forward;
+    } else {
+        $ip = $remote;
+    }
+
+    return $ip == '::1' ? '127.0.0.1' : $ip;
 }
 
 function matchEncryptedData($value, $encryptedData, $key = null)
@@ -227,7 +253,7 @@ function generateRandomString($len = 64)
 
 function generateUlid($lowercased = false, $timestamp = null): string
 {
-    if (! is_null($timestamp)) {
+    if (!is_null($timestamp)) {
         return (string) \Ulid\Ulid::fromTimestamp($timestamp, $lowercased);
     }
 
@@ -236,7 +262,7 @@ function generateUlid($lowercased = false, $timestamp = null): string
 
 function isJson($value)
 {
-    if (! is_string($value)) {
+    if (!is_string($value)) {
         return false;
     }
 
@@ -255,8 +281,9 @@ function isJson($value)
 
 function readJson($key = null, $payload = null, $default = null)
 {
-    if (empty($key) || empty($payload))
+    if (empty($key) || empty($payload)) {
         return null;
+    }
 
     $keys = explode('.', $key);
     foreach ($keys as $key) {
@@ -292,3 +319,10 @@ function slug($title, $separator = '-', $language = 'en', $dictionary = ['@' => 
 
     return trim($title, $separator);
 }
+
+function array_keys_exists(array $keys, array $array): bool
+{
+    $diff = array_diff_key(array_flip($keys), $array);
+    return count($diff) === 0;
+}
+

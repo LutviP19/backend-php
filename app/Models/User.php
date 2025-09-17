@@ -26,11 +26,21 @@ class User extends Model
 
 	public static function getUserByEmail($email)
 	{
-		return self::select(['ulid', 'name', 'email', 'password', 'client_token', 'current_team_id', 
-							'profile_photo_path', 'first_name', 'last_name', 'default_url'])
-				->where('email', '=', $email)
-				->whereAnd('status', '=', 1)
-				->first();
+		return self::select([
+			'ulid',
+			'name',
+			'email',
+			'password',
+			'client_token',
+			'current_team_id',
+			'profile_photo_path',
+			'first_name',
+			'last_name',
+			'default_url'
+		])
+			->where('email', '=', $email)
+			->whereAnd('status', '=', 1)
+			->first();
 	}
 
 	public static function getUlid($id)
@@ -38,20 +48,20 @@ class User extends Model
 		$data = self::select(['ulid'])->where('id', '=', $id)->first();
 		// \App\Core\Support\Log::debug($data, 'UserModel.getUlid');
 
-		if($data)
+		if ($data)
 			return $data->ulid;
-		
+
 		return false;
 	}
-	
+
 	public static function updateClientToken($columnId, $id)
 	{
 		$token = generateRandomString();
-		
+
 		self::primaryKey($columnId);
 		$update = self::updateWhere(['client_token' => $token], $columnId, $id);
 
-		if(true === $update)
+		if (true === $update)
 			return $token;
 		else
 			return null;

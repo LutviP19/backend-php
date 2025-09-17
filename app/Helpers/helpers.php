@@ -3,10 +3,11 @@
 /**
  * Global helpers.
  */
+
 use App\Core\Http\Request;
-use App\Core\Security\{Hash,CSRF};
+use App\Core\Security\{Hash, CSRF};
 use App\Core\Validation\MessageBag;
-use App\Core\Support\{Session,App};
+use App\Core\Support\{Session, App};
 use App\Core\Support\Config;
 
 /**
@@ -15,19 +16,19 @@ use App\Core\Support\Config;
  * @param array $data
  * @return void
  */
-function env($key, $alt='') 
+function env($key, $alt = '')
 {
     return isset($_ENV[$key]) ? $_ENV[$key] : $alt;
 }
 
-function config($key) 
+function config($key)
 {
     return Config::get($key);
 }
 
 function database_path($db_name)
 {
-    return BASE_PATH . 'storage/database/'.$db_name;
+    return BASE_PATH . 'storage/database/' . $db_name;
 }
 
 /**
@@ -38,7 +39,7 @@ function database_path($db_name)
  */
 function dd($data = [])
 {
-    echo "<pre>",var_dump($data),"</pre>";
+    echo "<pre>", var_dump($data), "</pre>";
     die();
 }
 
@@ -72,10 +73,11 @@ function currentUrl()
  */
 function sanitizeUri($uri)
 {
-    if(strpos($uri,'/') == 0) $uri = ltrim($uri,'/');
-    
+    if (strpos($uri, '/') == 0) $uri = ltrim($uri, '/');
+
     return filter_var(
-        $uri, FILTER_SANITIZE_URL
+        $uri,
+        FILTER_SANITIZE_URL
     );
 }
 
@@ -107,10 +109,10 @@ function csrfField()
  */
 function e($str)
 {
-    if(is_array($str))
+    if (is_array($str))
         return json_encode($str);
 
-    return htmlentities($str,ENT_QUOTES,'UTF-8');
+    return htmlentities($str, ENT_QUOTES, 'UTF-8');
 }
 
 /**
@@ -131,9 +133,9 @@ function session($key)
  * @param string|int $value
  * @return string|bool
  */
-function flash($key,$value = null)
+function flash($key, $value = null)
 {
-    return Session::flash($key,$value);
+    return Session::flash($key, $value);
 }
 
 /**
@@ -158,17 +160,16 @@ function old($key)
 
 function clientIP()
 {
-    return  (new \App\Core\Security\Middleware\EnsureIpIsValid)->ip();
+    return (new \App\Core\Security\Middleware\EnsureIpIsValid)->ip();
 }
 
-function matchEncryptedData($value, $encryptedData, $key = null) 
+function matchEncryptedData($value, $encryptedData, $key = null)
 {
     try {
         $encryption = new \App\Core\Security\Encryption($key);
         return $encryption->match($value, $encryptedData);
-    }
-    catch(Throwable $ex) {
-        if(config('app.debug')) {
+    } catch (Throwable $ex) {
+        if (config('app.debug')) {
             \App\Core\Support\Log::error([
                 'message' => $ex->getMessage(),
                 'file' => $ex->getFile(),
@@ -177,18 +178,17 @@ function matchEncryptedData($value, $encryptedData, $key = null)
             ], 'Helper.matchEncryptedData');
         }
 
-       return false;
-    }    
+        return false;
+    }
 }
 
-function encryptData($value, $key = null) 
+function encryptData($value, $key = null)
 {
     try {
         $encryption = new \App\Core\Security\Encryption($key);
         return $encryption->encrypt($value);
-    }
-    catch(Throwable $ex) {
-        if(config('app.debug')) {
+    } catch (Throwable $ex) {
+        if (config('app.debug')) {
             \App\Core\Support\Log::error([
                 'message' => $ex->getMessage(),
                 'file' => $ex->getFile(),
@@ -197,18 +197,17 @@ function encryptData($value, $key = null)
             ], 'Helper.encryptData');
         }
 
-       return null;
+        return null;
     }
 }
 
-function decryptData($value, $key = null) 
+function decryptData($value, $key = null)
 {
     try {
         $encryption = new \App\Core\Security\Encryption($key);
         return $encryption->decrypt($value);
-    }
-    catch(Throwable $ex) {
-        if(config('app.debug')) {
+    } catch (Throwable $ex) {
+        if (config('app.debug')) {
             \App\Core\Support\Log::error([
                 'message' => $ex->getMessage(),
                 'file' => $ex->getFile(),
@@ -217,7 +216,7 @@ function decryptData($value, $key = null)
             ], 'Helper.decryptData');
         }
 
-       return null;
+        return null;
     }
 }
 
@@ -228,10 +227,10 @@ function generateRandomString($len = 64)
 
 function generateUlid($lowercased = false, $timestamp = null): string
 {
-    if(! is_null($timestamp)) {
+    if (! is_null($timestamp)) {
         return (string) \Ulid\Ulid::fromTimestamp($timestamp, $lowercased);
     }
-    
+
     return (string) \Ulid\Ulid::generate($lowercased);
 }
 
@@ -256,12 +255,12 @@ function isJson($value)
 
 function readJson($key = null, $payload = null, $default = null)
 {
-    if(empty($key) || empty($payload))
+    if (empty($key) || empty($payload))
         return null;
 
-    $keys = explode('.',$key);
-    foreach($keys as $key){
-        if(isset($payload[$key])) {
+    $keys = explode('.', $key);
+    foreach ($keys as $key) {
+        if (isset($payload[$key])) {
             $payload = $payload[$key];
         } else {
             return $default;
@@ -276,20 +275,20 @@ function slug($title, $separator = '-', $language = 'en', $dictionary = ['@' => 
     // Convert all dashes/underscores into separator
     $flip = $separator === '-' ? '_' : '-';
 
-    $title = preg_replace('!['.preg_quote($flip).']+!u', $separator, $title);
+    $title = preg_replace('![' . preg_quote($flip) . ']+!u', $separator, $title);
 
     // Replace dictionary words
     foreach ($dictionary as $key => $value) {
-        $dictionary[$key] = $separator.$value.$separator;
+        $dictionary[$key] = $separator . $value . $separator;
     }
 
     $title = str_replace(array_keys($dictionary), array_values($dictionary), $title);
 
     // Remove all characters that are not the separator, letters, numbers, or whitespace
-    $title = preg_replace('![^'.preg_quote($separator).'\pL\pN\s]+!u', '', strtolower($title));
+    $title = preg_replace('![^' . preg_quote($separator) . '\pL\pN\s]+!u', '', strtolower($title));
 
     // Replace all separator characters and whitespace by a single separator
-    $title = preg_replace('!['.preg_quote($separator).'\s]+!u', $separator, $title);
+    $title = preg_replace('![' . preg_quote($separator) . '\s]+!u', $separator, $title);
 
     return trim($title, $separator);
 }

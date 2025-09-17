@@ -7,7 +7,7 @@ namespace App\Core\Support;
  */
 class Cookie
 {
-    
+
     /**
      * Get a value.
      * 
@@ -26,9 +26,9 @@ class Cookie
      * @param string $value
      * @return bool
      */
-    public static function set($key, $value, $expires = 0, $httpOnly = false, $path = '/',$domain = null,$secure = false)
+    public static function set($key, $value, $expires = 0, $httpOnly = false, $path = '/', $domain = null, $secure = false)
     {
-        setcookie($key,$value,$expires,$path,$domain,$secure,$httpOnly);
+        setcookie($key, $value, $expires, $path, $domain, $secure, $httpOnly);
     }
 
     /**
@@ -50,7 +50,6 @@ class Cookie
      */
     public static function unset($key)
     {
-        self::set($key,'');
+        self::set($key, '');
     }
-
 }

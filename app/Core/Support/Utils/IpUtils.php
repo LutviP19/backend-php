@@ -38,9 +38,7 @@ class IpUtils
     /**
      * This class should not be instantiated.
      */
-    private function __construct()
-    {
-    }
+    private function __construct() {}
 
     /**
      * Checks if an IPv4 or IPv6 address is contained in the list of given IPs or subnets.
@@ -74,7 +72,7 @@ class IpUtils
      */
     public static function checkIp4(string $requestIp, string $ip): bool
     {
-        $cacheKey = $requestIp.'-'.$ip.'-v4';
+        $cacheKey = $requestIp . '-' . $ip . '-v4';
         if (null !== $cacheValue = self::getCacheResult($cacheKey)) {
             return $cacheValue;
         }
@@ -119,7 +117,7 @@ class IpUtils
      */
     public static function checkIp6(string $requestIp, string $ip): bool
     {
-        $cacheKey = $requestIp.'-'.$ip.'-v6';
+        $cacheKey = $requestIp . '-' . $ip . '-v6';
         if (null !== $cacheValue = self::getCacheResult($cacheKey)) {
             return $cacheValue;
         }
@@ -216,24 +214,24 @@ class IpUtils
             $mask .= str_repeat('ff', 4 - $bytesToAnonymize);
             $mask .= str_repeat('00', $bytesToAnonymize);
 
-            return '::'.implode(':', str_split($mask, 4));
+            return '::' . implode(':', str_split($mask, 4));
         };
 
         $packedAddress = inet_pton($ip);
         if (4 === \strlen($packedAddress)) {
-            $mask = rtrim(str_repeat('255.', 4 - $v4Bytes).str_repeat('0.', $v4Bytes), '.');
+            $mask = rtrim(str_repeat('255.', 4 - $v4Bytes) . str_repeat('0.', $v4Bytes), '.');
         } elseif ($ip === inet_ntop($packedAddress & inet_pton('::ffff:ffff:ffff'))) {
             $mask = $mappedIpV4MaskGenerator('ffff', $v4Bytes);
         } elseif ($ip === inet_ntop($packedAddress & inet_pton('::ffff:ffff'))) {
             $mask = $mappedIpV4MaskGenerator('', $v4Bytes);
         } else {
-            $mask = str_repeat('ff', 16 - $v6Bytes).str_repeat('00', $v6Bytes);
+            $mask = str_repeat('ff', 16 - $v6Bytes) . str_repeat('00', $v6Bytes);
             $mask = implode(':', str_split($mask, 4));
         }
         $ip = inet_ntop($packedAddress & inet_pton($mask));
 
         if ($wrappedIPv6) {
-            $ip = '['.$ip.']';
+            $ip = '[' . $ip . ']';
         }
 
         return $ip;

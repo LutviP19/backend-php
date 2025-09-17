@@ -57,7 +57,7 @@ class Encryption
      */
     public static function generateKey($cipher = 'aes-256-cbc')
     {
-        return 'base64:'.base64_encode(random_bytes(self::$supportedCiphers[strtolower($cipher)]['size'] ?? 32));
+        return 'base64:' . base64_encode(random_bytes(self::$supportedCiphers[strtolower($cipher)]['size'] ?? 32));
     }
 
     /**
@@ -85,7 +85,11 @@ class Encryption
 
         $value = \openssl_encrypt(
             $data,
-            strtolower($this->cipher), $this->encryptionKey, 0, $iv, $tag
+            strtolower($this->cipher),
+            $this->encryptionKey,
+            0,
+            $iv,
+            $tag
         );
 
         if ($value === false) {
@@ -115,7 +119,7 @@ class Encryption
         $payload = $this->getJsonPayload($encryptedData);
 
         $iv = base64_decode($payload['iv']);
-        
+
         $this->ensureTagIsValid(
             $tag = empty($payload['tag']) ? null : base64_decode($payload['tag'])
         );
@@ -131,7 +135,12 @@ class Encryption
             }
 
             $decrypted = \openssl_decrypt(
-                $payload['value'], strtolower($this->cipher), $key, 0, $iv, $tag ?? ''
+                $payload['value'],
+                strtolower($this->cipher),
+                $key,
+                0,
+                $iv,
+                $tag ?? ''
             );
 
             if ($decrypted !== false) {
@@ -155,7 +164,7 @@ class Encryption
      */
     public function match(#[\SensitiveParameter] $value, $encryptedData): bool
     {
-        if(empty($value) || empty($encryptedData))
+        if (empty($value) || empty($encryptedData))
             return false;
 
         $encryptedData = $this->decrypt($encryptedData);
@@ -173,7 +182,7 @@ class Encryption
      */
     protected function hash(#[\SensitiveParameter] $iv, #[\SensitiveParameter] $value, #[\SensitiveParameter] $key)
     {
-        return hash_hmac('sha256', $iv.$value, $key);
+        return hash_hmac('sha256', $iv . $value, $key);
     }
 
     /**
@@ -186,7 +195,7 @@ class Encryption
         return ! self::$supportedCiphers[strtolower($this->cipher)]['aead'];
     }
 
-     /**
+    /**
      * Get the JSON array from the given payload.
      *
      * @param  string  $payload
@@ -233,7 +242,8 @@ class Encryption
     protected function validMacForKey(#[\SensitiveParameter] $payload, $key)
     {
         return hash_equals(
-            $this->hash($payload['iv'], $payload['value'], $key), $payload['mac']
+            $this->hash($payload['iv'], $payload['value'], $key),
+            $payload['mac']
         );
     }
 
@@ -264,7 +274,7 @@ class Encryption
         return [$this->encryptionKey, ...$this->previousKeys];
     }
 
-     /**
+    /**
      * Get the previous encryption keys.
      *
      * @return array

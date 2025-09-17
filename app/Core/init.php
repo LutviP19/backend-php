@@ -17,7 +17,7 @@ ini_set("error_append_string ", "</pre>");
 $dotenv = Dotenv\Dotenv::createUnsafeImmutable(__DIR__.'/../..');
 $dotenv->load();
 
-date_default_timezone_set(env('APP_TIMEZONE', 'Asia/Jakarta'));
+date_default_timezone_set('Asia/Jakarta');
 /* ----------------------------- Default settings END -------------------------------- */
 
 /**

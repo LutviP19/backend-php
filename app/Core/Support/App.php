@@ -43,7 +43,7 @@ class App
      * @param mixed $value
      * @return void
      */
-    public static function register($key,$value)
+    public static function register($key, $value)
     {
         self::$registry[$key] = $value;
     }

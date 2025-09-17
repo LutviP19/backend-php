@@ -72,17 +72,16 @@ class Hash
      * @param int $len
      * @return string
      */
-    public static function randomString($len = 64) 
+    public static function randomString($len = 64)
     {
         $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ*&!@%^#$';
         $strings = [];
         $max = mb_strlen($characters, '8bit') - 1;
-        
-        for ($i = 0; $i < $len; ++ $i) {
+
+        for ($i = 0; $i < $len; ++$i) {
             $strings[] = $characters[random_int(0, $max)];
         }
 
         return implode('', $strings);
     }
-    
 }

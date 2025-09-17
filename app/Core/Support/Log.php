@@ -17,7 +17,7 @@ class Log
     protected static $logname = 'backend-php';
 
     // Define the logs directory path
-    protected static $logdir = __DIR__.'/../../../storage/logs/';
+    protected static $logdir = __DIR__ . '/../../../storage/logs/';
 
     // Define the desired date format
     protected static $dateFormat = "Y-m-d H:i:s"; // Example: "2025-09-05 17:03:00"
@@ -34,28 +34,28 @@ class Log
         return self::$logdir;
     }
 
-    public static function info($logs, $modul='', $single=true)
+    public static function info($logs, $modul = '', $single = true)
     {
         self::saveLog('info', $logs, $modul, $single);
     }
 
-    public static function error($logs, $modul='', $single=true)
+    public static function error($logs, $modul = '', $single = true)
     {
         self::saveLog('error', $logs, $modul, $single);
     }
 
-    public static function debug($logs, $modul='', $single=true)
+    public static function debug($logs, $modul = '', $single = true)
     {
         self::saveLog('debug', $logs, $modul, $single);
     }
 
-    protected static function saveLog($type='info', $logs=[], $modul='', $single=true)
+    protected static function saveLog($type = 'info', $logs = [], $modul = '', $single = true)
     {
-        $logfile = self::getLogdir().'app_'.$type.'.log';
+        $logfile = self::getLogdir() . 'app_' . $type . '.log';
 
-        if(!$single) {
-            $renamed = 'app_'.$type.'_'.date('d-m-Y').'.log';
-            $logfile = self::getLogdir().$renamed;
+        if (!$single) {
+            $renamed = 'app_' . $type . '_' . date('d-m-Y') . '.log';
+            $logfile = self::getLogdir() . $renamed;
         }
 
         // Define the output format for the log message, including the datetime placeholder
@@ -79,17 +79,17 @@ class Log
         // You can now use your logger
         $logs = self::__formatedString($logs);
 
-        if($type === 'info')
-            $logger->info(!empty($modul) ? "[$modul]:".$logs : $logs);
-        elseif($type === 'error')
-            $logger->error(!empty($modul) ? "[$modul]:".$logs : $logs);
+        if ($type === 'info')
+            $logger->info(!empty($modul) ? "[$modul]:" . $logs : $logs);
+        elseif ($type === 'error')
+            $logger->error(!empty($modul) ? "[$modul]:" . $logs : $logs);
         else
-            $logger->debug(!empty($modul) ? "[$modul]:".$logs : $logs);
+            $logger->debug(!empty($modul) ? "[$modul]:" . $logs : $logs);
     }
 
-    private static function __formatedString($logs) 
+    private static function __formatedString($logs)
     {
-        if(is_array($logs) || is_object($logs)) 
+        if (is_array($logs) || is_object($logs))
             $logs = json_encode($logs, JSON_UNESCAPED_SLASHES);
 
         return $logs;

@@ -1,6 +1,6 @@
 <?php
 
-define('BASE_PATH', str_replace('config', '' , __DIR__));
+define('BASE_PATH', str_replace('config', '', __DIR__));
 
 /**
  * Config values for our application.
@@ -20,7 +20,7 @@ return [
         'url' => env('APP_URL', 'http://localhost'),
         'env' => env('APP_ENV', 'production'),
         'debug' => (bool) env('APP_DEBUG', false),
-        'logdir' => __DIR__.'/../storage/logs/',
+        'logdir' => __DIR__ . '/../storage/logs/',
     ],
 
     'trusted_ips' => [
@@ -44,7 +44,7 @@ return [
         'sqlite' => [
             'driver' => 'sqlite',
             'url' => env('DB_URL'),
-            'dbname' =>  database_path(env('DB_DATABASE','database.sqlite')),
+            'dbname' =>  database_path(env('DB_DATABASE', 'database.sqlite')),
             'prefix' => '',
             'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
             'busy_timeout' => null,
@@ -140,7 +140,7 @@ return [
 
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
-            'prefix' => env('REDIS_PREFIX', slug(env('APP_NAME', 'backendphp'), '_').'_database_'),
+            'prefix' => env('REDIS_PREFIX', slug(env('APP_NAME', 'backendphp'), '_') . '_database_'),
         ],
 
         'default' => [

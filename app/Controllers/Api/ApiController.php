@@ -146,7 +146,7 @@ class ApiController extends BaseController
       return str_replace('Bearer ', '', $headers['Authorization']);
    }
 
-   protected function getOutput(bool $status, int $statusCode, array $data, string $message = null)
+   protected function getOutput(bool $status, int $statusCode, array $data, string $message = '')
    {
       if($status) {
          return [

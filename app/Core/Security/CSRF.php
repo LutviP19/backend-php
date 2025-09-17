@@ -2,7 +2,7 @@
 
 namespace App\Core\Security;
 
-use App\Core\Support\{Config,Session};
+use App\Core\Support\{Config, Session};
 
 /**
  * CSRF Protection.
@@ -18,7 +18,7 @@ class CSRF
     {
         $key = Config::get('session.csrf_token');
         $token = Hash::unique();
-        Session::set($key,$token);
+        Session::set($key, $token);
         return $token;
     }
 
@@ -33,7 +33,7 @@ class CSRF
     {
         $key = Config::get('session.csrf_token');
         $csrf = Session::get($key);
-        if($csrf && $token == $csrf){
+        if ($csrf && $token == $csrf) {
             Session::unset($key);
             return true;
         }
@@ -50,5 +50,4 @@ class CSRF
         $token = self::generate();
         return "<input type=\"hidden\" name=\"csrf_token\" value=\"{$token}\">";
     }
-
 }

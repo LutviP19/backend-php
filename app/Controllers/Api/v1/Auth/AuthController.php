@@ -11,6 +11,7 @@ use App\Core\Security\Hash;
 use App\Core\Validation\Validator;
 use App\Controllers\Api\ApiController;
 use App\Core\Http\{Request,Response};
+use Exception;
 
 class AuthController extends ApiController
 {

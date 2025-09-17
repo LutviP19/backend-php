@@ -16,11 +16,11 @@ class Config
     public static function get($key)
     {
         $config = App::get('config');
-        $keys = explode('.',$key);
-        foreach($keys as $key){
-            if(isset($config[$key])){
+        $keys = explode('.', $key);
+        foreach ($keys as $key) {
+            if (isset($config[$key])) {
                 $config = $config[$key];
-            }else{
+            } else {
                 return false;
             }
         }

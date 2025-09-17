@@ -17,8 +17,8 @@ class Session
     {
         $sessions = [];
         $escaped = ['password', 'errors', 'secret', 'jwtId', 'tokenJwt', '_previous_uri', '_old_input'];
-        foreach($_SESSION as $key => $value) {
-            if(in_array($key, $escaped))
+        foreach ($_SESSION as $key => $value) {
+            if (in_array($key, $escaped))
                 continue;
 
             $sessions[$key] = $value;
@@ -27,7 +27,7 @@ class Session
         return $sessions;
     }
 
-    
+
     /**
      * Get a value.
      * 
@@ -46,7 +46,7 @@ class Session
      * @param string $value
      * @return bool
      */
-    public static function set($key,$value)
+    public static function set($key, $value)
     {
         return (bool)($_SESSION[$key] = $value);
     }
@@ -92,16 +92,16 @@ class Session
      * @param string|null $value
      * @return mixed
      */
-    public static function flash($key,$value = null)
+    public static function flash($key, $value = null)
     {
-        if(self::has($key)){
+        if (self::has($key)) {
             //value exists so return and unset it.
-            $flash =self::get($key);
+            $flash = self::get($key);
             self::unset($key);
             return $flash;
-        }else{
+        } else {
             //value doesn't exists so set it.
-            self::set($key,$value);
+            self::set($key, $value);
         }
     }
 
@@ -123,7 +123,7 @@ class Session
      */
     public static function setPreviousUri($uri)
     {
-        self::set('_previous_uri',$uri);
+        self::set('_previous_uri', $uri);
     }
 
     /**
@@ -134,8 +134,8 @@ class Session
      */
     public static function getOldInput($key)
     {
-        return isset(self::get('_old_input')[$key]) 
-        ? self::flash('_old_input')[$key] : '';
+        return isset(self::get('_old_input')[$key])
+            ? self::flash('_old_input')[$key] : '';
     }
 
     /**
@@ -150,6 +150,6 @@ class Session
             $inputs[e($input)] = e($value);
         }
 
-        self::set('_old_input',$inputs);
+        self::set('_old_input', $inputs);
     }
 }

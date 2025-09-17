@@ -10,6 +10,10 @@ use App\Core\Support\Config;
 use App\Core\Http\{Request,Response};
 
 
+// Events
+use App\Services\OrderService;
+use App\Core\Events\EventDispatcher;
+
 class PagesController extends Controller
 {
 
@@ -87,6 +91,20 @@ class PagesController extends Controller
         if(true) {
             Event::trigger('message.producer', [$date, $message]);
         }
+
+
+
+         /**  
+         * Main script to place an order and trigger the event-driven process.  
+         */  
+        $dispatcher = new EventDispatcher();
+        $orderService = new OrderService($dispatcher);  
+          
+        $order = ['id' => 123, 'items' => ['item1', 'item2']];  
+        $orderService->placeOrder($order);
+        /**  
+         * END Main script to place an order and trigger the event-driven process.  
+         */
     }
 
 }

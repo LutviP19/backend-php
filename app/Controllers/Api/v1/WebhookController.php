@@ -17,6 +17,9 @@ use Exception;
 
 use ReallySimpleJWT\Token;
 
+// Events
+use App\Services\OrderService;
+use App\Core\Events\EventDispatcher;
 
 class WebhookController extends ApiController
 {
@@ -125,6 +128,15 @@ class WebhookController extends ApiController
         $info = 'Webhook jwt';
         $subject = 'Access Webhook API';
         $tokenJwt = $jwtToken->createToken($userId, $info, $subject);
+
+        /**  
+         * Main script to place an order and trigger the event-driven process.  
+         */  
+        $dispatcher = new EventDispatcher();
+        $orderService = new OrderService($dispatcher);  
+          
+        $order = ['id' => 123, 'items' => ['item1', 'item2']];  
+        $orderService->placeOrder($order);
 
         $output = $this->getOutput(true, 200, [
                 'message' => 'Hello world!', 

@@ -74,6 +74,17 @@ class ApiController extends BaseController
       $validateClient = new \App\Core\Security\Middleware\ValidateClient($clientId);
       // $clientToken = $validateClient->getToken();
 
+      if(empty($clientId)) {
+
+            die(
+               $response->json(
+                  $this->getOutput(false, 401, [
+                     'auth' => 'Invalid account!',
+                  ], 'Please login!')
+               , 401)
+            );
+      }
+
       if(isset($header['X-Client-Token']) === false || 
          $validateClient->matchToken($header['X-Client-Token']) === false) {
 

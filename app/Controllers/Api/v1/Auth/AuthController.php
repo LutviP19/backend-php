@@ -25,8 +25,6 @@ class AuthController extends ApiController
 
     public function login(Request $request,Response $response)
     {
-        // $payload = $request::getPayload();
-        // \App\Core\Support\Log::debug($payload, 'AuthController.login');
 
         try {
             $validator = new Validator;
@@ -52,9 +50,6 @@ class AuthController extends ApiController
 
                 $user = User::getUserByEmail($email);
                 $callback = $this->checkCredentials($user, $password);
-
-                // if($callback)
-                // \App\Core\Support\Log::debug($user, 'AuthController.login.$callback');
             }
 
             // Middleware
@@ -87,9 +82,6 @@ class AuthController extends ApiController
         foreach($user as $key => $value) {
             if($key === 'ulid')
                 $key = 'uid';
-
-            // if($key === 'client_token')
-            //     $value = $value;
 
             Session::set($key, $value);
         }
@@ -128,6 +120,76 @@ class AuthController extends ApiController
                 ]), 201);
     }
 
+    public function updateToken(Request $request,Response $response)
+    {
+        // Validate header X-Client-Token
+        $this->validateClientToken($request, $response);
+
+        // Validate JWT
+        $this->validateJwt($request, $response);
+
+        try {
+            $validator = new Validator;
+            $validator->validate($request, [
+                'email' => 'required|email',
+                'password'  => 'required|min:8|max:100',
+            ]);
+            $errors = errors()->all();
+
+            
+            if($errors) {
+
+                $status = 203;
+                $callback = false;
+            } else {
+
+                $status = 401;
+                $errors = ['auth' => 'Invalid credentials,',];
+                
+                $payload = $request->all();
+                $email = readJson('email', $payload);
+                $password = readJson('password', $payload);
+
+                $user = User::getUserByEmail($email);
+                $callback = $this->checkCredentials($user, $password);
+            }
+
+            // Middleware
+            (new \App\Core\Security\Middleware\RateLimiter('uptoken_request'))
+                ->setupForm(clientIP(), $callback, 5, 10, 1200);
+
+            if(false == $callback || empty($user)) {
+                die(
+                    $response->json(
+                       $this->getOutput(false, $status, [
+                            $errors
+                       ])
+                    , $status)
+                );
+            }
+        }
+        catch(Exception $exception) {
+            die(
+                $response->json(
+                   $this->getOutput(false, 429, [
+                      $exception->getMessage(),
+                   ])
+                , 429)
+             );
+        }
+        
+        // Update Client Token
+        $userId = Session::get('uid');
+        $validateClient = new ValidateClient($userId);
+        $validateClient->updateToken();
+
+        Session::destroy();
+
+        return $response->json($this->getOutput(true, 201, [
+            'auth' => 'Token successfully updated, please re-login to use new token!',
+        ]), 201);
+    }
+
     public function logout(Request $request,Response $response)
     {
         // Validate header X-Client-Token
@@ -135,10 +197,6 @@ class AuthController extends ApiController
 
         // Validate JWT
         $this->validateJwt($request, $response);
-        
-        // dd($tokenJwt);
-        // dd($bearerToken);
-        // dd($this->jwtToken->validateToken($bearerToken));
 
         // clear cache token
         $userId = Session::get('uid');

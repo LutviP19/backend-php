@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Core\Support\Session;
 use App\Core\Events\Event;
 use App\Core\Message\Broker;
 use App\Models\User;
@@ -22,6 +23,7 @@ class PagesController extends Controller
     public function index(Request $request,Response $response)
     {
         $users = (new User())->all();
+        Session::set('users', generateUlid());
 
         $this->view('home', ['users' => $users]);
     }

@@ -48,6 +48,78 @@ class ApiController extends BaseController
    * You can add code that needs to be
    * used in every controller.
    */
+   
+   public function validateToken(Request $request, Response $response) 
+   {
+      $header = $request->headers();
+
+      if(isset($header['X-Api-Token']) === false || 
+         matchEncryptedData($this->getPass(), $header['X-Api-Token']) === false) {
+         
+         die(
+            $response->json(
+               $this->getOutput(false, 403, [
+                  'token' => 'Invalid token!',
+               ], 'Invalid api token!')
+            , 403)
+         );
+      }
+   }
+
+   public function validateClientToken(Request $request, Response $response) 
+   {
+      $header = $request->headers();
+
+      $clientId = Session::get('uid');  // Get from session
+      $validateClient = new \App\Core\Security\Middleware\ValidateClient($clientId);
+      // $clientToken = $validateClient->getToken();
+
+      if(isset($header['X-Client-Token']) === false || 
+         $validateClient->matchToken($header['X-Client-Token']) === false) {
+
+            die(
+               $response->json(
+                  $this->getOutput(false, 403, [
+                     'client_token' => 'Invalid token!',
+                  ], 'Invalid client token!')
+               , 403)
+            );
+      }
+   }
+
+   public function validateJwt(Request $request,Response $response) 
+   {
+      $user = Session::all();
+      $tokenJwt = Session::get('tokenJwt');
+      $bearerToken = $this->getBearerToken();
+
+      if(empty($user ) || 
+          is_null($this->jwtToken) || 
+          $bearerToken !== $tokenJwt || 
+          false === $this->jwtToken->validateToken($bearerToken)) {
+
+          die(
+              $response->json(
+                 $this->getOutput(false, 401, [
+                    'jwt' => 'Invalid jwt!',
+                 ])
+              , 401)
+          );
+      }
+   }
+
+   public function initJwtToken() 
+   {
+      $secret = Session::get('secret');
+      $expirationTime = 3600;
+      $jwtId = Session::get('jwtId');
+      $issuer = clientIP();
+      $audience = Config::get('app.url');
+
+      // Init JwtToken
+      return (new JwtToken($secret, $expirationTime, $jwtId, $issuer, $audience));
+   }
+
    protected function getPass() 
    {
       return config('app.token');
@@ -82,51 +154,4 @@ class ApiController extends BaseController
       }
    }
 
-   public function validateToken(Request $request, Response $response) 
-   {
-      $header = $request->headers();
-
-      if(isset($header['X-Api-Token']) === false || 
-      matchEncryptedData($this->getPass(), $header['X-Api-Token']) === false) {
-         die(
-            $response->json(
-               $this->getOutput(false, 403, [
-                  'token' => 'Invalid token!',
-               ], 'Invalid api token!')
-            , 403)
-         );
-      }
-   }
-
-   public function validateClientToken(Request $request, Response $response) 
-   {
-      $header = $request->headers();
-
-      $clientId = Session::get('uid');  // Get from session
-      $validateClient = new \App\Core\Security\Middleware\ValidateClient($clientId);
-      // $clientToken = $validateClient->getToken();
-
-      if(isset($header['X-Client-Token']) === false || 
-         $validateClient->matchToken($header['X-Client-Token']) === false) {
-            die(
-               $response->json(
-                  $this->getOutput(false, 403, [
-                     'client_token' => 'Invalid token!',
-                  ], 'Invalid client token!')
-               , 403)
-            );
-      }
-   }
-
-   public function initJwtToken() 
-   {
-      $secret = Session::get('secret');
-      $expirationTime = 3600;
-      $jwtId = Session::get('jwtId');
-      $issuer = clientIP();
-      $audience = Config::get('app.url');
-
-      // Init JwtToken
-      return (new JwtToken($secret, $expirationTime, $jwtId, $issuer, $audience));
-   }
 }

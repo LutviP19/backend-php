@@ -133,24 +133,8 @@ class AuthController extends ApiController
         // Validate header X-Client-Token
         $this->validateClientToken($request, $response);
 
-        $user = Session::all();
-
-        $tokenJwt = Session::get('tokenJwt');
-        $bearerToken = $this->getBearerToken();
-
-        if(empty($user ) || 
-            is_null($this->jwtToken) || 
-            $bearerToken !== $tokenJwt || 
-            false === $this->jwtToken->validateToken($bearerToken)) {
-
-            die(
-                $response->json(
-                   $this->getOutput(false, 401, [
-                      'jwt' => 'Invalid jwt!',
-                   ])
-                , 401)
-            );
-        }
+        // Validate JWT
+        $this->validateJwt($request, $response);
         
         // dd($tokenJwt);
         // dd($bearerToken);

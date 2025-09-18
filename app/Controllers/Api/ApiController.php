@@ -81,7 +81,7 @@ class ApiController extends BaseController
             die(
                 $response->json(
                     $this->getOutput(false, 401, [
-                        'auth' => 'Invalid account!',
+                        'auth' => 'Session expired!',
                     ], 'Please login!')
                     , 401)
             );

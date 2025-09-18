@@ -18,8 +18,9 @@ class ValidateSession
     {
         $authenticatedKey = ['uid', 'email', 'client_token', 'current_team_id'];
         $status = array_keys_exists($authenticatedKey, Session::all());
-        echo "Custom Session ID: " . session_id();
-        dd($status);
+
+        // echo "Custom Session ID: " . session_id();
+        // dd($status);
 
         // Invalid session data
         if ($status === false) {

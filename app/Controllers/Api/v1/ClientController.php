@@ -17,7 +17,7 @@ class ClientController extends ApiController
         parent::__construct();
 
         // // Validate header X-Client-Token
-        // $this->validateClientToken($this->request(), $this->response());
+        $this->validateClientToken($this->request(), $this->response());
 
         // // Validate JWT
         $this->validateJwt($this->request(), $this->response());

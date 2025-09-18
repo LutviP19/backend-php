@@ -4,7 +4,7 @@ define('BASE_PATH', str_replace('config', '', __DIR__));
 
 /**
  * Config values for our application.
- * 
+ *
  * @return array
  */
 return [
@@ -44,7 +44,7 @@ return [
         'sqlite' => [
             'driver' => 'sqlite',
             'url' => env('DB_URL'),
-            'dbname' =>  database_path(env('DB_DATABASE', 'database.sqlite')),
+            'dbname' => database_path(env('DB_DATABASE', 'database.sqlite')),
             'prefix' => '',
             'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
             'busy_timeout' => null,
@@ -53,9 +53,9 @@ return [
         ],
 
         'mysql' => [
-            'host'     => env('DB_HOST', '127.0.0.1'),
-            'port'     => env('DB_PORT', '3306'),
-            'dbname'   => env('DB_DATABASE', 'backend_php'),
+            'host' => env('DB_HOST', '127.0.0.1'),
+            'port' => env('DB_PORT', '3306'),
+            'dbname' => env('DB_DATABASE', 'backend_php'),
             'username' => env('DB_USERNAME', 'root'),
             'password' => env('DB_PASSWORD', ''),
             'unix_socket' => env('DB_SOCKET', ''),
@@ -67,9 +67,9 @@ return [
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
-                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ,
-            ]) : []
+            ]) : [],
         ],
 
         'mariadb' => [
@@ -132,7 +132,7 @@ return [
     | provides a richer body of commands than a typical key-value system
     | such as Memcached. You may define your connection settings here.
     |
-    */
+     */
 
     'redis' => [
 
@@ -169,7 +169,7 @@ return [
     'default_mb' => env('MB_CONNECTION', 'rabbitmq'),
 
     'broker' => [
-        'rabbitmq'  => [
+        'rabbitmq' => [
             'host' => env('MB_HOST', '127.0.0.1'),
             'port' => env('MB_PORT', '5672'),
             'username' => env('MB_USERNAME', 'guest'),
@@ -182,7 +182,7 @@ return [
      * Cookies
      */
     'cookie' => [
-        'csrf_token' => 'token'
+        'csrf_token' => 'token',
     ],
 
     /**

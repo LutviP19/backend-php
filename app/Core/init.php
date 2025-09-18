@@ -1,13 +1,6 @@
 <?php
 
-//Starting the session will be the first we do.
-// ini_set('session.save_path', __DIR__ . '/../../storage/framework/sessions');
-ini_set('session.save_handler', "redis");
-ini_set('session.save_path', "tcp://127.0.0.1:6379");
-ini_set('session.gc_maxlifetime', 7200); // Set to 2 hours
-session_name('BACKENDPHPSESSID'); // Set a custom session name
-session_start();
-session_name('BACKENDPHPSESSID'); // Set a custom session name
+define('BASEPATH', __DIR__ . '/../..');
 
 /* ----------------------------- Default settings START -------------------------------- */
 
@@ -21,7 +14,18 @@ $dotenv = Dotenv\Dotenv::createUnsafeImmutable(__DIR__ . '/../..');
 $dotenv->load();
 
 date_default_timezone_set(env('APP_TIMEZONE', 'Asia/Jakarta'));
-define('BASEPATH', __DIR__ . '/../..');
+
+//Starting the session will be the first we do.
+ini_set('session.save_handler', env('SESSION_DRIVER', 'file'));
+if (env('SESSION_DRIVER') === "redis") {
+    ini_set('session.save_path', "tcp://" . env('REDIS_HOST') . ":" . env('REDIS_PORT') . "?auth" . env('REDIS_PASSWORD'));
+    ini_set('session.gc_maxlifetime', (env('SESSION_LIFETIME', 120) * 60)); // Set default to 2 hours
+} else {
+    ini_set('session.save_path', __DIR__ . '/../../storage/framework/sessions');
+}
+
+session_name('BACKENDPHPSESSID'); // Set a custom session name
+session_start();
 /* ----------------------------- Default settings END -------------------------------- */
 
 /**
@@ -30,7 +34,6 @@ define('BASEPATH', __DIR__ . '/../..');
 
 use App\Core\Http\Request;
 use App\Core\Http\Router;
-
 use App\Core\Support\App;
 use App\Core\Support\Session;
 use App\Core\Validation\MessageBag;

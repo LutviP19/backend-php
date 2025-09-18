@@ -37,7 +37,7 @@ $ docker compose docker-compose/mailpit/docker-compose.yml
     php -S localhost:8000 -t public/
 ```
 
-# App Commnd
+# Console App
 - Listen Message.
 ```bash
      php bin/console app:testing 1

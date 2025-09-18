@@ -2,8 +2,11 @@ COMMAND :
 - Run Server
 $ php -S localhost:8000 -t public/
 
-- Get app info
-$ php bin/console app:testing 1
+- Setup app (on plan)
+$ php bin/console app:setup
+
+- Get app info (on plan)
+$ php bin/console app:info
 
 - Listen Message
 $ php bin/console app:testing 1

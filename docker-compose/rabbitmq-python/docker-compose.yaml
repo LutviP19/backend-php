@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: unless-stopped
+    #command:
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.tcp.routers.db.entrypoints=redis"
+    #   - "traefik.tcp.services.db.loadbalancer.server.port=6379"
+    #   - "traefik.tcp.routers.db.rule=HostSNI(`*`)"
+    #   - "traefik.http.routers.rabbitmq.entrypoints=rabbitmq-management"
+    # environment:
+    #   - RABBITMQ_DEFAULT_USER=admin
+    #   - RABBITMQ_DEFAULT_PASS=admin
+    ports:
+      - 5672:5672
+      - 15672:15672
+      - 15675:15675
+    networks:
+      - quickstarts
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "1"
+
+  # publisher-rabbitmq:
+  #   build: ./publisher
+  #   container_name: publisher-rabbitmq
+  #   restart: unless-stopped
+  #   volumes:
+  #     - ./publisher:/app
+  #   environment:
+  #     - RABBITMQ_HOST=rabbitmq
+  #   depends_on:
+  #     - rabbitmq
+  #   networks:
+  #     - quickstarts
+  #   logging:
+  #     driver: "json-file"
+  #     options:
+  #       max-size: "1m"
+  #       max-file: "1"
+
+  # consumer-rabbitmq:
+  #   build: ./consumer
+  #   container_name: consumer-rabbitmq
+  #   restart: unless-stopped
+  #   volumes:
+  #     - ./consumer:/app
+  #   environment:
+  #     - RABBITMQ_HOST=rabbitmq
+  #   depends_on:
+  #     - rabbitmq
+  #   networks:
+  #     - quickstarts
+  #   logging:
+  #     driver: "json-file"
+  #     options:
+  #       max-size: "1m"
+  #       max-file: "1"
+
+networks:
+  quickstarts:
+    name: traefik_default
+    external: true

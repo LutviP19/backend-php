@@ -1,0 +1,28 @@
+version: '2.4'
+
+services:
+  mailpit:
+    image: axllent/mailpit
+    container_name: mailpit
+    restart: unless-stopped
+    volumes:
+      - ./data:/data
+    ports:
+      - 8025:8025
+      - 1025:1025
+    environment:
+      MP_MAX_MESSAGES: 5000
+      MP_DATABASE: /data/mailpit.db
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.http.routers.mailhog.entrypoints=mailhog-web"
+    #   - "traefik.http.services.mailhog.loadbalancer.server.port=8025"
+    #   - "traefik.http.services.mailhog.loadbalancer.server.scheme=http"
+    networks:
+      - public
+networks:
+  public:
+    name: traefik_default
+    external: true

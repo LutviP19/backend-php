@@ -6,7 +6,10 @@ $ php -S localhost:8000 -t public/
 $ php bin/console list
 $ php bin/console app:testing 1
 
+session.save_path = "tcp://10.133.14.9:6379?auth=yourverycomplexpasswordhere"
+
 curl --location --request GET 'http://localhost:8000/webhook' \
+--header 'Accept: application/json' \
 --header 'Content-Type: application/json' \
 --header 'X-Api-Token: eyJpdiI6Im9Nbm5STk9FYWhhTE12SEhKT2pNanc9PSIsInZhbHVlIjoiUGRSQ0g5cCtKTEU2NGd5MDVJa3J1WDJkUTBML3I1cG94TDVxeHBOaEpOWT0iLCJtYWMiOiIwYWU1NWNlOTllZGMxZDFjYmJhZTE2MzgyMmNiNzYzNjEzYjY3Yjc0MDFlYjgxYzJiN2VjNzk1ZDIzNTNhYTNkIiwidGFnIjoiIn0=' \
 --data-raw '{
@@ -20,6 +23,7 @@ curl --location --request GET 'http://localhost:8000/webhook' \
 }'
 
 curl --location 'http://localhost:8000/auth/login' \
+--header 'Accept: application/json' \
 --header 'Content-Type: application/json' \
 --header 'X-Api-Token: eyJpdiI6Im9Nbm5STk9FYWhhTE12SEhKT2pNanc9PSIsInZhbHVlIjoiUGRSQ0g5cCtKTEU2NGd5MDVJa3J1WDJkUTBML3I1cG94TDVxeHBOaEpOWT0iLCJtYWMiOiIwYWU1NWNlOTllZGMxZDFjYmJhZTE2MzgyMmNiNzYzNjEzYjY3Yjc0MDFlYjgxYzJiN2VjNzk1ZDIzNTNhYTNkIiwidGFnIjoiIn0=' \
 --data-raw '{
@@ -28,11 +32,19 @@ curl --location 'http://localhost:8000/auth/login' \
 }'
 
 curl --location --request POST 'http://localhost:8000/auth/logout' \
---header 'Authorization: Bearer eyJjdHkiOiJKV1QiLCJpbmZvIjoiQXBpIGp3dC0wMUs1OFo0UDM0WkhBREM5NzRBUEg4OVBRMyIsImFsZyI6IkhTMjU2IiwidHlwIjoiSldUIn0.eyJpc3MiOiIxMjcuMC4wLjEiLCJzdWIiOiJBY2Nlc3MgQVBJIGZvciB1c2VyOjAxSzU4WjRQMzRaSEFEQzk3NEFQSDg5UFEzIiwiYXVkIjoiaHR0cDpcL1wvbG9jYWxob3N0OjgwMDAiLCJleHAiOjE3NTgwNDAzMTcsIm5iZiI6MTc1ODAzMzExNywiaWF0IjoxNzU4MDM2NzE3LCJqdGkiOiIwMUs1OUpFV0I3UlJFVDYzMFBIRFNUMzkxTSIsInVpZCI6IjAxSzU4WjRQMzRaSEFEQzk3NEFQSDg5UFEzIn0.ZeAYEA1hd1Qsd2q4gwtGowkEYsoZ5uhy6pHPkjHszhg' \
---header 'Cookie: PHPSESSID=qbnesvud53dvbgas7prb11nje7; BACKENDPHPSESSID=vgk3f9tcjn10jr6fafetgcer9q' \
+--header 'Authorization: Bearer eyJjdHkiOiJKV1QiLCJpbmZvIjoiQXBpIGp3dC0wMUs1OFo0UDM0WkhBREM5NzRBUEg4OVBRMyIsImFsZyI6IkhTMjU2IiwidHlwIjoiSldUIn0.eyJpc3MiOiIxMjcuMC4wLjEiLCJzdWIiOiJBY2Nlc3MgQVBJIGZvciB1c2VyOjAxSzU4WjRQMzRaSEFEQzk3NEFQSDg5UFEzIiwiYXVkIjoiaHR0cDpcL1wvbG9jYWxob3N0OjgwMDAiLCJleHAiOjE3NTgxNzgxOTksIm5iZiI6MTc1ODE3MDk5OSwiaWF0IjoxNzU4MTc0NTk5LCJqdGkiOiIwMUs1RE5ZTlZaVEJCR0tXR1lXVkNYNjhUNCIsInVpZCI6IjAxSzU4WjRQMzRaSEFEQzk3NEFQSDg5UFEzIn0.VHpQXlYqr7U9kuRlRAd4c1O3Ev6mnSXGumWOaEBZjRI' \
+--header 'Accept: application/json' \
 --header 'Content-Type: application/json' \
 --header 'X-Api-Token: eyJpdiI6Im9Nbm5STk9FYWhhTE12SEhKT2pNanc9PSIsInZhbHVlIjoiUGRSQ0g5cCtKTEU2NGd5MDVJa3J1WDJkUTBML3I1cG94TDVxeHBOaEpOWT0iLCJtYWMiOiIwYWU1NWNlOTllZGMxZDFjYmJhZTE2MzgyMmNiNzYzNjEzYjY3Yjc0MDFlYjgxYzJiN2VjNzk1ZDIzNTNhYTNkIiwidGFnIjoiIn0=' \
---header 'X-Client-Token: NTJjYmMxNTBjNmFhODgxZDZiODVhY2ZmMzMxMWIzMjhkOGMyOWUyNjhhZWU5MzcyZjI1NDUyYjY2N2JmNGRlOQ=='
+--header 'X-Client-Token: ODZhNDdmMDU0Nzg3NDVlNzUzZThiMzE5ZWY4MTYzZGZmM2VlZDBhYzNjMTAxN2UxMjRlOWUwZTA2OWYzMGM3OQ=='
+
+curl --location --request GET 'http://localhost:8000/client/profile' \
+--header 'Authorization: Bearer eyJjdHkiOiJKV1QiLCJpbmZvIjoiQXBpIGp3dC0wMUs1OFo0UDM0WkhBREM5NzRBUEg4OVBRMyIsImFsZyI6IkhTMjU2IiwidHlwIjoiSldUIn0.eyJpc3MiOiIxMjcuMC4wLjEiLCJzdWIiOiJBY2Nlc3MgQVBJIGZvciB1c2VyOjAxSzU4WjRQMzRaSEFEQzk3NEFQSDg5UFEzIiwiYXVkIjoiaHR0cDpcL1wvbG9jYWxob3N0OjgwMDAiLCJleHAiOjE3NTgxODI3ODEsIm5iZiI6MTc1ODE3NTU4MSwiaWF0IjoxNzU4MTc5MTgxLCJqdGkiOiIwMUs1RFRBSDVQWE45RlJaRVpYRzY5VzFTWCIsInVpZCI6IjAxSzU4WjRQMzRaSEFEQzk3NEFQSDg5UFEzIn0.MjaRIZOvAaltj2UNH74xXw8XwCUP3CmuSyvmf82Ise8' \
+--header 'Accept: application/json' \
+--header 'Content-Type: application/json' \
+--header 'X-Api-Token: eyJpdiI6Im9Nbm5STk9FYWhhTE12SEhKT2pNanc9PSIsInZhbHVlIjoiUGRSQ0g5cCtKTEU2NGd5MDVJa3J1WDJkUTBML3I1cG94TDVxeHBOaEpOWT0iLCJtYWMiOiIwYWU1NWNlOTllZGMxZDFjYmJhZTE2MzgyMmNiNzYzNjEzYjY3Yjc0MDFlYjgxYzJiN2VjNzk1ZDIzNTNhYTNkIiwidGFnIjoiIn0=' \
+--header 'X-Client-Token: ODZhNDdmMDU0Nzg3NDVlNzUzZThiMzE5ZWY4MTYzZGZmM2VlZDBhYzNjMTAxN2UxMjRlOWUwZTA2OWYzMGM3OQ=='
+
 
 dd(gettype($this->encryptionKey));
 \App\Core\Support\Log::info(gettype($val), 'TestCommand.getMessage');

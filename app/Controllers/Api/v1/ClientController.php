@@ -17,10 +17,10 @@ class ClientController extends ApiController
         parent::__construct();
 
         // // Validate header X-Client-Token
-        // $this->validateClientToken($request, $response);
+        // $this->validateClientToken($this->request(), $this->response());
 
         // // Validate JWT
-        // $this->validateJwt($request, $response);
+        $this->validateJwt($this->request(), $this->response());
 
         (new \App\Core\Security\Middleware\ValidateSession())
             ->handle($this->request(), $this->response());

@@ -112,13 +112,14 @@ function csrfField()
  * @param string $str
  * @return string
  */
-function e($str)
+function e($str, $doubleEncode = true)
 {
     if (is_array($str)) {
         return json_encode($str);
     }
 
     return htmlentities($str, ENT_QUOTES, 'UTF-8');
+    // return htmlspecialchars($str ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8', $doubleEncode);
 }
 
 /**
@@ -319,10 +320,3 @@ function slug($title, $separator = '-', $language = 'en', $dictionary = ['@' => 
 
     return trim($title, $separator);
 }
-
-function array_keys_exists(array $keys, array $array): bool
-{
-    $diff = array_diff_key(array_flip($keys), $array);
-    return count($diff) === 0;
-}
-

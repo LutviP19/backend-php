@@ -117,6 +117,7 @@ class AuthController extends ApiController
 
         return $response->json($this->getOutput(true, 201, [
                     'token' => $tokenJwt,
+                    'sessid' => session_id(),
                     'account' => Session::all()
                 ]), 201);
     }

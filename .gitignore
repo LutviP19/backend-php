@@ -1,3 +1,5 @@
 .env
+.env.backup
+NOTES.txt
 /node_modules
 /vendor

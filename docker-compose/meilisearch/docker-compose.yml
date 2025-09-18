@@ -1,0 +1,21 @@
+version: '3.7'
+
+# dockercompose -f docker-compose.yaml up -d
+services:
+  ###< meilisearch/meilisearch-php ###
+  # https://docs.meilisearch.com/learn/cookbooks/docker.html#download-meilisearch-with-docker
+  meilisearch:
+    image: getmeili/meilisearch:v1.12
+    restart: unless-stopped
+    volumes:
+      - ./data.ms:/data.ms
+    ports:
+      - "7700:7700"
+    environment:
+      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY:-ms}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7700"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+###< meilisearch/meilisearch-php ###

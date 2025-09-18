@@ -1,0 +1,33 @@
+version: "3.8"
+
+services:
+  redis:
+    image: redis:7.4.1
+    container_name: redis
+    restart: unless-stopped
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.tcp.routers.db.entrypoints=postgres"
+    #   - "traefik.tcp.services.db.loadbalancer.server.port=6379"
+    #   - "traefik.tcp.routers.db.rule=HostSNI(`*`)"
+    volumes:
+      - ./redis:/data
+    ports:
+      - 6379:6379
+    networks:
+      - public
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "1"
+
+networks:
+  public:
+    name: traefik_default
+    external: true

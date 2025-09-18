@@ -1,10 +1,13 @@
 <?php
 
 //Starting the session will be the first we do.
-ini_set('session.save_path', __DIR__.'/../../storage/framework/sessions');
+// ini_set('session.save_path', __DIR__ . '/../../storage/framework/sessions');
+ini_set('session.save_handler', "redis");
+ini_set('session.save_path', "tcp://127.0.0.1:6379");
 ini_set('session.gc_maxlifetime', 7200); // Set to 2 hours
 session_name('BACKENDPHPSESSID'); // Set a custom session name
 session_start();
+session_name('BACKENDPHPSESSID'); // Set a custom session name
 
 /* ----------------------------- Default settings START -------------------------------- */
 
@@ -14,37 +17,42 @@ ini_set("error_prepend_string", "<pre style='color: #333; font-face:monospace; f
 ini_set("error_append_string ", "</pre>");
 
 // Looking for .env at the root directory
-$dotenv = Dotenv\Dotenv::createUnsafeImmutable(__DIR__.'/../..');
+$dotenv = Dotenv\Dotenv::createUnsafeImmutable(__DIR__ . '/../..');
 $dotenv->load();
 
-date_default_timezone_set('Asia/Jakarta');
+date_default_timezone_set(env('APP_TIMEZONE', 'Asia/Jakarta'));
+define('BASEPATH', __DIR__ . '/../..');
 /* ----------------------------- Default settings END -------------------------------- */
 
 /**
  * Bootstrap the Application
  */
-use App\Core\Support\{App,Session};
-use App\Core\Http\{Router,Request};
+
+use App\Core\Http\Request;
+use App\Core\Http\Router;
+
+use App\Core\Support\App;
+use App\Core\Support\Session;
 use App\Core\Validation\MessageBag;
 
 //register configuration to the app.
-App::register('config',require __DIR__.'/../../config/app.php');
+App::register('config', require __DIR__ . '/../../config/app.php');
 
 /**
- * Register MessageBag with all the validation errors 
+ * Register MessageBag with all the validation errors
  * from session to the App container/registry so we
  * can use them later.
  */
 $messageBag = new MessageBag(new Session);
 $messageBag->setMessages(Session::flash('errors'));
-App::register('errors',$messageBag);
+App::register('errors', $messageBag);
 
 //Call the appropriate route.
-$output = Router::load(__DIR__.'/../../routes/routes.php')
-    ->dispatch(Request::uri(),Request::method());
+$output = Router::load(__DIR__ . '/../../routes/routes.php')
+    ->dispatch(Request::uri(), Request::method());
 
 //For requests that expect json results.
-if(Request::isJsonRequest() && is_string($output)){
+if (Request::isJsonRequest() && is_string($output)) {
     echo $output;
 }
 

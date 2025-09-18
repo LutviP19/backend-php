@@ -1,20 +1,43 @@
-COMMAND :
+SETUP :
+-------
+- Composer:
+composer install
+
+- env (copy example)
+$ cp .env.example .env
+
+- Sample Database(mysql dump):
+create table users : storage/database/migrations/mysql
+create sample user : storage/database/migrations/mysql/insert_user.sql
+
+- docker compose
+redis : 
+$ docker compose docker-compose/redis/docker-compose.yaml
+rabbitmq :
+$ docker compose docker-compose/rabbitmq-python/docker-compose.yaml
+mailpit :
+$ docker compose docker-compose/mailpit/docker-compose.yml
+
+
+APP COMMANDS :
+--------------
 - Run Server
 $ php -S localhost:8000 -t public/
 
-- Setup app (on plan)
+- Setup app (planned)
 $ php bin/console app:setup
 
-- Get app info (on plan)
+- Get app info (planned)
 $ php bin/console app:info
 
 - Listen Message
 $ php bin/console app:testing 1
 
 CURL :
+------
 Note: 
 [REPLACE_WITH_YOUR_OWN_SETUP] depend on your own generated key.
-[REPLACE_WITH_YOUR_OWN_DATA] depend on your own data value from database.
+[REPLACE_WITH_YOUR_OWN_DATA] depend on your own data from database.
 
 - Login 
 --------
@@ -82,4 +105,43 @@ curl --location --request GET 'http://localhost:8000/client/profile' \
 --header 'Content-Type: application/json' \
 --header 'X-Api-Token: [REPLACE_WITH_YOUR_OWN_SETUP]' \
 --header 'X-Client-Token: [REPLACE_WITH_YOUR_OWN_SETUP]'
+
+
+Message Queue (with Encryption):
+--------------------------------
+- Producer
+curl --location --request GET 'http://localhost:8000/extra'
+
+- Consummer
+$ php bin/console app:testing 1
+Output:
+ [x] 18-09-2025 20:45:11
+id: 1
+title: Title A
+contents: The default interactive shell is now zsh.
+
+
+Events :
+--------
+curl --location --request GET 'http://localhost:8000/extra'
+Output:
+Main output to place an order and trigger the event-driven process.
+Order placed: 123
+
+$ php bin/console app:testing 1
+Output:
+EventListener[message.queue]: [{"id":1,"title":"Title A","contents":"The default interactive shell is now zsh."},{"id":2,"title":"Title B","contents":"To update your account to use zsh"},{"id":3,"title":"Title C","contents":"For more details, please visit"}]
+
+
+Non-Blocking Process:
+---------------------
+$ php bin/console app:testing 1
+Output:
+Let's start non-blocking version: 
+Parse key id: [key:id, value:1]
+Parse key title: [key:title, value:Title A]
+Parse key contents: [key:contents, value:The default interactive shell is now zsh.]
+
+simulateConcurrent-output: {"id":"1 counter: 10000x","title":"Title A counter: 2000x","contents":"The default interactive shell is now zsh. counter: 15000x"}
+
 

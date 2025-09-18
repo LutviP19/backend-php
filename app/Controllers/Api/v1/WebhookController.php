@@ -40,7 +40,7 @@ class WebhookController extends ApiController
      * @param App\Core\Http\Response $response
      * @return void
      */
-    public function index(\App\Core\Http\Request $request, Response $response)
+    public function index(Request $request, Response $response)
     {
         // \App\Core\Support\Log::debug(gettype($request), 'WebhookController.index.gettype($request)');
         \App\Core\Support\Log::debug($request, 'WebhookController.index.$request');

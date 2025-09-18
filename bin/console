@@ -31,14 +31,13 @@ session_start();
 /**
  * Bootstrap the Application
  */
+use App\Console\Commands\TestCommand;
+use App\Core\Support\App;
+use Symfony\Component\Console\Application;
 use App\Console\Commands\ClearcacheCommand;
 
 //register configuration to the app.
 App::register('config', require __DIR__ . '/../config/app.php');
-
-use App\Console\Commands\TestCommand;
-use App\Core\Support\App;
-use Symfony\Component\Console\Application;
 
 $app = new Application();
 $app->add(new TestCommand());

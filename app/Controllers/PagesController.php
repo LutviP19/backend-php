@@ -97,6 +97,8 @@ class PagesController extends Controller
          /**  
          * Main script to place an order and trigger the event-driven process.  
          */  
+        echo "===================================================<br>\r\n";
+        echo "Main output to place an order and trigger the event-driven process.<br>\r\n";
         $dispatcher = new EventDispatcher();
         $orderService = new OrderService($dispatcher);  
           

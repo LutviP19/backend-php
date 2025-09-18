@@ -20,17 +20,18 @@
 create table users : storage/database/migrations/mysql
 create sample user : storage/database/migrations/mysql/insert_user.sql
 - Docker Compose (Supported services).
+- 
 redis : 
 ```bash
-$ docker compose docker-compose/redis/docker-compose.yaml
+$ docker compose up docker-compose/redis/docker-compose.yaml
 ```
 rabbitmq :
 ```bash
-$ docker compose docker-compose/rabbitmq-python/docker-compose.yaml
+$ docker compose up docker-compose/rabbitmq-python/docker-compose.yaml
 ```
 mailpit :
 ```bash
-$ docker compose docker-compose/mailpit/docker-compose.yml
+$ docker compose up docker-compose/mailpit/docker-compose.yml
 ```
 - Run server.
 ```bash

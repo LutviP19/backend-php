@@ -6,9 +6,11 @@
     "require": {
         "php": "^8.2",
         "symfony/console": "^7.3",
+        "symfony/event-dispatcher": "^7.3",
+        "symfony/mailer": "^7.3",
         "php-amqplib/php-amqplib": "^3.7",
         "amphp/amp": "^3.1",
-        "revolt/event-loop": "^1.0",        
+        "revolt/event-loop": "^1.0",
         "monolog/monolog": "^3.9",
         "vlucas/phpdotenv": "^5.6",
         "amphp/http-client": "^5.3",
@@ -16,8 +18,7 @@
         "robinvdvleuten/ulid": "^5.0",
         "rbdwllr/reallysimplejwt": "^5.0",
         "maba/gentle-force": "^0.3.1",
-        "predis/predis": "^1.1",
-        "symfony/event-dispatcher": "^7.3"        
+        "predis/predis": "^1.1"
     },
     "bin": [
         "bin/console"

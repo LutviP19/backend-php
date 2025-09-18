@@ -1,0 +1,82 @@
+COMMAND :
+- Run Server
+$ php -S localhost:8000 -t public/
+
+- Get app info
+$ php bin/console app:testing 1
+
+- Listen Message
+$ php bin/console app:testing 1
+
+CURL :
+Note: 
+[REPLACE_WITH_YOUR_OWN_SETUP] depend on your own generated key.
+[REPLACE_WITH_YOUR_OWN_DATA] depend on your own data value from database.
+
+- Login 
+--------
+curl --location 'http://localhost:8000/auth/login' \
+--header 'Accept: application/json' \
+--header 'Content-Type: application/json' \
+--header 'X-Api-Token: [REPLACE_WITH_YOUR_OWN_SETUP]' \
+--data-raw '{
+    "email" : "[REPLACE_WITH_YOUR_OWN_DATA]",
+    "password" : "[REPLACE_WITH_YOUR_OWN_DATA]"
+}'
+-----
+Used Response:
+- token : [REPLACE_WITH_VALID_JWT]
+- sessid : [REPLACE_WITH_VALID_SESION_ID]
+
+
+- Logout 
+---------
+curl --location --request POST 'http://localhost:8000/auth/logout' \
+--header 'Authorization: Bearer [REPLACE_WITH_VALID_JWT]' \
+--header 'Cookie: BACKENDPHPSESSID=[REPLACE_WITH_VALID_SESION_ID]' \
+--header 'Accept: application/json' \
+--header 'Content-Type: application/json' \
+--header 'X-Api-Token: [REPLACE_WITH_YOUR_OWN_SETUP]' \
+--header 'X-Client-Token: [REPLACE_WITH_YOUR_OWN_SETUP]'
+
+- Update Client token
+----------------------
+curl --location 'http://localhost:8000/auth/uptoken' \
+--header 'Authorization: Bearer [REPLACE_WITH_VALID_JWT]' \
+--header 'Cookie: BACKENDPHPSESSID=[REPLACE_WITH_VALID_SESION_ID]' \
+--header 'Accept: application/json' \
+--header 'Content-Type: application/json' \
+--header 'Content-Type: application/json' \
+--header 'X-Api-Token: [REPLACE_WITH_YOUR_OWN_SETUP]' \
+--header 'X-Client-Token: [REPLACE_WITH_YOUR_OWN_SETUP]' \
+--data-raw '{
+    "email" : "[REPLACE_WITH_YOUR_OWN_DATA]",
+    "password" : "[REPLACE_WITH_YOUR_OWN_DATA]"
+}'
+
+- Webhook (Display sample data)
+-------------------------------
+curl --location --request GET 'http://localhost:8000/webhook' \
+--header 'Accept: application/json' \
+--header 'Content-Type: application/json' \
+--header 'X-Api-Token: [REPLACE_WITH_YOUR_OWN_SETUP]' \
+--data-raw '{
+    "email" : "admin@example.com",
+    "password" : "password123",
+    "credentials" : {
+        "read" : true,
+        "write" : true,
+        "delete" : false
+    }
+}'
+
+- Client profile 
+-----------------
+curl --location --request GET 'http://localhost:8000/client/profile' \
+--header 'Authorization: Bearer [REPLACE_WITH_VALID_JWT]' \
+--header 'Cookie: BACKENDPHPSESSID=[REPLACE_WITH_VALID_SESION_ID]' \
+--header 'Accept: application/json' \
+--header 'Content-Type: application/json' \
+--header 'X-Api-Token: [REPLACE_WITH_YOUR_OWN_SETUP]' \
+--header 'X-Client-Token: [REPLACE_WITH_YOUR_OWN_SETUP]'
+

@@ -24,19 +24,39 @@ APP COMMANDS :
 - Run Server
 $ php -S localhost:8000 -t public/
 
+- Get app info (param: userid)
+$ php bin/console app:info 1
+Output:
+App Name: Backend PHP
+App Url: http://localhost:8000
+App Environment: local
+App Debug status: true
+App Session driver: redis
+App Database driver: mysql
+App Message Broker driver: rabbitmq
+App Mailer driver: smtp
+App header api token [X-Api-Token]: eyJpdiI6Ik1Cd29xWDFIOE9CUW81Q08rWnZEM1E9PSIsInZhbHVlIjoid05sVmtTeUFad0tzdFgxQzdSMyt1aW5xS0hTN0pwc3NrSFE2NVQvQ3FxQT0iLCJtYWMiOiIxZGMwZGQ1NzU0YzYxMmUzMjFhMzU2N2FmYjIxM2MwZDczY2Y2YWE1MzA2OWU2NWQzMWRhOTVmYmM0YmMyNTc4IiwidGFnIjoiIn0=
+User ID: 1
+App header client token [X-Client-Token]: MWE0YzYxZjQ0M2NkYTc1NDVlZmY2NmY0ZDQxNDY0MjdlODIzMWZlNGY0NzM0M2U5YzZmOGFlZGY2NTA4MDcyOA==
+
+All info of application.
+
+
+- Listen Message (param: userid)
+$ php bin/console app:testing 1
+Output:
+[*] Waiting for messages userid:1. To exit press CTRL+C
+
+
 - Setup app (planned)
 $ php bin/console app:setup
 
-- Get app info (planned)
-$ php bin/console app:info
 
-- Listen Message
-$ php bin/console app:testing 1
 
 CURL :
 ------
 Note: 
-[REPLACE_WITH_YOUR_OWN_SETUP] depend on your own generated key.
+[REPLACE_WITH_YOUR_OWN_SETUP] depend on your own generated key (use command [Get app info] to get this values).
 [REPLACE_WITH_YOUR_OWN_DATA] depend on your own data from database.
 
 - Login 

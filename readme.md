@@ -40,18 +40,24 @@ $ docker compose up docker-compose/mailpit/docker-compose.yml
 ```
 
 # Console App
-- Listen Message.
+- Listen Message (param: userid).
 ```bash
      php bin/console app:testing 1
+```
+- Get app info (param: userid).
+```bash
+     php bin/console app:info 1
 ```
 - Setup app (planned)
 ```bash
      php bin/console app:setup
 ```
-- Get app info (planned)
-```bash
-     php bin/console app:info
-```
+
+# Logs
+Basepath of logs at: storage/logs
+error log: storage/logs/app_error.log
+debug log: storage/logs/app_debug.log
+info log: storage/logs/app_info.log
 
 # Demo
 Please read DEMO.txt

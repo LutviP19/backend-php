@@ -31,6 +31,7 @@ session_start();
 /**
  * Bootstrap the Application
  */
+use App\Console\Commands\InfoCommand;
 use App\Console\Commands\TestCommand;
 use App\Core\Support\App;
 use Symfony\Component\Console\Application;
@@ -40,6 +41,7 @@ use App\Console\Commands\ClearcacheCommand;
 App::register('config', require __DIR__ . '/../config/app.php');
 
 $app = new Application();
+$app->add(new InfoCommand());
 $app->add(new TestCommand());
 $app->add(new ClearcacheCommand());
 $app->run();

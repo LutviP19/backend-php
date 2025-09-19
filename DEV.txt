@@ -7,7 +7,7 @@
 - JWT (done)
 - Rate Limiter (done)
 - Caching Redis (done)
-- Mailer 
+- Mailer (done)
 - Message Bus
 - Sanitize Input [XSS, SQL Injection]
 - GraphQL

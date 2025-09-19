@@ -4,14 +4,11 @@ namespace App\Console\Commands;
 
 use App\Core\Events\Event;
 use App\Core\Message\Broker;
+use function Amp\async;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Input\InputArgument;
-use Amp\Future;
-use function Amp\async;
-use function Amp\delay;
-
 
 class TestCommand extends Command
 {
@@ -33,7 +30,6 @@ class TestCommand extends Command
             ->addArgument('userid', InputArgument::REQUIRED, 'Pass the userid.');
     }
 
-
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->id = $input->getArgument('userid');
@@ -47,10 +43,12 @@ class TestCommand extends Command
             // concurrent process
             $data = json_decode($body, true);
             $index = array_search($this->id, array_column($data, 'id')); // get index
-            $output = $this->simulateConcurrent($data[$index]);
+            if (isset($data[$index]) && ! isset($data['event'])) {
+                $output = $this->simulateConcurrent($data[$index]);
 
-            $json = is_array($output) ? json_encode($output) : 'xxx';
-            echo "simulateConcurrent-output: {$json}\n" . PHP_EOL;;
+                $json = is_array($output) ? json_encode($output) : 'xxx';
+                echo "simulateConcurrent-output: {$json}\n" . PHP_EOL;;
+            }
         });
 
         $this->getMessageBroker();
@@ -72,9 +70,6 @@ class TestCommand extends Command
                 $date = date('d-m-Y H:i:s');
 
                 echo ' [x] ', $date, "\n";
-
-                // \App\Core\Support\Log::info($this->id, 'TestCommand.getMessage');
-                // \App\Core\Support\Log::info(gettype($data), 'TestCommand.getMessage');
                 foreach ($data as $key => $val) {
                     // \App\Core\Support\Log::info(gettype($val), 'TestCommand.getMessage');
                     if (is_array($val)) {
@@ -85,11 +80,27 @@ class TestCommand extends Command
                         ) {
 
                             foreach ($val as $k => $v) {
+                                if (is_array($v)) {
+                                    $v = json_encode($v);
+                                }
+
                                 echo "$k: $v\n";
                             }
+                        } else {
+                            if (is_array($val) && isset($val['event'])) {
+                                foreach ($val as $k => $v) {
+                                    if (is_array($v)) {
+                                        $v = json_encode($v);
+                                    }
+                                    $k = $key . '-' . $k;
+    
+                                    echo "$k: $v\n";
+                                }
+                            }
                         }
-                    } else
+                    } else {
                         echo "$key: $val\n";
+                    }
                 }
 
                 echo "=====\n";
@@ -115,8 +126,9 @@ class TestCommand extends Command
             // delay() is a non-blocking version of PHP's sleep() function,
             // which only pauses the current fiber instead of blocking the whole process.
             // delay(1);
-            for ($i = 0; $i <= 10000; $i++)
+            for ($i = 0; $i <= 10000; $i++) {
                 $counter = $i;
+            }
 
             return $data['id'] . " counter: {$counter}x";;
         });
@@ -128,8 +140,9 @@ class TestCommand extends Command
             // Let's pause for only 1 instead of 2 seconds here,
             // so our text is printed in the correct order.
             // delay(2);
-            for ($i = 0; $i <= 2000; $i++)
+            for ($i = 0; $i <= 2000; $i++) {
                 $counter = $i;
+            }
 
             return $data['title'] . " counter: {$counter}x";;
         });
@@ -141,8 +154,9 @@ class TestCommand extends Command
             // Let's pause for only 1 instead of 3 seconds here,
             // so our text is printed in the correct order.
             // delay(3);
-            for ($i = 0; $i <= 15000; $i++)
+            for ($i = 0; $i <= 15000; $i++) {
                 $counter = $i;
+            }
 
             return $data['contents'] . " counter: {$counter}x";
         });

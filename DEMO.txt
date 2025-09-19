@@ -131,22 +131,39 @@ Message Queue (with Encryption):
 --------------------------------
 - Producer
 curl --location --request GET 'http://localhost:8000/extra'
+Output:
+[x] Sent[19-09-2025 17:27:20]: [{"id":1,"title":"Title A","contents":"The default interactive shell is now zsh."},{"id":2,"title":"Title B","contents":"To update your account to use zsh"},{"id":3,"title":"Title C","contents":"For more details, please visit"}]<br>
+Sending message to RabbitMQ: eyJpdiI6IkJ5S0prWVlRV3I0aU8rU3dUQWRjK1E9PSIsInZhbHVl.........
+===================================================<br>
+Main output to place an order and trigger the event-driven process.<br>
+Order placed: 123
+Inventory updated for order: 123
+Payment processed for order: 123
+Email sent for order: 123
 
-- Consummer
+- Consummer Rabbit MQ
 $ php bin/console app:testing 1
 Output:
- [x] 18-09-2025 20:45:11
+ [x] 19-09-2025 17:27:20
 id: 1
 title: Title A
 contents: The default interactive shell is now zsh.
+=====
+ [x] 19-09-2025 17:27:20
+event: order.placed
+id: 123
+=====
 
 
 Events :
 --------
 curl --location --request GET 'http://localhost:8000/extra'
 Output:
-Main output to place an order and trigger the event-driven process.
-Order placed: 123 Inventory updated for order: 123 Payment processed for order: 123 Email sent for order: 123
+Main output to place an order and trigger the event-driven process.<br>
+Order placed: 123
+Inventory updated for order: 123
+Payment processed for order: 123
+Email sent for order: 123
 
 $ php bin/console app:testing 1
 Output:

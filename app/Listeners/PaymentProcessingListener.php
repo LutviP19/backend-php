@@ -10,10 +10,11 @@ use App\Events\OrderPlacedEvent;
  * Listener for processing payment when an order is placed.  
  */  
 class PaymentProcessingListener {  
+
     /**  
      * Handles the event of an order being placed.  
      *  
-     * @param OrderPlacedEvent $event The event object.  
+     * @param OrderPlacedEvent $event The event object.
      */  
     public function onOrderPlaced(OrderPlacedEvent $event) {  
         // Logic to process payment  

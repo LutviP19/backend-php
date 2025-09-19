@@ -32,7 +32,7 @@ class OrderService {
   
         // Dispatch event  
         $event = new OrderPlacedEvent($order);  
-        $this->dispatcher->dispatch($event, OrderPlacedEvent::NAME);  
+        $this->dispatcher->dispatch($event, 'onOrderPlaced');  
     }
 }
 

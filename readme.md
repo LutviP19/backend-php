@@ -55,8 +55,11 @@ $ docker compose up docker-compose/mailpit/docker-compose.yml
 
 # Logs
 Basepath of logs at: storage/logs
+
 error log: storage/logs/app_error.log
+
 debug log: storage/logs/app_debug.log
+
 info log: storage/logs/app_info.log
 
 # Demo

@@ -10,14 +10,16 @@ use App\Events\OrderPlacedEvent;
  * Listener for updating inventory when an order is placed.  
  */  
 class InventoryUpdateListener {  
+
+
     /**  
      * Handles the event of an order being placed.  
      *  
      * @param OrderPlacedEvent $event The event object.  
-     */  
+     */
     public function onOrderPlaced(OrderPlacedEvent $event) {  
         // Logic to update inventory  
         $order = $event->getOrder();  
-        echo "Inventory updated for order: " . $order['id'] . PHP_EOL;  
+        echo "Inventory updated for order: " . $order['id'] . PHP_EOL;
     }  
 }

@@ -146,7 +146,7 @@ Events :
 curl --location --request GET 'http://localhost:8000/extra'
 Output:
 Main output to place an order and trigger the event-driven process.
-Order placed: 123
+Order placed: 123 Inventory updated for order: 123 Payment processed for order: 123 Email sent for order: 123
 
 $ php bin/console app:testing 1
 Output:

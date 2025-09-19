@@ -2,29 +2,29 @@
 
 namespace App\Controllers;
 
-use App\Core\Support\Session;
-use App\Core\Events\Event;
-use App\Core\Message\Broker;
 use App\Models\User;
-use App\Core\Support\Config;
-use App\Core\Http\{Request,Response};
+use App\Core\Events\Event;
 
+use App\Core\Http\{Request, Response};
+use App\Core\Message\Broker;
+use App\Core\Support\Config;
+use App\Core\Support\Session;
 
 // Events
-use App\Services\OrderService;
 use App\Core\Events\EventDispatcher;
+use App\Services\OrderService;
 
 class PagesController extends Controller
 {
 
     /**
      * Show the home page.
-     * 
+     *
      * @param App\Core\Http\Request $request
      * @param App\Core\Http\Response $response
      * @return void
      */
-    public function index(Request $request,Response $response)
+    public function index(Request $request, Response $response)
     {
         $users = (new User())->all();
         Session::set('users', generateUlid());
@@ -34,7 +34,7 @@ class PagesController extends Controller
 
     /**
      * Show the home page.
-     * 
+     *
      * @return void
      */
     public function contact()
@@ -44,7 +44,7 @@ class PagesController extends Controller
 
     /**
      * Show the home page.
-     * 
+     *
      * @return void
      */
     public function about()
@@ -54,7 +54,7 @@ class PagesController extends Controller
 
     /**
      * Show the home page.
-     * 
+     *
      * @return void
      */
     public function extra()
@@ -70,7 +70,7 @@ class PagesController extends Controller
             ['id' => 3, 'title' => 'Title C', 'contents' => 'For more details, please visit'],
         ];
 
-        $default = 'Testing MQ '.$date;
+        $default = 'Testing MQ ' . $date;
         $default = config('app.token');
         $default = json_encode($data);
 
@@ -84,28 +84,26 @@ class PagesController extends Controller
         echo "Sending message to RabbitMQ: {$message}";
 
         // Simulate Event with param as array
-        Event::listen('message.producer', function($date, $message) {
+        Event::listen('message.producer', function ($date, $message) {
             echo "Event[message.producer][$date]: $message<br>\r\n";
         });
 
-        if(true) {
+        if (true) {
             Event::trigger('message.producer', [$date, $message]);
         }
 
-
-
-         /**  
-         * Main script to place an order and trigger the event-driven process.  
-         */  
+        /**
+         * Main script to place an order and trigger the event-driven process.
+         */
         echo "===================================================<br>\r\n";
         echo "Main output to place an order and trigger the event-driven process.<br>\r\n";
         $dispatcher = new EventDispatcher();
-        $orderService = new OrderService($dispatcher);  
-          
-        $order = ['id' => 123, 'items' => ['item1', 'item2']];  
+        $orderService = new OrderService($dispatcher);
+
+        $order = ['id' => 123, 'items' => ['item1', 'item2']];
         $orderService->placeOrder($order);
-        /**  
-         * END Main script to place an order and trigger the event-driven process.  
+        /**
+         * END Main script to place an order and trigger the event-driven process.
          */
     }
 

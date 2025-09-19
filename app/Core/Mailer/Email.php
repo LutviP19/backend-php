@@ -5,10 +5,12 @@
 namespace App\Core\Mailer;
 
 use App\Core\Support\Config;
-use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\Mailer;
+use Symfony\Component\Mailer\Transport;
 use Symfony\Component\Mime\Address;
-use Symfony\Component\Mime\Email as EmailSymfony;
+use Symfony\Component\Mime\Email as SymfonyEmail;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
+use Exception;
 
 class Email
 {
@@ -25,10 +27,10 @@ class Email
     public function send()
     {
         try {
-            $email = (new EmailSymfony())
+            $email = (new SymfonyEmail())
                 ->from(new Address(env('MAIL_FROM_ADDRESS'), env('MAIL_FROM_NAME')))
                 ->to('your-email@here.test')
-                ->priority(EmailSymfony::PRIORITY_HIGHEST)
+                ->priority(SymfonyEmail::PRIORITY_HIGHEST)
                 ->subject('My first mail using Symfony Mailer')
                 ->text('This is an important message!')
                 ->html('<strong>This is an important message!</strong>');
@@ -43,19 +45,24 @@ class Email
         } catch (TransportExceptionInterface $e) {
             // some error prevented the email sending; display an
             // error message or try to resend the message
-            throw new Exception('Error send email: '.$e->getMessage());
+            throw new Exception('Error send email: ' . $e->getMessage());
         }
     }
 
     private function __getSettings()
     {
         $mailer = Config::get('default_mailer');
-        $settings = "sendmail://default";
+        $dsn = "sendmail://default";
+
+        if ($mailer === "mailpit") {
+            // Default mailpit smtp
+            $dsn = "smtp://localhost:" . env('MAIL_PORT');
+        }
 
         if ($mailer === "mailtrap") {
             $password = Config::get('mailer.mailtrap.password');
 
-            $settings = "mailtrap+smtp://$password@default";
+            $dsn = "mailtrap+smtp://$password@default";
         }
 
         if ($mailer === "smtp") {
@@ -64,9 +71,9 @@ class Email
             $host = Config::get('mailer.smtp.host');
             $port = Config::get('mailer.smtp.port');
 
-            $settings = "smtp://$username:$password@$host:$port";
+            $dsn = "smtp://$username:$password@$host:$port";
         }
 
-        return $settings;
+        return $dsn;
     }
 }

@@ -8,11 +8,10 @@
  * Available router methods : get(), post(), put(), delete().
  */
 
- // Auth
-require_once(__DIR__ . '/auth.php');
+//========== API - v1
+$router->get('/webhook', 'Api\v1\WebhookController@index');
+$router->post('/webhook', 'Api\v1\WebhookController@index');
 
-// API
-require_once(__DIR__ . '/api.php');
+$router->get('/client/profile', 'Api\v1\ClientController@profile');
+//========== END API - v1
 
-// WEB
-require_once(__DIR__ . '/web.php');

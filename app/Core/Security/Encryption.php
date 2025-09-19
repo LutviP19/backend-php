@@ -40,7 +40,7 @@ class Encryption
             throw new Exception("Encryption key is not set in environment variables.");
         }
 
-        if (! static::supported($key, $cipher)) {
+        if (! static::supported($this->encryptionKey, $cipher)) {
             $ciphers = implode(', ', array_keys(self::$supportedCiphers));
 
             throw new RuntimeException("Unsupported cipher or incorrect key length. Supported ciphers are: {$ciphers}.");

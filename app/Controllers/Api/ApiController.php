@@ -20,12 +20,12 @@ class ApiController extends BaseController
         parent::__construct();
 
         // Accepted type is JSON
-        if (!$this->request()->isJsonRequest()) {
+        if (false === $this->request()->isJsonRequest()) {
             die(
                 $this->response()->json(
                     $this->getOutput(false, 403, [
-                        'message' => 'Only accepted JSON.',
-                    ])
+                        'Invalid format!',
+                    ], 'Only accepted JSON.')
                     , 403)
             );
         }
@@ -61,7 +61,7 @@ class ApiController extends BaseController
             die(
                 $response->json(
                     $this->getOutput(false, 403, [
-                        'token' => 'Invalid token!',
+                        'token' => 'Invalid api token!',
                     ], 'Invalid api token!')
                     , 403)
             );
@@ -93,7 +93,7 @@ class ApiController extends BaseController
             die(
                 $response->json(
                     $this->getOutput(false, 403, [
-                        'client_token' => 'Invalid token!',
+                        'client_token' => 'Invalid client token!',
                     ], 'Invalid client token!')
                     , 403)
             );
@@ -115,7 +115,7 @@ class ApiController extends BaseController
                 $response->json(
                     $this->getOutput(false, 401, [
                         'jwt' => 'Invalid jwt!',
-                    ])
+                    ], 'Please login!')
                     , 401)
             );
         }

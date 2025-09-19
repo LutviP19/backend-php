@@ -77,9 +77,7 @@ class AuthController extends ApiController
              );
         }
 
-        // Generate credentials token
-        
-        // Session::destroy();
+        // Generate credentials
         foreach($user as $key => $value) {
             if($key === 'ulid')
                 $key = 'uid';
@@ -87,27 +85,30 @@ class AuthController extends ApiController
             Session::set($key, $value);
         }
 
-        $userId = $user->ulid;
+        Session::set('gnr', generateRandomString(32, true));
+        $userId =  Session::get('uid');
+        $gnr =  Session::get('gnr');
 
         // Set login session
         $validateClient = new ValidateClient($userId);
-        $clientToken = $validateClient->generateToken();
-        Session::set('client_token', $clientToken);
+        $clientToken = $validateClient->getToken();
+        $clientTokenGen = $validateClient->generateToken();
+        Session::set('client_token', $clientTokenGen);
 
-        if(false === $validateClient->matchToken($clientToken)) {
+        if(false === $validateClient->matchToken($clientTokenGen)) {
             die(
                 $response->json(
                    $this->getOutput(false, 401, [
-                      'message' => 'Invalid client Id!',
-                   ])
+                      'auth' => 'Client not found!',
+                   ], 'Invalid Client!')
                 , 401)
              );
         }
 
         // initJwtToken
-        Session::set('secret', $user->client_token);
+        Session::set('secret', encryptData($clientToken, $gnr));
         Session::set('jwtId', generateUlid());
-        $this->jwtToken = $this->initJwtToken();        
+        $this->jwtToken = $this->initJwtToken();
 
         // Create specific data for jwt
         $info = 'Api jwt-'.$userId;

@@ -59,7 +59,7 @@ class ValidateClient
 
     public function generateToken()
     {
-        $token = $this->getToken($this->columnId);
+        $token = $this->getToken();
 
         if (! is_null($token))
             return $this->hash->create($token);

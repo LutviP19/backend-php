@@ -52,7 +52,7 @@ App::register('errors', $messageBag);
 
 //Call the appropriate route.
 $output = Router::load(__DIR__ . '/../../routes/routes.php')
-    ->dispatch(Request::uri(), Request::method());
+            ->dispatch(Request::uri(), Request::method());
 
 //For requests that expect json results.
 if (Request::isJsonRequest() && is_string($output)) {

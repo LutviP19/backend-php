@@ -1,11 +1,12 @@
 # Backend PHP
-- An simple framework built with php, focus for microservices.
+- Simple framework built with php, focus for microservices.
 
 # Requirement
 - PHP 8.2+.
 - Redis CLI
 - RabbitMQ
 - MySQL / SQLite
+- Docker Desktop(optional)
 
 # Setup the app up and running
 - Install depedencies.
@@ -17,8 +18,8 @@
     cp .env.example .env
 ```
 - Migrate database (mysql dump file)
-create table users : storage/database/migrations/mysql
-create sample user : storage/database/migrations/mysql/insert_user.sql
+create table users : storage/database/migrations/mysql/user.sql
+create sample user : storage/database/seeders/mysql/insert_user.sql
 - Docker Compose (Supported services).
 - 
 redis : 
@@ -58,4 +59,4 @@ Please read DEMO.txt
 # Development Proccess
 Please read DEV.txt
 
-**Please note this framework it's still in development and not tested in production environment.**
+**Please note this framework still in development and not tested in production environment.**

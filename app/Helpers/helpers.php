@@ -247,8 +247,11 @@ function decryptData($value, $key = null)
     }
 }
 
-function generateRandomString($len = 64)
+function generateRandomString($len = 64, $base64 = false)
 {
+    if($base64)
+        return base64_encode(\App\Core\Security\Hash::randomString($len));
+
     return \App\Core\Security\Hash::randomString($len);
 }
 

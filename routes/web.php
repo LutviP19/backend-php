@@ -8,11 +8,8 @@
  * Available router methods : get(), post(), put(), delete().
  */
 
- // Auth
-require_once(__DIR__ . '/auth.php');
-
-// API
-require_once(__DIR__ . '/api.php');
-
 // WEB
-require_once(__DIR__ . '/web.php');
+$router->get('/', 'PagesController@index');
+$router->get('/contact', 'PagesController@contact');
+$router->get('/about', 'PagesController@about');
+$router->get('/extra', 'PagesController@extra');

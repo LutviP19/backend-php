@@ -580,4 +580,4 @@ Now whenever you submit this form without csrf token you will get an exception. 
     <?php echo e($myVariable) ?>
 ```
 
-**Please note that I wrote this mini-framework just for learning purposes and it's not good enough to be used in a production environment.**
+**Please note this framework still in development and not tested in production environment.**

@@ -72,6 +72,7 @@ class InfoCommand extends Command
     {
         $appName = Config::get('app.name');
         $appUrl = Config::get('app.url');
+        $appPath = Config::get('app.path');
         $appEnv = Config::get('app.env');
         $appDebug = Config::get('app.debug') ? 'true' : 'false';
         $appSessionDriver = env('SESSION_DRIVER');
@@ -87,6 +88,7 @@ class InfoCommand extends Command
 
         $info = "App Name: {$appName}".PHP_EOL;
         $info .= "App Url: {$appUrl}".PHP_EOL;
+        $info .= "App Base Path: {$appPath}".PHP_EOL;
         $info .= "App Environment: {$appEnv}".PHP_EOL;
         $info .= "App Debug status: {$appDebug}".PHP_EOL;
         $info .= "App Session driver: {$appSessionDriver}".PHP_EOL;

@@ -18,6 +18,7 @@ return [
         'hash_key' => env('HASH_KEY'),
         'token' => env('HEADER_TOKEN'),
         'url' => env('APP_URL', 'http://localhost'),
+        'path' => BASE_PATH,
         'env' => env('APP_ENV', 'production'),
         'debug' => (bool) env('APP_DEBUG', false),
         'logdir' => __DIR__ . '/../storage/logs/',

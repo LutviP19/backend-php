@@ -247,7 +247,7 @@ function decryptData($value, $key = null)
     }
 }
 
-function generateRandomString($len = 64, $base64 = false)
+function generateRandomString($len = 64, $base64 = false): string
 {
     if($base64)
         return base64_encode(\App\Core\Security\Hash::randomString($len));
@@ -264,14 +264,19 @@ function generateUlid($lowercased = false, $timestamp = null): string
     return (string) \Ulid\Ulid::generate($lowercased);
 }
 
-function sendEmail(string $from = '', string $to, string $subject, $bodyText = '', $bodyHtml = '', array $attachment = [], array $image = [])
+function sendMessageQueue($message): void
+{
+    (new \App\Core\Message\Broker())->sendMessage($message);
+}
+
+function sendEmail(string $from = '', string $to, string $subject, $bodyText = '', $bodyHtml = '', array $attachment = [], array $image = []): void
 {
     $email = (new \App\Core\Mailer\Email);
     $email->prepareData($from, $to, $subject, $bodyText, $bodyHtml, $attachment, $image);
     $email->send();
 }
 
-function isJson($value)
+function isJson($value): bool
 {
     if (!is_string($value)) {
         return false;

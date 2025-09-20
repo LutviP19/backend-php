@@ -2,7 +2,7 @@
     "name": "lutvip19/backend-php",
     "license": "MIT",
     "description": "Simple PHP framework for backend services.",
-    "keywords": ["mvc", "event-driven", "asynchronous", "framework"],
+    "keywords": ["mvc", "event-driven", "asynchronous", "microservice", "framework"],
     "require": {
         "php": "^8.2",
         "symfony/console": "^7.3",

@@ -38,6 +38,6 @@ class EmailNotificationListener
 
         // Send Message Queue
         $message = encryptData(json_encode(['event' => $event::NAME] + $order));
-        (new \App\Core\Message\Broker())->sendMessage($message);
+        sendMessageQueue($message);
     }
 }

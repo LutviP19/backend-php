@@ -65,7 +65,7 @@ info log: storage/logs/app_info.log
 # Demo
 Please read DEMO.txt
 
-# Development Proccess
+# Development Process
 Please read DEV.txt
 
 **Please note this framework still in development and not tested in production environment.**

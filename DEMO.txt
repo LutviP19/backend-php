@@ -168,7 +168,11 @@ Email sent for order: 123
 $ php bin/console app:testing 1
 Output:
 EventListener[message.queue]: [{"id":1,"title":"Title A","contents":"The default interactive shell is now zsh."},{"id":2,"title":"Title B","contents":"To update your account to use zsh"},{"id":3,"title":"Title C","contents":"For more details, please visit"}]
-
+=====
+ [x] 19-09-2025 17:27:20
+event: order.placed
+id: 123
+=====
 
 Non-Blocking Process:
 ---------------------

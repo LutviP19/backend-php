@@ -23,7 +23,18 @@ class EmailNotificationListener
         echo "Email sent for order: " . $order['id'] . PHP_EOL;
 
         // Send Email
-        (new \App\Core\Mailer\Email)->send();
+        $from = "noreplay@hello.test, Backend PHP Mailer";
+        $subject = "New Order";
+        $bodyText = "This is an message for order!";
+        $bodyHtml = "<strong>This is an message for order!</strong>";
+        $attachment = ['/Users/lutvi/Developer/backend-php-master/DEV.txt', '/Users/lutvi/Developer/backend-php-master/DEMO.txt'];
+        $image = [];
+
+        for($i=1; $i <=3; $i++) {
+            $to = "your-email-$i@here.test, Test User $i";
+
+            sendEmail($from, $to, $subject, $bodyText, $bodyHtml, $attachment, $image);
+        }
 
         // Send Message Queue
         $message = encryptData(json_encode(['event' => $event::NAME] + $order));

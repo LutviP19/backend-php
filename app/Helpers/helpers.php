@@ -264,6 +264,13 @@ function generateUlid($lowercased = false, $timestamp = null): string
     return (string) \Ulid\Ulid::generate($lowercased);
 }
 
+function sendEmail(string $from = '', string $to, string $subject, $bodyText = '', $bodyHtml = '', array $attachment = [], array $image = [])
+{
+    $email = (new \App\Core\Mailer\Email);
+    $email->prepareData($from, $to, $subject, $bodyText, $bodyHtml, $attachment, $image);
+    $email->send();
+}
+
 function isJson($value)
 {
     if (!is_string($value)) {

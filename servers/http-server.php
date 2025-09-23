@@ -105,13 +105,13 @@ class MiddlewareB implements MiddlewareInterface
     {
         $requestBody = $request->getBody();
         var_dump('MiddlewareB 1');
-        \App\Core\Support\Log::debug($request, 'Swoole.MiddlewareB.request');
-        \App\Core\Support\Log::debug($requestBody, 'Swoole.MiddlewareB.requestBody');
+        // \App\Core\Support\Log::debug($request, 'Swoole.MiddlewareB.request');
+        // \App\Core\Support\Log::debug($requestBody, 'Swoole.MiddlewareB.requestBody');
 
         $response = $handler->handle($request);
         var_dump('MiddlewareB 2');
-        \App\Core\Support\Log::debug($response, 'Swoole.MiddlewareB.response');
-        \App\Core\Support\Log::debug($response->getStatusCode(), 'Swoole.MiddlewareB.responsegetStatusCode');
+        // \App\Core\Support\Log::debug($response, 'Swoole.MiddlewareB.response');
+        // \App\Core\Support\Log::debug($response->getStatusCode(), 'Swoole.MiddlewareB.responsegetStatusCode');
 
         return $response;
     }
@@ -129,13 +129,13 @@ $server->on('request', function (OpenSwoole\Http\Request $request, OpenSwoole\Ht
             // Perform some asynchronous task (e.g., database query)
             // Replace this with your actual asynchronous operation
 
-            // Return response
-            while(true) {
-                ob_flush();
-                fetchDataAsynchronously($request, $response, $returned[0]);
-                ob_end_flush();
-                break;
-            }
+            // // Return response
+            // while(true) {
+            //     ob_flush();
+            //     fetchDataAsynchronously($request, $response, $returned[0]);
+            //     ob_end_flush();
+            //     break;
+            // }
             
             // // Return content
             // while(true) {
@@ -154,13 +154,13 @@ $server->on('request', function (OpenSwoole\Http\Request $request, OpenSwoole\Ht
             //     break;
             // }
 
-            // // Return void
-            // while(true) {
-            //     ob_flush();
-            //     fetchDataAsynchronously($request, $response, $returned[3]);
-            //     ob_end_flush();
-            //     break;
-            // }
+            // Return void
+            while(true) {
+                // ob_flush();
+                fetchDataAsynchronously($request, $response, $returned[3]);
+                // ob_end_flush();
+                break;
+            }
 
             // // Force Include index.php
             // $file = __DIR__ .'/../public/index.php';
@@ -177,7 +177,7 @@ $server->on('request', function (OpenSwoole\Http\Request $request, OpenSwoole\Ht
             //     // echo "New-FD:{$request->fd}, Created!\n";
 
             //     // Get Assets
-            //     fetchDataAsynchronously($request, $response);
+            //     fetchDataAsynchronously($request, $response, 'assets');
     
             //     ob_start();
             //     include($file);
@@ -201,7 +201,7 @@ $server->on('request', function (OpenSwoole\Http\Request $request, OpenSwoole\Ht
 
 
             // Stop state
-            die();
+            exit();
         });
     // } catch (Throwable $e) {
     //     // Handle exceptions and errors
@@ -235,7 +235,7 @@ function fetchDataAsynchronously(OpenSwoole\Http\Request $request, OpenSwoole\Ht
     // }
     
     initializeServerConstant($request);
-    \App\Core\Support\Log::debug("=============".$request->fd, 'OpenSwoole.fetchDataAsynchronously.separator');
+    // \App\Core\Support\Log::debug("=============".$request->fd, 'OpenSwoole.fetchDataAsynchronously.separator');
     // \App\Core\Support\Log::debug($_SERVER, 'OpenSwoole.fetchDataAsynchronously.$_SERVER');
     // \App\Core\Support\Log::debug($_REQUEST, 'OpenSwoole.fetchDataAsynchronously.$_REQUEST');
 
@@ -253,20 +253,20 @@ function fetchDataAsynchronously(OpenSwoole\Http\Request $request, OpenSwoole\Ht
     
     $fd = $request->fd;
     $uri = $_SERVER['REQUEST_URI'];
-    \App\Core\Support\Log::debug($uri, 'Swoole.fetchDataAsynchronously.$uri');
+    // \App\Core\Support\Log::debug($uri, 'Swoole.fetchDataAsynchronously.$uri');
     $filePath = $baseDir . $uri;
     if (is_dir($filePath)) {
         $filePath = rtrim($filePath, '/') . '/index.php';
     }
 
-    \App\Core\Support\Log::debug($filePath, 'Swoole.fetchDataAsynchronously.$filePath');
+    // \App\Core\Support\Log::debug($filePath, 'Swoole.fetchDataAsynchronously.$filePath');
     if (file_exists($filePath)) {
         $fileInfo = pathinfo($filePath);
         $extension = isset($fileInfo['extension']) ? $fileInfo['extension'] : '';
         // \App\Core\Support\Log::debug($extension, 'Swoole.fetchDataAsynchronously.extension');
 
         $fileName = isset($fileInfo['basename']) ? $fileInfo['basename'] : '';
-        \App\Core\Support\Log::debug($fileName, 'Swoole.fetchDataAsynchronously.fileName');
+        // \App\Core\Support\Log::debug($fileName, 'Swoole.fetchDataAsynchronously.fileName');
 
         switch ($extension) {
             case 'php':
@@ -409,10 +409,10 @@ function fetchDataAsynchronously(OpenSwoole\Http\Request $request, OpenSwoole\Ht
         
         $filePath = $baseDir . '/index.php';
         $lastSegment = $uri;
-        \App\Core\Support\Log::debug($lastSegment, 'Swoole.fetchDataAsynchronously.lastSegment');
+        // \App\Core\Support\Log::debug($lastSegment, 'Swoole.fetchDataAsynchronously.lastSegment');
 
         $fileName = str_replace('/', '', $lastSegment).".php";
-        \App\Core\Support\Log::debug($fileName, 'Swoole.fetchDataAsynchronously.fileName');
+        // \App\Core\Support\Log::debug($fileName, 'Swoole.fetchDataAsynchronously.fileName');
     
         switch ($lastSegment) {
             case '/home':
@@ -446,7 +446,7 @@ function fetchDataAsynchronously(OpenSwoole\Http\Request $request, OpenSwoole\Ht
 
                     $setHeaders[] = "Content-Type, application/json";
 
-                    \App\Core\Support\Log::debug($content, 'Swoole.server.$json');
+                    // \App\Core\Support\Log::debug($content, 'Swoole.server.$json');
                     if($response->isWritable())
                         $response->end($content);
                     else
@@ -462,17 +462,17 @@ function fetchDataAsynchronously(OpenSwoole\Http\Request $request, OpenSwoole\Ht
 
     if($returned === 'tmp') {
         $tmpFile = createTmp($fd, $fileName, $setHeaders, $content);
-        \App\Core\Support\Log::debug($tmpFile, 'Swoole.fetchDataAsynchronously.tmpFile');
+        // \App\Core\Support\Log::debug($tmpFile, 'Swoole.fetchDataAsynchronously.tmpFile');
         return $tmpFile;
     }
 
     if($returned === 'response') {
-        \App\Core\Support\Log::debug($response, 'Swoole.fetchDataAsynchronously.response');
+        // \App\Core\Support\Log::debug($response, 'Swoole.fetchDataAsynchronously.response');
         return $response;
     }
    
     if($returned === 'content') {
-        \App\Core\Support\Log::debug($content, 'Swoole.fetchDataAsynchronously.content');
+        // \App\Core\Support\Log::debug($content, 'Swoole.fetchDataAsynchronously.content');
         return $content;
     }
 }

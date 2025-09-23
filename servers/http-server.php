@@ -1,10 +1,25 @@
 <?php
 
+// Disabled Errors
+ini_set('log_errors', 0);
+ini_set('display_errors', 0);
+ini_set('display_startup_errors', 0);
+error_reporting(0);
+
 require_once __DIR__ . '/bootstrap.php';
 
 
+use OpenSwoole\Http\Request as OpenSwooleRequest;
+use OpenSwoole\Http\Response as OpenSwooleResponse;
+use App\Core\Http\Request as RequestCore;
+use App\Core\Http\Response as ResponseCore;
+use App\Core\Http\Router;
+use App\Core\Support\App;
+use App\Core\Support\Session;
+use App\Core\Validation\MessageBag;
+
 use OpenSwoole\Core\Psr\Middleware\StackHandler;
-use OpenSwoole\Core\Psr\Response;
+use OpenSwoole\Core\Psr\Response as PsrResponse;
 use OpenSwoole\HTTP\Server;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -61,21 +76,14 @@ $server->on("Start", function (Server $server) {
     echo "Swoole http server is started at http://" . $serverip . ":" . $serverport . "\n";
 });
 
-use OpenSwoole\Http\Request as OpenSwooleRequest;
-use OpenSwoole\Http\Response as OpenSwooleResponse;
-use App\Core\Http\Request as RequestCore;
-use App\Core\Http\Response as ResponseCore;
-use App\Core\Http\Router;
-use App\Core\Support\App;
-use App\Core\Support\Session;
-use App\Core\Validation\MessageBag;
+class CustomServerRequest extends \OpenSwoole\Core\Psr\ServerRequest { }
+
 
 class DefaultResponseMiddleware implements MiddlewareInterface
 {
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-
-        return (new Response('aaaaa'))->withHeader('x-a', '1234');
+        return (new PsrResponse('aaaa'))->withHeader('x-a', '1234');
     }
 }
 
@@ -109,26 +117,79 @@ class MiddlewareB implements MiddlewareInterface
     }
 }
 
-// $stack = (new StackHandler())
-//     ->add(new DefaultResponseMiddleware())
-//     ->add(new MiddlewareA())
-//     ->add(new MiddlewareB());
-    
-// $server->setHandler($stack);
-
 
 $server->on('request', function (OpenSwoole\Http\Request $request, OpenSwoole\Http\Response $response) {
     // try {
-        
-        $response = \OpenSwoole\Http\Response::create($request->fd);
-        echo "New-FD:{$request->fd}, Created!\n";
+        // returned of fetchDataAsynchronously
+        $returned = ['response', 'content', 'tmp', 'void'];
 
         // Simulate some asynchronous operation (e.g., fetching data from a database)
-        // go(function () use ($request, $response) {
+        go(function () use ($request, $response, $returned) {
+
             // Perform some asynchronous task (e.g., database query)
             // Replace this with your actual asynchronous operation
-            $file = fetchDataAsynchronously($request, $response);
-            include($file);
+
+            // Return response
+            while(true) {
+                ob_flush();
+                fetchDataAsynchronously($request, $response, $returned[0]);
+                ob_end_flush();
+                break;
+            }
+            
+            // // Return content
+            // while(true) {
+            //     $content = fetchDataAsynchronously($request, $response, $returned[1]);
+            //     $content = (string) $content;
+            //     (new PsrResponse($content))->withHeader();
+            //     break;
+            // }
+
+            // // Return tmp
+            // while(true) {
+            //     ob_flush();
+            //     $tmp = fetchDataAsynchronously($request, $response, $returned[2]);
+            //     include($tmp);
+            //     ob_end_flush();
+            //     break;
+            // }
+
+            // // Return void
+            // while(true) {
+            //     ob_flush();
+            //     fetchDataAsynchronously($request, $response, $returned[3]);
+            //     ob_end_flush();
+            //     break;
+            // }
+
+            // // Force Include index.php
+            // $file = __DIR__ .'/../public/index.php';
+            // initializeServerConstant($request);
+
+            // // if($response->isWritable()) {
+            // //     ob_start();
+            // //     include($file);
+            // //     $content = ob_get_clean();
+            // //     $response->header("Content-Type", "application/json");
+            // //     $response->end($content);
+            // // } else {
+            //     // $response = \OpenSwoole\Http\Response::create($request->fd);
+            //     // echo "New-FD:{$request->fd}, Created!\n";
+
+            //     // Get Assets
+            //     fetchDataAsynchronously($request, $response);
+    
+            //     ob_start();
+            //     include($file);
+            //     $content = ob_get_clean();
+            //     // $response->header("Content-Type", "application/json");
+            //     $response->end($content);
+                
+
+            //     // $content = (string) $content;
+            //     // \App\Core\Support\Log::debug($content, 'OpenSwoole.request.$content');
+            //     // (new PsrResponse($content))->withHeader("Content-Type", "application/json");
+            // // }
 
             // Send response once the asynchronous task is complete
             // if($response->isWritable())
@@ -137,7 +198,11 @@ $server->on('request', function (OpenSwoole\Http\Request $request, OpenSwoole\Ht
                 // $response->detach();
             // else 
                 // $response->end($data);
-        // });
+
+
+            // Stop state
+            die();
+        });
     // } catch (Throwable $e) {
     //     // Handle exceptions and errors
     //     $response->status(500);
@@ -147,11 +212,19 @@ $server->on('request', function (OpenSwoole\Http\Request $request, OpenSwoole\Ht
     // }
 });
 
+
+// $stack = (new StackHandler())
+//     ->add(new DefaultResponseMiddleware())
+//     ->add(new MiddlewareA())
+//     ->add(new MiddlewareB());
+    
+// $server->setHandler($stack);
+
 $server->start();
 
 
 // Simulated asynchronous function to fetch data from a database
-function fetchDataAsynchronously(OpenSwoole\Http\Request $request, OpenSwoole\Http\Response $response) {
+function fetchDataAsynchronously(OpenSwoole\Http\Request $request, OpenSwoole\Http\Response $response, $returned = 'response') {
 
     // $response = \OpenSwoole\Http\Response::create($request->fd);
     // if($response->isWritable())
@@ -201,127 +274,127 @@ function fetchDataAsynchronously(OpenSwoole\Http\Request $request, OpenSwoole\Ht
                     ob_start();
                     include $filePath;
                     $content = ob_get_clean();
-                    // $response->header('Content-Type', 'text/html');
-                    // $response->header('Content-Encoding', 'gzip');
-                    // $response->header('Content-Length', strlen(gzencode($content)));
+                    $response->header('Content-Type', 'text/html');
+                    $response->header('Content-Encoding', 'gzip');
+                    $response->header('Content-Length', strlen(gzencode($content)));
 
                     $setHeaders[] = "Content-Type, text/html";
                     $setHeaders[] = "Content-Encoding, gzip";
                     $setHeaders[] = "Content-Length, ".strlen(gzencode($content));
 
-                    // $response->end(gzencode($content));
+                    $response->end(gzencode($content));
                 // });
                 break;
             case 'ico':
                 $content = file_get_contents($filePath);
-                // $response->header('Content-Type', 'font/otf');
-                // $response->header('Content-Length', strlen($content));
+                $response->header('Content-Type', 'font/otf');
+                $response->header('Content-Length', strlen($content));
 
                 $setHeaders[] = "Content-Type, font/otf";
                 $setHeaders[] = "Content-Length, ".strlen($content);
 
-                // $response->end($content);
+                $response->end($content);
                 break;
             case 'css':
                 $content = file_get_contents($filePath);
-                // $response->header('Content-Type', 'text/css');
-                // $response->header('Content-Length', strlen($content));
+                $response->header('Content-Type', 'text/css');
+                $response->header('Content-Length', strlen($content));
 
                 $setHeaders[] = "Content-Type, text/css";
                 $setHeaders[] = "Content-Length, ".strlen($content);
 
-                // $response->end($content);
+                $response->end($content);
                 break;
             case 'js':
                 $content = file_get_contents($filePath);
-                // $response->header('Content-Type', 'application/javascript');
-                // $response->header('Content-Length', strlen($content));
+                $response->header('Content-Type', 'application/javascript');
+                $response->header('Content-Length', strlen($content));
 
                 $setHeaders[] = "Content-Type, application/javascript";
                 $setHeaders[] = "Content-Length, ".strlen($content);
 
-                // $response->end($content);
+                $response->end($content);
                 break;
             case 'jpg':
             case 'jpeg':
                 $content = file_get_contents($filePath);
-                // $response->header('Content-Type', 'image/jpeg');
-                // $response->header('Content-Length', strlen($content));
+                $response->header('Content-Type', 'image/jpeg');
+                $response->header('Content-Length', strlen($content));
 
                 $setHeaders[] = "Content-Type, image/jpeg";
                 $setHeaders[] = "Content-Length, ".strlen($content);
 
-                // $response->write($content);
+                $response->write($content);
                 break;
             case 'png':
                 $content = file_get_contents($filePath);
-                // $response->header('Content-Type', 'image/png');
-                // $response->header('Content-Length', strlen($content));
+                $response->header('Content-Type', 'image/png');
+                $response->header('Content-Length', strlen($content));
 
                 $setHeaders[] = "Content-Type, image/png";
                 $setHeaders[] = "Content-Length, ".strlen($content);
 
-                // $response->write($content);
+                $response->write($content);
                 break;
             case 'gif':
                 $content = file_get_contents($filePath);
-                // $response->header('Content-Type', 'image/gif');
-                // $response->header('Content-Length', strlen($content));
+                $response->header('Content-Type', 'image/gif');
+                $response->header('Content-Length', strlen($content));
 
                 $setHeaders[] = "Content-Type, image/gif";
                 $setHeaders[] = "Content-Length, ".strlen($content);
 
-                // $response->write($content);
+                $response->write($content);
                 break;
             case 'svg':
                 $content = file_get_contents($filePath);
-                // $response->header('Content-Type', 'image/svg+xml');
-                // $response->header('Content-Length', strlen($content));
+                $response->header('Content-Type', 'image/svg+xml');
+                $response->header('Content-Length', strlen($content));
 
                 $setHeaders[] = "Content-Type, image/svg+xml";
                 $setHeaders[] = "Content-Length, ".strlen($content);
 
-                // $response->write($content);
+                $response->write($content);
                 break;
             case 'woff':
                 $content = file_get_contents($filePath);
-                // $response->header('Content-Type', 'font/woff');
-                // $response->header('Content-Length', strlen($content));
+                $response->header('Content-Type', 'font/woff');
+                $response->header('Content-Length', strlen($content));
 
                 $setHeaders[] = "Content-Type, font/woff";
                 $setHeaders[] = "Content-Length, ".strlen($content);
 
-                // $response->write($content);
+                $response->write($content);
                 break;
             case 'woff2':
                 $content = file_get_contents($filePath);
-                // $response->header('Content-Type', 'font/woff2');
-                // $response->header('Content-Length', strlen($content));
+                $response->header('Content-Type', 'font/woff2');
+                $response->header('Content-Length', strlen($content));
 
                 $setHeaders[] = "Content-Type, font/woff2";
                 $setHeaders[] = "Content-Length, ".strlen($content);
 
-                // $response->write($content);
+                $response->write($content);
                 break;
             case 'ttf':
                 $content = file_get_contents($filePath);
-                // $response->header('Content-Type', 'font/ttf');
-                // $response->header('Content-Length', strlen($content));
+                $response->header('Content-Type', 'font/ttf');
+                $response->header('Content-Length', strlen($content));
 
                 $setHeaders[] = "Content-Type, font/ttf";
                 $setHeaders[] = "Content-Length, ".strlen($content);
 
-                // $response->write($content);
+                $response->write($content);
                 break;
             case 'otf':
                 $content = file_get_contents($filePath);
-                // $response->header('Content-Type', 'font/otf');
-                // $response->header('Content-Length', strlen($content));
+                $response->header('Content-Type', 'font/otf');
+                $response->header('Content-Length', strlen($content));
 
                 $setHeaders[] = "Content-Type, font/otf";
                 $setHeaders[] = "Content-Length, ".strlen($content);
 
-                // $response->write($content);
+                $response->write($content);
                 break;                
             default:
                 break;
@@ -350,18 +423,18 @@ function fetchDataAsynchronously(OpenSwoole\Http\Request $request, OpenSwoole\Ht
                     ob_start();
                     include $filePath;
                     $content = ob_get_clean();
-                    // $response->header('Content-Type', 'text/html');
-                    // $response->header('Content-Encoding', 'gzip');
-                    // $response->header('Content-Length', strlen(gzencode($content)));
+                    $response->header('Content-Type', 'text/html');
+                    $response->header('Content-Encoding', 'gzip');
+                    $response->header('Content-Length', strlen(gzencode($content)));
 
                     $setHeaders[] = "Content-Type, text/html";
                     $setHeaders[] = "Content-Encoding, gzip";
                     $setHeaders[] = "Content-Length, ".strlen(gzencode($content));
 
-                    // if($response->isWritable())
-                    //     $response->end(gzencode($content));
-                    // else
-                    //     echo "{$filePath}, URI Not rendered!";
+                    if($response->isWritable())
+                        $response->end(gzencode($content));
+                    else
+                        echo "{$filePath}, URI Not rendered!";
                 // });
                 break;
             case '/webhook':
@@ -369,15 +442,15 @@ function fetchDataAsynchronously(OpenSwoole\Http\Request $request, OpenSwoole\Ht
                     ob_start();
                     include $filePath;
                     $content = ob_get_clean();
-                    // $response->header("Content-Type", "application/json");
+                    $response->header("Content-Type", "application/json");
 
                     $setHeaders[] = "Content-Type, application/json";
 
-                    // \App\Core\Support\Log::debug($content, 'Swoole.server.$json');
-                    // if($response->isWritable())
-                    //     $response->end($content);
-                    // else
-                    //     echo "{$filePath}, URI Not rendered!";
+                    \App\Core\Support\Log::debug($content, 'Swoole.server.$json');
+                    if($response->isWritable())
+                        $response->end($content);
+                    else
+                        echo "{$filePath}, URI Not rendered!";
                 // });
                 break;
             default:
@@ -387,15 +460,21 @@ function fetchDataAsynchronously(OpenSwoole\Http\Request $request, OpenSwoole\Ht
 
     // session_write_close(); // Ensure session data is saved
 
-    $tmpFile = createTmp($fd, $fileName, $setHeaders, $content);
-    \App\Core\Support\Log::debug($tmpFile, 'Swoole.fetchDataAsynchronously.tmpFile');
-    return $tmpFile;
+    if($returned === 'tmp') {
+        $tmpFile = createTmp($fd, $fileName, $setHeaders, $content);
+        \App\Core\Support\Log::debug($tmpFile, 'Swoole.fetchDataAsynchronously.tmpFile');
+        return $tmpFile;
+    }
 
-    \App\Core\Support\Log::debug($response, 'Swoole.fetchDataAsynchronously.response');
-    return $response;
-
-    \App\Core\Support\Log::debug($content, 'Swoole.fetchDataAsynchronously.content');
-    return $content;
+    if($returned === 'response') {
+        \App\Core\Support\Log::debug($response, 'Swoole.fetchDataAsynchronously.response');
+        return $response;
+    }
+   
+    if($returned === 'content') {
+        \App\Core\Support\Log::debug($content, 'Swoole.fetchDataAsynchronously.content');
+        return $content;
+    }
 }
 
 function createTmp($fd, $fileName, $setHeaders, $content)
@@ -419,24 +498,23 @@ function createTmp($fd, $fileName, $setHeaders, $content)
         $fileContents .= '$response->header("'.$value[0].'", "'.trim($value[1]).'");' . PHP_EOL;
     }
 
-    $content = 
     $content = base64_encode($content);
     $fileContents .= '$content=\''.($content).'\';' . PHP_EOL;
-    $fileContents .= '$response->end(base64_decode($content));' . PHP_EOL;
+    $fileContents .= '$response->write(base64_decode($content));' . PHP_EOL;
 
     // write contents to file
-    @file_put_contents($filePath, $fileContents);
+    file_put_contents($filePath, $fileContents);
     
     return $filePath;
 }
 
-function initializeServerConstant(OpenSwoole\Http\Request $request) {
+function initializeServerConstant($request) { //OpenSwoole\Http\Request 
     // Setup
     global $serverip, $serverport;
 
     $_SERVER = [];
-    $uri = $request->server["request_uri"];
-    $requestip = $request->server["remote_addr"];
+    $uri = $request->server["request_uri"] ?? "/";
+    $requestip = $request->server["remote_addr"] ?? clientIP();
 
     $_SERVER['DOCUMENT_ROOT'] = __DIR__;
     $_SERVER['SERVER_NAME'] = $serverip;

@@ -1,23 +1,17 @@
 <?php
 declare(strict_types=1);
-// Disabled Errors
+
+// Disabled Log Errors
 ini_set('log_errors', 0);
-ini_set('display_errors', 0);
-ini_set('display_startup_errors', 0);
-error_reporting(0);
+// ini_set('display_errors', 0);
+// ini_set('display_startup_errors', 0);
+error_reporting(~E_NOTICE & ~E_DEPRECATED);
 
 require_once __DIR__ . '/bootstrap.php';
 
 
 use OpenSwoole\Http\Request as OpenSwooleRequest;
 use OpenSwoole\Http\Response as OpenSwooleResponse;
-use App\Core\Http\Request as RequestCore;
-use App\Core\Http\Response as ResponseCore;
-use App\Core\Http\Router;
-use App\Core\Support\App;
-use App\Core\Support\Session;
-use App\Core\Validation\MessageBag;
-
 use OpenSwoole\Core\Psr\Middleware\StackHandler;
 use OpenSwoole\Core\Psr\Response as PsrResponse;
 use OpenSwoole\HTTP\Server;
@@ -31,6 +25,12 @@ $serverport = 9501;
 $max_request = 1000;
 
 $server = new Server($serverip, $serverport);
+
+$redis = new \Predis\Client([
+    'host' => config('redis.cache.host'),
+    'port' => config('redis.cache.port'),
+    'database' => config('redis.cache.database')
+]);
 
 // Server settings
 $server->set([
@@ -60,6 +60,10 @@ $server->set([
     // 'open_websocket_protocol' => true,
     // 'open_mqtt_protocol' => true,
 
+    // // Setup SSL files
+    // 'ssl_cert_file' => $ssl_dir . '/ssl.crt',
+    // 'ssl_key_file' => $ssl_dir . '/ssl.key',
+
     // // HTTP2
     // 'http2_header_table_size' => 4095,
     // 'http2_initial_window_size' => 65534,
@@ -77,6 +81,8 @@ $server->on("Start", function (Server $server) {
 });
 
 class CustomServerRequest extends \OpenSwoole\Core\Psr\ServerRequest { }
+
+class ExitException extends Exception { }
 
 
 class DefaultResponseMiddleware implements MiddlewareInterface
@@ -119,100 +125,105 @@ class MiddlewareB implements MiddlewareInterface
 
 
 $server->on('request', function (OpenSwoole\Http\Request $request, OpenSwoole\Http\Response $response) {
-    // try {
+    try {
         // returned of fetchDataAsynchronously
         $returned = ['response', 'content', 'tmp', 'void'];
+        startSession($response);
 
         // Simulate some asynchronous operation (e.g., fetching data from a database)
         go(function () use ($request, $response, $returned) {
-
             // Perform some asynchronous task (e.g., database query)
             // Replace this with your actual asynchronous operation
-
-            // // Return response
-            // while(true) {
-            //     ob_flush();
-            //     fetchDataAsynchronously($request, $response, $returned[0]);
-            //     ob_end_flush();
-            //     break;
-            // }
-            
-            // // Return content
-            // while(true) {
-            //     $content = fetchDataAsynchronously($request, $response, $returned[1]);
-            //     $content = (string) $content;
-            //     (new PsrResponse($content))->withHeader();
-            //     break;
-            // }
-
-            // // Return tmp
-            // while(true) {
-            //     ob_flush();
-            //     $tmp = fetchDataAsynchronously($request, $response, $returned[2]);
-            //     include($tmp);
-            //     ob_end_flush();
-            //     break;
-            // }
-
-            // Return void
-            while(true) {
-                // ob_flush();
-                fetchDataAsynchronously($request, $response, $returned[3]);
-                // ob_end_flush();
-                break;
-            }
-
-            // // Force Include index.php
-            // $file = __DIR__ .'/../public/index.php';
-            // initializeServerConstant($request);
-
-            // // if($response->isWritable()) {
-            // //     ob_start();
-            // //     include($file);
-            // //     $content = ob_get_clean();
-            // //     $response->header("Content-Type", "application/json");
-            // //     $response->end($content);
-            // // } else {
-            //     // $response = \OpenSwoole\Http\Response::create($request->fd);
-            //     // echo "New-FD:{$request->fd}, Created!\n";
-
-            //     // Get Assets
-            //     fetchDataAsynchronously($request, $response, 'assets');
-    
-            //     ob_start();
-            //     include($file);
-            //     $content = ob_get_clean();
-            //     // $response->header("Content-Type", "application/json");
-            //     $response->end($content);
+            try {
+                // // Return response
+                // while(true) {
+                //     ob_flush();
+                //     fetchDataAsynchronously($request, $response, $returned[0]);
+                //     ob_end_flush();
+                //     break;
+                // }
                 
+                // // Return content
+                // while(true) {
+                //     $content = fetchDataAsynchronously($request, $response, $returned[1]);
+                //     $content = (string) $content;
+                //     (new PsrResponse($content))->withHeader();
+                //     break;
+                // }
 
-            //     // $content = (string) $content;
-            //     // \App\Core\Support\Log::debug($content, 'OpenSwoole.request.$content');
-            //     // (new PsrResponse($content))->withHeader("Content-Type", "application/json");
-            // // }
+                // // Return tmp
+                // while(true) {
+                //     ob_flush();
+                //     $tmp = fetchDataAsynchronously($request, $response, $returned[2]);
+                //     include($tmp);
+                //     ob_end_flush();
+                //     break;
+                // }
 
-            // Send response once the asynchronous task is complete
-            // if($response->isWritable())
-                // $response->write($data);
-                // Detach the response, making it independent and send the file descriptor of the client to a task
-                // $response->detach();
-            // else 
-                // $response->end($data);
+                // Return void
+                while(true) {
+                    // ob_flush();
+                    fetchDataAsynchronously($request, $response, $returned[3]);
+                    // ob_end_flush();
+                    break;
+                }
+
+                // // Force Include index.php
+                // $file = __DIR__ .'/../public/index.php';
+                // initializeServerConstant($request);
+
+                // // if($response->isWritable()) {
+                // //     ob_start();
+                // //     include($file);
+                // //     $content = ob_get_clean();
+                // //     $response->header("Content-Type", "application/json");
+                // //     $response->end($content);
+                // // } else {
+                //     // $response = \OpenSwoole\Http\Response::create($request->fd);
+                //     // echo "New-FD:{$request->fd}, Created!\n";
+
+                //     // Get Assets
+                //     fetchDataAsynchronously($request, $response, 'assets');
+        
+                //     ob_start();
+                //     include($file);
+                //     $content = ob_get_clean();
+                //     // $response->header("Content-Type", "application/json");
+                //     $response->end($content);
+                    
+
+                //     // $content = (string) $content;
+                //     // \App\Core\Support\Log::debug($content, 'OpenSwoole.request.$content');
+                //     // (new PsrResponse($content))->withHeader("Content-Type", "application/json");
+                // // }
+
+                // Send response once the asynchronous task is complete
+                // if($response->isWritable())
+                    // $response->write($data);
+                    // Detach the response, making it independent and send the file descriptor of the client to a task
+                    // $response->detach();
+                // else 
+                    // $response->end($data);
 
 
-            // Stop state
-            exit();
+                // Stop state
+                // exit(1);
+                throw new ExitException();
+            } catch(ExitException $e) {
+                // ... handle gracefully ...
+                exit(1);
+            }
         });
-    // } catch (Throwable $e) {
-    //     // Handle exceptions and errors
-    //     $response->status(500);
-    //     $response->end('Internal Server Error');
-    //     // Log the exception or send it to an error monitoring service
-    //     echo "Exception: " . $e->getMessage() . "\n";
-    // }
+    } catch (Throwable $e) {
+        // Handle exceptions and errors
+        $response->status(500);
+        $response->end('Internal Server Error');
+        // Log the exception or send it to an error monitoring service
+        echo "Exception: " . $e->getMessage() . "\n";
+    }
 });
 
-
+// Use Middleware
 // $stack = (new StackHandler())
 //     ->add(new DefaultResponseMiddleware())
 //     ->add(new MiddlewareA())
@@ -236,6 +247,7 @@ function fetchDataAsynchronously(OpenSwoole\Http\Request $request, OpenSwoole\Ht
     
     // Init Server constants
     initializeServerConstant($request);
+    
     // Get header metadata
     $headers = getallheaders();
 
@@ -430,6 +442,10 @@ function fetchDataAsynchronously(OpenSwoole\Http\Request $request, OpenSwoole\Ht
         }
     }
 
+    
+    saveSession();
+    session_write_close(); // Ensure session data is saved
+
     if($returned === 'tmp') {
         $tmpFile = createTmp($fd, $fileName, $setHeaders, $content);
         return $tmpFile;
@@ -527,5 +543,41 @@ function initializeServerConstant($request) { //OpenSwoole\Http\Request
         foreach ($request->cookie as $key => $value) {
             $_COOKIE[$key] = $value;
         }
+    }
+}
+
+function startSession($response) {
+    global $redis;
+
+    $sessionExp = 60*60*24*2;
+    $sessionId = session_id();
+
+    if (is_null($_COOKIE['BACKENDPHPSESSID'])) {
+        $response->header('Set-Cookie', "BACKENDPHPSESSID={$sessionId}; Max-Age={$sessionExp}; Path=/; SameSite=Lax;");
+
+        $redis->set("session:$sessionId", serialize($_SESSION));
+    } else {
+        $sessionId = $_COOKIE['BACKENDPHPSESSID'];
+    }
+
+    $sessionData = $redis->get("session:$sessionId");
+
+    // \App\Core\Support\Log::debug("Current Session ID: " . $sessionId, 'startSession.sessionId');
+    // \App\Core\Support\Log::debug($sessionData, 'startSession.sessionData');
+    // \App\Core\Support\Log::debug($_COOKIE, 'startSession.$_COOKIE');
+
+    if ($sessionData) {
+        $_SESSION = unserialize($sessionData);
+    } else {
+        $_SESSION = [];
+    }
+}
+
+function saveSession() {
+    global $redis;
+
+    if (!is_null($_COOKIE['BACKENDPHPSESSID'])) {
+        $sessionId = $_COOKIE['BACKENDPHPSESSID'];
+        $redis->set("session:$sessionId", serialize($_SESSION));
     }
 }

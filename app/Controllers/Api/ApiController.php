@@ -43,6 +43,7 @@ class ApiController extends BaseController
             // Validate token
             $this->validateToken($this->request(), $this->response());
         }
+        // \App\Core\Support\Log::debug($_SERVER['SERVER_PORT'], 'ApiController.SERVER_PORT');
 
         // Validate with session data
         if (Session::has('uid') && Session::has('secret') && Session::has('jwtId')) {

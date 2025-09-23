@@ -24,12 +24,14 @@ class WebhookController extends ApiController
         parent::__construct();
 
         // Middlewares
-        try {
-            (new \App\Core\Security\Middleware\RateLimiter('webhook_request'))
-                ->setup(clientIP(), 5, 500, 1200);
-        } 
-        catch(Exception $exception) {
-            die($exception->getMessage());
+        if($_SERVER['SERVER_PORT'] !== 9501) { // OpenSwoole Server
+            try {
+                (new \App\Core\Security\Middleware\RateLimiter('webhook_request'))
+                    ->setup(clientIP(), 5, 500, 1200);
+            } 
+            catch(Exception $exception) {
+                die($exception->getMessage());
+            }
         }
     }
 
@@ -132,6 +134,7 @@ class WebhookController extends ApiController
         $output = $this->getOutput(true, 200, [
                 'message' => 'Hello world!', 
                 'client_ip' => clientIP(),
+                'session_id' => session_id(),
                 'ulid' => $ulid,
                 'token_jwt' => $tokenJwt,
                 'parse_jwt' => $jwtToken->parseJwt($tokenJwt),

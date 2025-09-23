@@ -15,7 +15,7 @@ $dotenv->load();
 
 date_default_timezone_set(env('APP_TIMEZONE', 'Asia/Jakarta'));
 
-if (session_status() === PHP_SESSION_NONE) {
+if (PHP_SESSION_NONE == session_status()) {
     //Starting the session will be the first we do.
     ini_set('session.save_handler', env('SESSION_DRIVER', 'file'));
     if (env('SESSION_DRIVER') === "redis") {

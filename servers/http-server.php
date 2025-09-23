@@ -23,6 +23,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 $serverip = "127.0.0.1";
 $serverport = 9501;
 $max_request = 1000;
+$ssl_dir = __DIR__ . "/../storage/ssl";
 
 $server = new Server($serverip, $serverport);
 
@@ -60,9 +61,9 @@ $server->set([
     // 'open_websocket_protocol' => true,
     // 'open_mqtt_protocol' => true,
 
-    // // Setup SSL files
-    // 'ssl_cert_file' => $ssl_dir . '/ssl.crt',
-    // 'ssl_key_file' => $ssl_dir . '/ssl.key',
+    // Setup SSL files
+    'ssl_cert_file' => $ssl_dir . '/ssl.crt',
+    'ssl_key_file' => $ssl_dir . '/ssl.key',
 
     // // HTTP2
     // 'http2_header_table_size' => 4095,

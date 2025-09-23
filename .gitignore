@@ -2,6 +2,7 @@
 .env.backup
 *.pid
 NOTES.txt
+/tools
 /node_modules
 /vendor
 /.fleet

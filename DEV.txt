@@ -13,6 +13,7 @@
 - GraphQL
 - No SQL [MongoDB]
 
+- Open Swoole [PHP Server]
 - Health checks [Auto recovery]
 - Tools monitoring [Prometheus, ELK Stack, Jaeger]
 

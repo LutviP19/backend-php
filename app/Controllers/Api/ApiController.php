@@ -20,24 +20,29 @@ class ApiController extends BaseController
         parent::__construct();
 
         // Accepted type is JSON
-        if (false === $this->request()->isJsonRequest()) {
-            die(
-                $this->response()->json(
-                    $this->getOutput(false, 403, [
-                        'Invalid format!',
-                    ], 'Only accepted JSON.')
-                    , 403)
-            );
+        if($_SERVER['SERVER_PORT'] !== 9501) { // OpenSwoole Server
+            if (false === $this->request()->isJsonRequest()) {
+                die(
+                    $this->response()->json(
+                        $this->getOutput(false, 403, [
+                            'Invalid format!',
+                        ], 'Only accepted JSON.')
+                        , 403)
+                );
+            }
         }
 
         // Middlewares
         (new \App\Core\Security\Middleware\EnsureIpIsValid())
             ->handle($this->request(), $this->response(), $this->response());
-        (new \App\Core\Security\Middleware\EnsureHeaderIsValid())
+
+        if($_SERVER['SERVER_PORT'] !== 9501) { // OpenSwoole Server
+            (new \App\Core\Security\Middleware\EnsureHeaderIsValid())
             ->handle($this->request(), $this->response());
 
-        // Validate token
-        $this->validateToken($this->request(), $this->response());
+            // Validate token
+            $this->validateToken($this->request(), $this->response());
+        }
 
         // Validate with session data
         if (Session::has('uid') && Session::has('secret') && Session::has('jwtId')) {

@@ -1,6 +1,6 @@
 <?php
 
-define('BASE_PATH', str_replace('config', '', __DIR__));
+if (!defined('BASE_PATH')) define('BASE_PATH', str_replace('config', '', __DIR__));
 
 /**
  * Config values for our application.

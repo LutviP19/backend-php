@@ -42,7 +42,9 @@ class Response
      */
     public function header($key,$value,$statusCode = 200,$replace = true)
     {
+        if (!headers_sent())
         header("{$key}: {$value}",$replace,$statusCode);
+    
         return $this;
     }
 
@@ -56,6 +58,17 @@ class Response
     {
         http_response_code($code);
         return $this;
+    }
+
+    /**
+     * set a response code.
+     * 
+     * @param int $code
+     * @return Response
+     */
+    public function getStatusCode()
+    {
+        return http_response_code();
     }
 
     /**

@@ -58,6 +58,16 @@ function url($uri = '')
     return "http://{$_SERVER['HTTP_HOST']}/{$uri}";
 }
 
+function assets($uri = '')
+{
+    $uri = sanitizeUri($uri);
+    if($_SERVER['SERVER_PORT'] === 9501) { // OpenSwoole Server
+        return "http://{$_SERVER['HTTP_HOST']}/{$uri}";
+    }
+
+    return "http://{$_SERVER['HTTP_HOST']}/{$uri}";
+}
+
 /**
  * Get the current url.
  *

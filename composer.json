@@ -18,7 +18,10 @@
         "robinvdvleuten/ulid": "^5.0",
         "rbdwllr/reallysimplejwt": "^5.0",
         "maba/gentle-force": "^0.3.1",
-        "predis/predis": "^1.1"
+        "predis/predis": "^1.1",
+        "psr/http-message": "^2.0",
+        "psr/http-server-middleware": "^1.0",
+        "openswoole/core": "^22.2"
     },
     "bin": [
         "bin/console"

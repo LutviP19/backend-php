@@ -45,24 +45,26 @@ class WebhookController extends ApiController
         // \App\Core\Support\Log::debug(gettype($request), 'WebhookController.index.gettype($request)');
         \App\Core\Support\Log::debug($request, 'WebhookController.index.$request');
 
-        $validator = new Validator;
-        $validator->validate($request, [
-            'email' => 'required|email',
-            'password'  => 'required|min:8|max:100',
-        ]);
-        $errors = errors()->all();
-        \App\Core\Support\Log::debug($errors, 'WebhookController.index.errors');
+        if($_SERVER['SERVER_PORT'] !== 9501) { // OpenSwoole Server
+            $validator = new Validator;
+            $validator->validate($request, [
+                'email' => 'required|email',
+                'password'  => 'required|min:8|max:100',
+            ]);
+            $errors = errors()->all();
+            \App\Core\Support\Log::debug($errors, 'WebhookController.index.errors');
 
-        if($errors) {
-            $callback = function(){ return false; };
+            if($errors) {
+                $callback = function(){ return false; };
 
-            \App\Core\Support\Log::debug(gettype($callback), 'WebhookController.index.gettype($callback)');
+                \App\Core\Support\Log::debug(gettype($callback), 'WebhookController.index.gettype($callback)');
 
-            die($response->json(
-                $this->getOutput(false, 203, [
-                   $errors
-                ])
-             , 203));
+                die($response->json(
+                    $this->getOutput(false, 203, [
+                       $errors
+                    ])
+                 , 203));
+            }
         }
 
         // \App\Core\Support\Log::debug($_REQUEST, 'WebhookController.index.$_REQUEST');

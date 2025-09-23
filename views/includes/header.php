@@ -21,7 +21,7 @@
             flex: 1 0 auto;
         }
     </style>
-    <link rel="stylesheet" href="<?= url('/css/materialize.min.css') ?>">
+    <link rel="stylesheet" href="<?= assets('/css/materialize.min.css') ?>">
     <title><?= config('app.name'); ?></title>
 </head>
 <body class="grey-text text-darken-2">

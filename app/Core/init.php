@@ -1,6 +1,6 @@
 <?php
 
-define('BASEPATH', __DIR__ . '/../..');
+if (!defined('BASEPATH')) define('BASEPATH', __DIR__ . '/../..');
 
 /* ----------------------------- Default settings START -------------------------------- */
 
@@ -15,17 +15,20 @@ $dotenv->load();
 
 date_default_timezone_set(env('APP_TIMEZONE', 'Asia/Jakarta'));
 
-//Starting the session will be the first we do.
-ini_set('session.save_handler', env('SESSION_DRIVER', 'file'));
-if (env('SESSION_DRIVER') === "redis") {
-    ini_set('session.save_path', "tcp://" . env('REDIS_HOST') . ":" . env('REDIS_PORT') . "?auth" . env('REDIS_PASSWORD'));
-    ini_set('session.gc_maxlifetime', (env('SESSION_LIFETIME', 120) * 60)); // Set default to 2 hours
-} else {
-    ini_set('session.save_path', __DIR__ . '/../../storage/framework/sessions');
-}
+if (session_status() === PHP_SESSION_NONE) {
+    //Starting the session will be the first we do.
+    ini_set('session.save_handler', env('SESSION_DRIVER', 'file'));
+    if (env('SESSION_DRIVER') === "redis") {
+        ini_set('session.save_path', "tcp://" . env('REDIS_HOST') . ":" . env('REDIS_PORT') . "?auth" . env('REDIS_PASSWORD'));
+        ini_set('session.gc_maxlifetime', (env('SESSION_LIFETIME', 120) * 60)); // Set default to 2 hours
+    } else {
+        ini_set('session.save_path', __DIR__ . '/../../storage/framework/sessions');
+    }
 
-session_name('BACKENDPHPSESSID'); // Set a custom session name
-session_start();
+    session_name('BACKENDPHPSESSID'); // Set a custom session name
+
+    session_start();
+}
 /* ----------------------------- Default settings END -------------------------------- */
 
 /**

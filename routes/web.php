@@ -9,6 +9,7 @@
  */
 
 // WEB
+$router->get('', 'PagesController@index');
 $router->get('/', 'PagesController@index');
 $router->get('/contact', 'PagesController@contact');
 $router->get('/about', 'PagesController@about');

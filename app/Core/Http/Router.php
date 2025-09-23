@@ -157,7 +157,8 @@ class Router
             );
         }else{
             //no route registered with the uri.
-            throw new Exception("Route not Found!");
+            if($_SERVER['SERVER_PORT'] !== 9501)
+                throw new Exception("Route not Found!");
         }
     }
 

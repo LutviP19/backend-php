@@ -1,5 +1,5 @@
 <?php
-
+declare(strict_types=1);
 // Disabled Errors
 ini_set('log_errors', 0);
 ini_set('display_errors', 0);
@@ -44,10 +44,10 @@ $server->set([
     "log_date_format" => "%d-%m-%Y %H:%M:%S",
     "log_date_with_microseconds" => false,
 
-    // // Compression
-    // 'http_compression' => true,
-    // 'http_compression_level' => 3, // 1 - 9
-    // 'compression_min_length' => 20,
+    // Compression
+    'http_compression' => true,
+    'http_compression_level' => 3, // 1 - 9
+    'compression_min_length' => 20,
 
     // // Coroutine
     // 'enable_coroutine' => true,
@@ -226,64 +226,48 @@ $server->start();
 // Simulated asynchronous function to fetch data from a database
 function fetchDataAsynchronously(OpenSwoole\Http\Request $request, OpenSwoole\Http\Response $response, $returned = 'response') {
 
-    // $response = \OpenSwoole\Http\Response::create($request->fd);
-    // if($response->isWritable())
+    // Check response status
+    if($response->isWritable())
         echo "FD:{$request->fd}, rendered!\n";
-    // else {
-    //     $response = \OpenSwoole\Http\Response::create($request->fd+1);
-    //     echo "New-FD:{$request->fd}, Created!\n";
-    // }
+    else {
+        $response = \OpenSwoole\Http\Response::create($request->fd);
+        echo "New-FD:{$request->fd}, Created!\n";
+    }
     
+    // Init Server constants
     initializeServerConstant($request);
-    // \App\Core\Support\Log::debug("=============".$request->fd, 'OpenSwoole.fetchDataAsynchronously.separator');
-    // \App\Core\Support\Log::debug($_SERVER, 'OpenSwoole.fetchDataAsynchronously.$_SERVER');
-    // \App\Core\Support\Log::debug($_REQUEST, 'OpenSwoole.fetchDataAsynchronously.$_REQUEST');
-
+    // Get header metadata
     $headers = getallheaders();
-    // \App\Core\Support\Log::debug($headers, 'Swoole.fetchDataAsynchronously.headers');
-    // \App\Core\Support\Log::debug($request, 'Swoole.fetchDataAsynchronously.request');
-    // \App\Core\Support\Log::debug($request->fd, 'Swoole.fetchDataAsynchronously.$request->fd');
-    
-    // \App\Core\Support\Log::debug($response, 'Swoole.fetchDataAsynchronously.$response');
-    // \App\Core\Support\Log::debug($response->fd, 'Swoole.fetchDataAsynchronously.$response->fd');
-
-    // startSession();
 
     $baseDir = __DIR__ .'/../public';
     
     $fd = $request->fd;
     $uri = $_SERVER['REQUEST_URI'];
-    // \App\Core\Support\Log::debug($uri, 'Swoole.fetchDataAsynchronously.$uri');
+    
     $filePath = $baseDir . $uri;
     if (is_dir($filePath)) {
         $filePath = rtrim($filePath, '/') . '/index.php';
     }
 
-    // \App\Core\Support\Log::debug($filePath, 'Swoole.fetchDataAsynchronously.$filePath');
     if (file_exists($filePath)) {
         $fileInfo = pathinfo($filePath);
         $extension = isset($fileInfo['extension']) ? $fileInfo['extension'] : '';
-        // \App\Core\Support\Log::debug($extension, 'Swoole.fetchDataAsynchronously.extension');
-
         $fileName = isset($fileInfo['basename']) ? $fileInfo['basename'] : '';
-        // \App\Core\Support\Log::debug($fileName, 'Swoole.fetchDataAsynchronously.fileName');
 
         switch ($extension) {
             case 'php':
-                // go(function () use ($filePath, $response) {
-                    ob_start();
-                    include $filePath;
-                    $content = ob_get_clean();
-                    $response->header('Content-Type', 'text/html');
-                    $response->header('Content-Encoding', 'gzip');
-                    $response->header('Content-Length', strlen(gzencode($content)));
+                ob_start();
+                include $filePath;
+                $content = ob_get_clean();
+                $response->header('Content-Type', 'text/html');
+                $response->header('Content-Encoding', 'gzip');
+                $response->header('Content-Length', strlen(gzencode($content)));
 
-                    $setHeaders[] = "Content-Type, text/html";
-                    $setHeaders[] = "Content-Encoding, gzip";
-                    $setHeaders[] = "Content-Length, ".strlen(gzencode($content));
+                $setHeaders[] = "Content-Type, text/html";
+                $setHeaders[] = "Content-Encoding, gzip";
+                $setHeaders[] = "Content-Length, ".strlen(gzencode($content));
 
-                    $response->end(gzencode($content));
-                // });
+                $response->end(gzencode($content));
                 break;
             case 'ico':
                 $content = file_get_contents($filePath);
@@ -400,79 +384,62 @@ function fetchDataAsynchronously(OpenSwoole\Http\Request $request, OpenSwoole\Ht
                 break;
         }
     } else {
-
-        // $path = parse_url($url, PHP_URL_PATH);
-        // $pathTrimmed = trim($path, '/');
-        // $segments = explode('/', $pathTrimmed);
-        // $lastSegment = end($segments);
-        
         
         $filePath = $baseDir . '/index.php';
         $lastSegment = $uri;
-        // \App\Core\Support\Log::debug($lastSegment, 'Swoole.fetchDataAsynchronously.lastSegment');
 
         $fileName = str_replace('/', '', $lastSegment).".php";
-        // \App\Core\Support\Log::debug($fileName, 'Swoole.fetchDataAsynchronously.fileName');
     
+        // Routing content
         switch ($lastSegment) {
             case '/home':
             case '/contact':
             case '/about':
             case '/extra':
-                // go(function () use ($filePath, $response) {
-                    ob_start();
-                    include $filePath;
-                    $content = ob_get_clean();
-                    $response->header('Content-Type', 'text/html');
-                    $response->header('Content-Encoding', 'gzip');
-                    $response->header('Content-Length', strlen(gzencode($content)));
+                ob_start();
+                include $filePath;
+                $content = ob_get_clean();
+                $response->header('Content-Type', 'text/html');
+                $response->header('Content-Encoding', 'gzip');
+                $response->header('Content-Length', strlen(gzencode($content)));
 
-                    $setHeaders[] = "Content-Type, text/html";
-                    $setHeaders[] = "Content-Encoding, gzip";
-                    $setHeaders[] = "Content-Length, ".strlen(gzencode($content));
+                $setHeaders[] = "Content-Type, text/html";
+                $setHeaders[] = "Content-Encoding, gzip";
+                $setHeaders[] = "Content-Length, ".strlen(gzencode($content));
 
-                    if($response->isWritable())
-                        $response->end(gzencode($content));
-                    else
-                        echo "{$filePath}, URI Not rendered!";
-                // });
+                if($response->isWritable())
+                    $response->end(gzencode($content));
+                else
+                    echo "{$filePath}, URI Not rendered!";
                 break;
             case '/webhook':
-                // go(function () use ($filePath, $response) {
-                    ob_start();
-                    include $filePath;
-                    $content = ob_get_clean();
-                    $response->header("Content-Type", "application/json");
+                ob_start();
+                include $filePath;
+                $content = ob_get_clean();
+                $response->header("Content-Type", "application/json");
 
-                    $setHeaders[] = "Content-Type, application/json";
+                $setHeaders[] = "Content-Type, application/json";
 
-                    // \App\Core\Support\Log::debug($content, 'Swoole.server.$json');
-                    if($response->isWritable())
-                        $response->end($content);
-                    else
-                        echo "{$filePath}, URI Not rendered!";
-                // });
+                if($response->isWritable())
+                    $response->end($content);
+                else
+                    echo "{$filePath}, URI Not rendered!";
                 break;
             default:
                 break;
         }
     }
 
-    // session_write_close(); // Ensure session data is saved
-
     if($returned === 'tmp') {
         $tmpFile = createTmp($fd, $fileName, $setHeaders, $content);
-        // \App\Core\Support\Log::debug($tmpFile, 'Swoole.fetchDataAsynchronously.tmpFile');
         return $tmpFile;
     }
 
     if($returned === 'response') {
-        // \App\Core\Support\Log::debug($response, 'Swoole.fetchDataAsynchronously.response');
         return $response;
     }
    
     if($returned === 'content') {
-        // \App\Core\Support\Log::debug($content, 'Swoole.fetchDataAsynchronously.content');
         return $content;
     }
 }
@@ -560,30 +527,5 @@ function initializeServerConstant($request) { //OpenSwoole\Http\Request
         foreach ($request->cookie as $key => $value) {
             $_COOKIE[$key] = $value;
         }
-    }
-}
-
-function startSession() {
-    global $redis;
-    if (!isset($_COOKIE['BACKENDPHPSESSID'])) {
-        $sessionId = bin2hex(random_bytes(16));
-        setcookie('BACKENDPHPSESSID', $sessionId);
-    } else {
-        $sessionId = $_COOKIE['BACKENDPHPSESSID'];
-    }
-
-    $sessionData = $redis->get("session:$sessionId");
-    if ($sessionData) {
-        $_SESSION = unserialize($sessionData);
-    } else {
-        $_SESSION = [];
-    }
-}
-
-function saveSession() {
-    global $redis;
-    if (isset($_COOKIE['BACKENDPHPSESSID'])) {
-        $sessionId = $_COOKIE['BACKENDPHPSESSID'];
-        $redis->set("session:$sessionId", serialize($_SESSION));
     }
 }

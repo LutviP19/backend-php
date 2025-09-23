@@ -124,7 +124,7 @@ $server->on('request', function (OpenSwoole\Http\Request $request, OpenSwoole\Ht
         echo "New-FD:{$request->fd}, Created!\n";
 
         // Simulate some asynchronous operation (e.g., fetching data from a database)
-        go(function () use ($request, $response) {
+        // go(function () use ($request, $response) {
             // Perform some asynchronous task (e.g., database query)
             // Replace this with your actual asynchronous operation
             $file = fetchDataAsynchronously($request, $response);
@@ -137,7 +137,7 @@ $server->on('request', function (OpenSwoole\Http\Request $request, OpenSwoole\Ht
                 // $response->detach();
             // else 
                 // $response->end($data);
-        });
+        // });
     // } catch (Throwable $e) {
     //     // Handle exceptions and errors
     //     $response->status(500);

@@ -9,14 +9,14 @@ class App
 {
     /**
      * All registered keys.
-     * 
+     *
      * @var array
      */
     protected static $registry = [];
 
     /**
      * Get a value from the registry.
-     * 
+     *
      * @param string $key
      * @return mixed
      */
@@ -27,7 +27,7 @@ class App
 
     /**
      * Check if a value exists in the registry.
-     * 
+     *
      * @param string $key
      * @return bool
      */
@@ -38,7 +38,7 @@ class App
 
     /**
      * Register a value into the App container.
-     * 
+     *
      * @param string $key
      * @param mixed $value
      * @return void

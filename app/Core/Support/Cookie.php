@@ -7,10 +7,9 @@ namespace App\Core\Support;
  */
 class Cookie
 {
-
     /**
      * Get a value.
-     * 
+     *
      * @param string $key
      * @return mixed
      */
@@ -21,7 +20,7 @@ class Cookie
 
     /**
      * Set a value.
-     * 
+     *
      * @param string $key
      * @param string $value
      * @return bool
@@ -33,7 +32,7 @@ class Cookie
 
     /**
      * Determine if a value exists.
-     * 
+     *
      * @param string $key
      * @return bool
      */
@@ -44,7 +43,7 @@ class Cookie
 
     /**
      * Unset/Remove a value.
-     * 
+     *
      * @param string $key
      * @return void
      */

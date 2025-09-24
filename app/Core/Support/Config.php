@@ -9,7 +9,7 @@ class Config
 {
     /**
      * Get a value
-     * 
+     *
      * @param string $key
      * @return mixed
      */

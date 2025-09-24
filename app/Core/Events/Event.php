@@ -6,7 +6,6 @@ use Roolith\Event\Event as RoolithEvent;
 
 class Event extends RoolithEvent
 {
-    
 }
 
 // https://github.com/im4aLL/roolith-event/tree/master

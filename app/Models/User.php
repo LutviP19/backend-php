@@ -7,63 +7,65 @@ use App\Core\Database\QueryBuilder; // import the class.
 
 class User extends Model
 {
-	/**
-	 * Table to query from.
-	 *
-	 * @var string
-	 */
-	protected $table = "users";
+    /**
+     * Table to query from.
+     *
+     * @var string
+     */
+    protected $table = "users";
 
-	/**
-	 * Primary key column name.
-	 *
-	 * @var string
-	 */
-	protected $pk = "id";
+    /**
+     * Primary key column name.
+     *
+     * @var string
+     */
+    protected $pk = "id";
 
 
-	//user model code....
+    //user model code....
 
-	public static function getUserByEmail($email)
-	{
-		return self::select([
-			'ulid',
-			'name',
-			'email',
-			'password',
-			'client_token',
-			'current_team_id',
-			'profile_photo_path',
-			'first_name',
-			'last_name',
-			'default_url'
-		])
-			->where('email', '=', $email)
-			->whereAnd('status', '=', 1)
-			->first();
-	}
+    public static function getUserByEmail($email)
+    {
+        return self::select([
+            'ulid',
+            'name',
+            'email',
+            'password',
+            'client_token',
+            'current_team_id',
+            'profile_photo_path',
+            'first_name',
+            'last_name',
+            'default_url'
+        ])
+            ->where('email', '=', $email)
+            ->whereAnd('status', '=', 1)
+            ->first();
+    }
 
-	public static function getUlid($id)
-	{
-		$data = self::select(['ulid'])->where('id', '=', $id)->first();
-		// \App\Core\Support\Log::debug($data, 'UserModel.getUlid');
+    public static function getUlid($id)
+    {
+        $data = self::select(['ulid'])->where('id', '=', $id)->first();
+        // \App\Core\Support\Log::debug($data, 'UserModel.getUlid');
 
-		if ($data)
-			return $data->ulid;
+        if ($data) {
+            return $data->ulid;
+        }
 
-		return false;
-	}
+        return false;
+    }
 
-	public static function updateClientToken($columnId, $id)
-	{
-		$token = generateRandomString();
+    public static function updateClientToken($columnId, $id)
+    {
+        $token = generateRandomString();
 
-		self::primaryKey($columnId);
-		$update = self::updateWhere(['client_token' => $token], $columnId, $id);
+        self::primaryKey($columnId);
+        $update = self::updateWhere(['client_token' => $token], $columnId, $id);
 
-		if (true === $update)
-			return $token;
-		else
-			return null;
-	}
+        if (true === $update) {
+            return $token;
+        } else {
+            return null;
+        }
+    }
 }

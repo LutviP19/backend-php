@@ -1,4 +1,5 @@
 <?php
+
 define('APP_START', microtime(true));
 define('BASEPATH', __DIR__ . '/..');
 

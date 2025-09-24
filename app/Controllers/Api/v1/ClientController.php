@@ -11,7 +11,6 @@ use App\Core\Http\{Request, Response};
 
 class ClientController extends ApiController
 {
-
     public function __construct()
     {
         parent::__construct();

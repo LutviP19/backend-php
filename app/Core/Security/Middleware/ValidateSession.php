@@ -11,7 +11,7 @@ class ValidateSession
      * Handle an incoming request.
      *
      * @param  (\App\Core\Http\Request): (\App\Core\Http\Response)
-     * 
+     *
      * @return \App\Core\Http\Response
      */
     public function handle(Request $request, Response $response): Response
@@ -25,13 +25,13 @@ class ValidateSession
         // Invalid session data
         if ($status === false) {
             die($response->json(
-                    [
+                [
                         'status' => false,
                         'statusCode' => 401,
                         'message' => 'invalid credentials!',
                     ],
-                    401
-                ));
+                401
+            ));
         }
 
         return $response;

@@ -10,7 +10,7 @@ class MessageBag
      * All messages or errors. We will use it
      * specifically for Validation but it can
      * be used for others stuff.
-     * 
+     *
      * @var array|[]
      */
     protected $messages = [];
@@ -18,27 +18,27 @@ class MessageBag
     /**
      * Session object for storing messages into
      * the session for next request.
-     * 
+     *
      * @var \App\Core\Support\Session
      */
     protected $session;
 
     /**
-     * 
+     *
      */
     public function __construct(Session $session)
     {
-       $this->setSession($session);
+        $this->setSession($session);
     }
 
     /**
      * Set a message/error to an array on messages.
-     * 
+     *
      * @param string $key
      * @param string $message
      * @return void
      */
-    public function setMessage($key,$message)
+    public function setMessage($key, $message)
     {
         $this->messages[$key][] = $message;
     }
@@ -46,7 +46,7 @@ class MessageBag
     /**
      * Check if we have any messages/errors in
      * the main messages array.
-     * 
+     *
      * @return bool
      */
     public function hasMessages()
@@ -56,7 +56,7 @@ class MessageBag
 
     /**
      * Retreive all the messages/errors.
-     * 
+     *
      * @return array
      */
     public function all()
@@ -67,7 +67,7 @@ class MessageBag
     /**
      * Check if we have a certain messages array
      * inside the main array.
-     * 
+     *
      * @param string $key
      * @return bool
      */
@@ -78,7 +78,7 @@ class MessageBag
 
     /**
      * Retrieve the first value from sub-messages array.
-     * 
+     *
      * @param string $key
      * @return string|''
      */
@@ -86,10 +86,10 @@ class MessageBag
     {
         return $this->has($key) ? $this->messages[$key][0] : '';
     }
-    
+
     /**
      * Retrieve all messages from sub-messages array.
-     * 
+     *
      * @param string $key
      * @return array|''
      */
@@ -101,7 +101,7 @@ class MessageBag
     /**
      * Set messages/errors to the main messges
      * array.
-     * 
+     *
      * @param string $key
      * @param string $message
      * @return void
@@ -113,17 +113,17 @@ class MessageBag
 
     /**
      * Store all the messages to the session.
-     * 
+     *
      * @return void
      */
     public function store()
     {
-        $this->session->set('errors',$this->messages);
+        $this->session->set('errors', $this->messages);
     }
 
     /**
      * Remove all the messages from the session.
-     * 
+     *
      * @return void
      */
     public function destroy()
@@ -133,7 +133,7 @@ class MessageBag
 
     /**
      * Set Session.
-     * 
+     *
      * @param \App\Core\Support\Session $session
      * @return void
      */
@@ -144,7 +144,7 @@ class MessageBag
 
     /**
      * Get Session.
-     * 
+     *
      * @return \App\Core\Support\Session
      */
     protected function getSession()

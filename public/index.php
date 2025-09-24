@@ -1,6 +1,8 @@
 <?php
 
-if (!defined('APP_START')) define('APP_START', microtime(true));
+if (!defined('APP_START')) {
+    define('APP_START', microtime(true));
+}
 
 /**
  * Require the composer autoload File.

@@ -4,51 +4,47 @@ namespace App\Controllers\Api\v1;
 
 use App\Core\Support\Config;
 use App\Models\User;
-
 use App\Core\Security\Middleware\ValidateClient;
 use App\Core\Security\Middleware\JwtToken;
-
 use App\Controllers\Api\ApiController;
 use App\Core\Http\{Request,Response};
 use App\Core\Security\Hash;
 use App\Core\Security\Encryption;
 use App\Core\Validation\Validator;
 use Exception;
-
 use ReallySimpleJWT\Token;
-
 
 class WebhookController extends ApiController
 {
-    public function __construct() {
+    public function __construct()
+    {
         parent::__construct();
 
         // Middlewares
-        if($_SERVER['SERVER_PORT'] !== 9501) { // OpenSwoole Server
+        if ($_SERVER['SERVER_PORT'] !== 9501) { // OpenSwoole Server
             try {
                 (new \App\Core\Security\Middleware\RateLimiter('webhook_request'))
                     ->setup(clientIP(), 5, 500, 1200);
-            } 
-            catch(Exception $exception) {
+            } catch (Exception $exception) {
                 die($exception->getMessage());
             }
         }
     }
 
-     /**
-     * Show the home page.
-     * 
-     * @param App\Core\Http\Request $request
-     * @param App\Core\Http\Response $response
-     * @return void
-     */
+    /**
+    * Show the home page.
+    *
+    * @param App\Core\Http\Request $request
+    * @param App\Core\Http\Response $response
+    * @return void
+    */
     public function index(Request $request, Response $response)
     {
         // \App\Core\Support\Log::debug(gettype($request), 'WebhookController.index.gettype($request)');
         \App\Core\Support\Log::debug($request, 'WebhookController.index.$request');
 
-        if($_SERVER['SERVER_PORT'] !== 9501) { // OpenSwoole Server
-            $validator = new Validator;
+        if ($_SERVER['SERVER_PORT'] !== 9501) { // OpenSwoole Server
+            $validator = new Validator();
             $validator->validate($request, [
                 'email' => 'required|email',
                 'password'  => 'required|min:8|max:100',
@@ -56,16 +52,17 @@ class WebhookController extends ApiController
             $errors = errors()->all();
             \App\Core\Support\Log::debug($errors, 'WebhookController.index.errors');
 
-            if($errors) {
-                $callback = function(){ return false; };
+            if ($errors) {
+                $callback = function () { return false; };
 
                 \App\Core\Support\Log::debug(gettype($callback), 'WebhookController.index.gettype($callback)');
 
                 die($response->json(
                     $this->getOutput(false, 203, [
                        $errors
-                    ])
-                 , 203));
+                    ]),
+                    203
+                ));
             }
         }
 
@@ -82,10 +79,11 @@ class WebhookController extends ApiController
         $canDelete = readJson('credentials.delete', $payload);
 
         $status = $canRead;
-        if($status)
-        // \App\Core\Support\Log::debug($status, 'WebhookController.index.CREDENTIAL');
+        if ($status) {
+            // \App\Core\Support\Log::debug($status, 'WebhookController.index.CREDENTIAL');
 
-        $user = User::getUserByEmail($email);
+            $user = User::getUserByEmail($email);
+        }
         // \App\Core\Support\Log::debug($user, 'WebhookController.index.user');
 
 
@@ -132,7 +130,7 @@ class WebhookController extends ApiController
 
 
         $output = $this->getOutput(true, 200, [
-                'message' => 'Hello world!', 
+                'message' => 'Hello world!',
                 'client_ip' => clientIP(),
                 'session_id' => session_id(),
                 'ulid' => $ulid,

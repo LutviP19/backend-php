@@ -11,7 +11,7 @@ use Maba\GentleForce\Exception\RateLimitReachedException;
 use Predis\Client as PredisClient;
 use Exception;
 
-class RateLimiter 
+class RateLimiter
 {
     /**
      * Count of usages available in specified period.
@@ -44,7 +44,7 @@ class RateLimiter
     // Object class
     protected PredisClient $redisClient;
 
-    public function __construct($rateLimitName) 
+    public function __construct($rateLimitName)
     {
         $this->rateLimitName = (string) $rateLimitName ?: 'request_'.clientIP().'_'.date('Ymd');
 
@@ -57,8 +57,8 @@ class RateLimiter
 
     /**
      * Setup rate limited for api access
-     * 
-     * @params : 
+     *
+     * @params :
      * $id : Client idetifier.
      * $maxUsage : Count of usages available in specified period.
      * $period : Period in seconds for max usages to be "spent".
@@ -92,7 +92,7 @@ class RateLimiter
 
     /**
      * Setup rate limited for post form data
-     * 
+     *
      * @params :
      * $id : Client idetifier.
      * $callback : function validate form
@@ -108,7 +108,7 @@ class RateLimiter
         $request = new Request();
 
         $id = $id ?: clientIP();
-        
+
         $this->rateLimitName = (string) 'credentials_'.$this->rateLimitName;
 
         $rateLimitProvider = new RateLimitProvider();
@@ -127,23 +127,24 @@ class RateLimiter
             // this avoids race-conditions with lots of requests
             $credentialsResult = $throttler->checkAndIncrease($this->rateLimitName, $id);
 
-        } 
-        catch (RateLimitReachedException $exception) {
+        } catch (RateLimitReachedException $exception) {
 
             die(
-                $response->json([
+                $response->json(
+                    [
                     'status' => false,
                     'statusCode' => 500,
                     'message' => 'Too much tries, Please try after: '.$exception->getWaitForInSeconds().' seconds.',
-                ], 
-                500)
+                ],
+                    500
+                )
             );
         }
 
         if ($callback) {
             // as we've increased error count in advance, we need to decrease it if everything went fine
             $credentialsResult->decrease();
-            
+
             // passed into system
         }
     }

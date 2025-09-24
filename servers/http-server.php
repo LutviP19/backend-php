@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 // Disabled Log Errors
@@ -40,7 +41,8 @@ $redis = new \Predis\Client([
 $server->set([
     // Process ID
     "pid_file" => __DIR__ . "/swoole.pid",
-    'document_root' => __DIR__ .'../public',
+    // 'document_root' => __DIR__ .'../public',
+    'document_root' => realpath(__DIR__ . '/../public/'),
 
     // // Setup SSL files
     // 'ssl_cert_file' => $ssl_dir . '/ssl.crt',
@@ -97,9 +99,13 @@ $server->on("Start", function (Server $server) {
     echo "Swoole http server is started at http://" . $serverip . ":" . $serverport . "\n";
 });
 
-class CustomServerRequest extends \OpenSwoole\Core\Psr\ServerRequest { }
+class CustomServerRequest extends \OpenSwoole\Core\Psr\ServerRequest
+{
+}
 
-class ExitException extends Exception { }
+class ExitException extends Exception
+{
+}
 
 
 class DefaultResponseMiddleware implements MiddlewareInterface
@@ -141,17 +147,19 @@ class MiddlewareB implements MiddlewareInterface
 }
 
 
-$server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse $response) {
+$server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse $response) use ($server) {
     try {
         // returned of fetchDataAsynchronously
         $returned = ['response', 'content', 'tmp', 'void'];
-        startSession($response);
+
+        // print_r($server->stats());
+        // \App\Core\Support\Log::debug($server->stats() 'Swoole.request.$server->stats()');
 
         // Simulate some asynchronous operation (e.g., fetching data from a database)
         go(function () use ($request, $response, $returned) {
             try {
                 // Return void
-                while(true) {
+                while (true) {
                     // ob_flush();
                     fetchDataAsynchronously($request, $response, $returned[3]);
                     // ob_end_flush();
@@ -159,7 +167,7 @@ $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse 
                 }
 
                 throw new ExitException();
-            } catch(ExitException $e) {
+            } catch (ExitException $e) {
                 // ... handle gracefully ...
                 exit(1);
             }
@@ -178,34 +186,35 @@ $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse 
 //     ->add(new DefaultResponseMiddleware())
 //     ->add(new MiddlewareA())
 //     ->add(new MiddlewareB());
-    
+
 // $server->setHandler($stack);
 
 $server->start();
 
 
 // Simulated asynchronous function to fetch data from a database
-function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse $response, $returned = 'response') {
+function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse $response, $returned = 'response')
+{
 
     // Check response status
-    if($response->isWritable())
+    if ($response->isWritable()) {
         echo "FD:{$request->fd}, rendered!\n";
-    else {
+    } else {
         $response = $response::create($request->fd);
         echo "New-FD:{$request->fd}, Created!\n";
     }
-    
+
     // Init Server constants
     initializeServerConstant($request);
-    
+
     // Get header metadata
     $headers = getallheaders();
 
     $baseDir = __DIR__ .'/../public';
-    
+
     $fd = $request->fd;
     $uri = $_SERVER['REQUEST_URI'];
-    
+
     $filePath = $baseDir . $uri;
     if (is_dir($filePath)) {
         $filePath = rtrim($filePath, '/') . '/index.php';
@@ -341,17 +350,17 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
                 $setHeaders[] = "Content-Length, ".strlen($content);
 
                 $response->write($content);
-                break;                
+                break;
             default:
                 break;
         }
     } else {
-        
+
         $filePath = $baseDir . '/index.php';
         $lastSegment = $uri;
 
         $fileName = str_replace('/', '', $lastSegment).".php";
-    
+
         // Routing content
         switch ($lastSegment) {
             case '/home':
@@ -369,10 +378,11 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
                 $setHeaders[] = "Content-Encoding, gzip";
                 $setHeaders[] = "Content-Length, ".strlen(gzencode($content));
 
-                if($response->isWritable())
+                if ($response->isWritable()) {
                     $response->end(gzencode($content));
-                else
+                } else {
                     echo "{$filePath}, URI Not rendered!";
+                }
                 break;
             case '/webhook':
                 ob_start();
@@ -382,30 +392,31 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
 
                 $setHeaders[] = "Content-Type, application/json";
 
-                if($response->isWritable())
+                if ($response->isWritable()) {
                     $response->end($content);
-                else
+                } else {
                     echo "{$filePath}, URI Not rendered!";
+                }
                 break;
             default:
                 break;
         }
     }
 
-    
+    startSession($response);
     saveSession();
     session_write_close(); // Ensure session data is saved
 
-    if($returned === 'tmp') {
+    if ($returned === 'tmp') {
         $tmpFile = createTmp($fd, $fileName, $setHeaders, $content);
         return $tmpFile;
     }
 
-    if($returned === 'response') {
+    if ($returned === 'response') {
         return $response;
     }
-   
-    if($returned === 'content') {
+
+    if ($returned === 'content') {
         return $content;
     }
 }
@@ -415,20 +426,23 @@ function createTmp($fd, $fileName, $setHeaders, $content)
     $tmpPath = __DIR__ . "/../storage/framework/tmp";
 
     $fdPath = "{$tmpPath}/{$fd}";
-    if(! file_exists($fdPath))
+    if (! file_exists($fdPath)) {
         mkdir($fdPath);
+    }
 
     $filePath = "{$fdPath}/$fileName";
-    if(file_exists($filePath))
+    if (file_exists($filePath)) {
         unlink($filePath);
+    }
 
     $fileContents = "<?php " . PHP_EOL;
-    foreach($setHeaders as $header) {
+    foreach ($setHeaders as $header) {
         $value = explode(",", $header);
-        if(is_numeric($value[1]))
-        $fileContents .= '$response->header("'.$value[0].'", '.$value[1].');' . PHP_EOL;
-        else
-        $fileContents .= '$response->header("'.$value[0].'", "'.trim($value[1]).'");' . PHP_EOL;
+        if (is_numeric($value[1])) {
+            $fileContents .= '$response->header("'.$value[0].'", '.$value[1].');' . PHP_EOL;
+        } else {
+            $fileContents .= '$response->header("'.$value[0].'", "'.trim($value[1]).'");' . PHP_EOL;
+        }
     }
 
     $content = base64_encode($content);
@@ -437,12 +451,12 @@ function createTmp($fd, $fileName, $setHeaders, $content)
 
     // write contents to file
     file_put_contents($filePath, $fileContents);
-    
+
     return $filePath;
 }
 
-function initializeServerConstant($request) { //OpenSwoole\Http\Request 
-    // Setup
+function initializeServerConstant($request) //OpenSwoole\Http\Request
+{// Setup
     global $serverip, $serverport;
 
     $_SERVER = [];
@@ -496,14 +510,15 @@ function initializeServerConstant($request) { //OpenSwoole\Http\Request
     }
 }
 
-function startSession($response) {
+function startSession($response)
+{
     global $redis;
 
-    $sessionExp = 60*60*24*2;
-    $sessionId = session_id();
+    $sessionExp = 60 * 60 * 24 * 2;
+
 
     if (!isset($_COOKIE['BACKENDPHPSESSID']) || is_null($_COOKIE['BACKENDPHPSESSID'])) {
-
+        $sessionId = session_id();
         $response->header('Set-Cookie', "BACKENDPHPSESSID={$sessionId}; Max-Age={$sessionExp}; Path=/; SameSite=Lax;");
 
         $redis->set("session:$sessionId", serialize($_SESSION));
@@ -516,7 +531,7 @@ function startSession($response) {
 
     // \App\Core\Support\Log::debug("Current Session ID: " . $sessionId, 'startSession.sessionId');
     // \App\Core\Support\Log::debug($sessionData, 'startSession.sessionData');
-    // \App\Core\Support\Log::debug($_COOKIE, 'startSession.$_COOKIE');
+    \App\Core\Support\Log::debug($_COOKIE, 'startSession.$_COOKIE');
 
     if ($sessionData) {
         $_SESSION = unserialize($sessionData);
@@ -525,7 +540,8 @@ function startSession($response) {
     }
 }
 
-function saveSession() {
+function saveSession()
+{
     global $redis;
 
     if (!is_null($_COOKIE['BACKENDPHPSESSID'])) {

@@ -18,7 +18,7 @@
     <script>
         M.AutoInit();
         // Flash Message
-        <?php if(session("status")): ?>
+        <?php if (session("status")): ?>
             M.toast({html: "<span><?= flash("status") ?></span>"});
         <?php endif ?>
     </script>

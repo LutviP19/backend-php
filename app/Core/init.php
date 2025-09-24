@@ -1,6 +1,9 @@
 <?php
 
-if (!defined('BASEPATH')) define('BASEPATH', __DIR__ . '/../..');
+
+if (!defined('BASEPATH')) {
+    define('BASEPATH', __DIR__ . '/../..');
+}
 
 /* ----------------------------- Default settings START -------------------------------- */
 
@@ -49,7 +52,7 @@ App::register('config', require __DIR__ . '/../../config/app.php');
  * from session to the App container/registry so we
  * can use them later.
  */
-$messageBag = new MessageBag(new Session);
+$messageBag = new MessageBag(new Session());
 $messageBag->setMessages(Session::flash('errors'));
 App::register('errors', $messageBag);
 

@@ -12,7 +12,6 @@ use App\Core\Support\Session;
 
 class ApiController extends BaseController
 {
-
     protected $jwtToken;
 
     public function __construct()
@@ -20,14 +19,15 @@ class ApiController extends BaseController
         parent::__construct();
 
         // Accepted type is JSON
-        if($_SERVER['SERVER_PORT'] !== 9501) { // OpenSwoole Server
+        if ($_SERVER['SERVER_PORT'] !== 9501) { // OpenSwoole Server
             if (false === $this->request()->isJsonRequest()) {
                 die(
                     $this->response()->json(
                         $this->getOutput(false, 403, [
                             'Invalid format!',
-                        ], 'Only accepted JSON.')
-                        , 403)
+                        ], 'Only accepted JSON.'),
+                        403
+                    )
                 );
             }
         }
@@ -36,7 +36,7 @@ class ApiController extends BaseController
         (new \App\Core\Security\Middleware\EnsureIpIsValid())
             ->handle($this->request(), $this->response(), $this->response());
 
-        if($_SERVER['SERVER_PORT'] !== 9501) { // OpenSwoole Server
+        if ($_SERVER['SERVER_PORT'] !== 9501) { // OpenSwoole Server
             (new \App\Core\Security\Middleware\EnsureHeaderIsValid())
             ->handle($this->request(), $this->response());
 
@@ -68,8 +68,9 @@ class ApiController extends BaseController
                 $response->json(
                     $this->getOutput(false, 403, [
                         'token' => 'Invalid api token!',
-                    ], 'Invalid api token!')
-                    , 403)
+                    ], 'Invalid api token!'),
+                    403
+                )
             );
         }
     }
@@ -88,8 +89,9 @@ class ApiController extends BaseController
                 $response->json(
                     $this->getOutput(false, 401, [
                         'auth' => 'Session expired!',
-                    ], 'Please login!')
-                    , 401)
+                    ], 'Please login!'),
+                    401
+                )
             );
         }
 
@@ -100,8 +102,9 @@ class ApiController extends BaseController
                 $response->json(
                     $this->getOutput(false, 403, [
                         'client_token' => 'Invalid client token!',
-                    ], 'Invalid client token!')
-                    , 403)
+                    ], 'Invalid client token!'),
+                    403
+                )
             );
         }
     }
@@ -121,8 +124,9 @@ class ApiController extends BaseController
                 $response->json(
                     $this->getOutput(false, 401, [
                         'jwt' => 'Invalid jwt!',
-                    ], 'Please login!')
-                    , 401)
+                    ], 'Please login!'),
+                    401
+                )
             );
         }
     }

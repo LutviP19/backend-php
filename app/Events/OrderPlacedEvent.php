@@ -6,8 +6,8 @@ namespace App\Events;
 
 use Symfony\Contracts\EventDispatcher\Event;
 
-/**  
- * Class representing the event triggered when an order is placed.  
+/**
+ * Class representing the event triggered when an order is placed.
  */
 class OrderPlacedEvent extends Event
 {
@@ -15,20 +15,20 @@ class OrderPlacedEvent extends Event
 
     protected $order;
 
-    /**  
-     * Constructor to initialize the order data.  
-     *  
-     * @param array $order The order details.  
+    /**
+     * Constructor to initialize the order data.
+     *
+     * @param array $order The order details.
      */
     public function __construct($order)
     {
         $this->order = $order;
     }
 
-    /**  
-     * Gets the order details.  
-     *  
-     * @return array The order details.  
+    /**
+     * Gets the order details.
+     *
+     * @return array The order details.
      */
     public function getOrder()
     {

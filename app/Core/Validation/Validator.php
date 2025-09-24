@@ -8,31 +8,30 @@ use App\Core\Http\{Request,Response};
 
 class Validator
 {
-
     /**
      * Current request object.
-     * 
+     *
      * @var \App\Core\Http\Request
      */
     protected $request;
 
     /**
      * All rules for validator.
-     * 
+     *
      * @var \App\Core\Validation\Rules
      */
     protected $rules;
 
     /**
      * Check if we have an optional rule.
-     * 
+     *
      * @var bool|false
      */
     protected $isOptionalField = false;
 
     /**
      * Available validation rules.
-     * 
+     *
      * @var array
      */
     private $validRules = [
@@ -56,11 +55,11 @@ class Validator
 
     /**
      * Available parametered validation rules.
-     * 
+     *
      * @var array
      */
     private $validParamRules = [
-        
+
         /**
          * Unique value to a database column value.
          * Rule syntax: unique:table,column,id,
@@ -92,7 +91,7 @@ class Validator
 
     /**
      * Validate the current request data.
-     * 
+     *
      * @param App\Core\Http\Request $request
      * @param array $rules
      * @return void
@@ -103,23 +102,23 @@ class Validator
 
         //set the rules object where all the rule methods are.
         $this->setRules(
-            new Rules($request, new MessageBag(new Session))
+            new Rules($request, new MessageBag(new Session()))
         );
-        
+
         //start validation.
-        foreach($rules as $field => $fieldRules){
-            $this->validateFields($field,explode('|',$fieldRules));
+        foreach ($rules as $field => $fieldRules) {
+            $this->validateFields($field, explode('|', $fieldRules));
         }
 
-        if($this->errors()){
+        if ($this->errors()) {
 
             $response = new Response();
-                
+
             //if we have at least one failed error then we
             //will store the messageBag errors to the session.
             $this->getRules()->getMessageBag()->store();
 
-            if(false === $request::isJsonRequest()) {
+            if (false === $request::isJsonRequest()) {
                 //store the post request input values in the session.
                 Session::setOldInput();
 
@@ -135,19 +134,19 @@ class Validator
 
     /**
      * Start validating each field.
-     * 
+     *
      * @param string $field
      * @param array $rules
      * @return void
      */
-    protected function validateFields($field,$rules)
+    protected function validateFields($field, $rules)
     {
 
-        foreach($rules as $rule){
+        foreach ($rules as $rule) {
 
             //if we have an optioned rule then we will
             //break the loop.
-            if($this->isOptionalField()){
+            if ($this->isOptionalField()) {
 
                 //we want to set it to false so it doesn't
                 //break every other field/input.
@@ -156,29 +155,29 @@ class Validator
                 break;
 
             }
-            
-            if(!preg_match('(:)',$rule)){
+
+            if (!preg_match('(:)', $rule)) {
 
                 //check if the rule exists.
-                if(!in_array($rule,$this->getValidRules())){
+                if (!in_array($rule, $this->getValidRules())) {
                     throw new Exception("Invalid Rule \"{$rule}\"");
                 }
 
                 //validate the current rule.
-                $this->validateRule($field,$rule);
+                $this->validateRule($field, $rule);
 
-            }else{
-                
+            } else {
+
                 //split the rule from ":" character.
-                $paramRule = explode(':',$rule);
-                
+                $paramRule = explode(':', $rule);
+
                 //check if the rule exists.
-                if(!in_array($paramRule[0],$this->getValidParamRules())){
+                if (!in_array($paramRule[0], $this->getValidParamRules())) {
                     throw new Exception("Invalid Rule \"{$paramRule[0]}\"");
                 }
 
                 //validate the current parametered rule.
-                $this->validateParamRule($field,$paramRule);
+                $this->validateParamRule($field, $paramRule);
 
             }
 
@@ -189,13 +188,13 @@ class Validator
     /**
      * This method with do the actual validation
      * for each field/input.
-     * 
+     *
      * @param string $field
      * @param string $rule
      * @return void
      */
-    protected function validateRule($field,$rule)
-    {   
+    protected function validateRule($field, $rule)
+    {
         $rules = $this->getRules();
 
         switch ($rule) {
@@ -203,84 +202,88 @@ class Validator
                 $this->setIsOptionalField(
                     $rules->validateOptional($field)
                 );
-            break;
+                break;
 
             case 'required':
                 $rules->validateRequired($field);
-            break;
+                break;
 
             case 'string':
                 $rules->validateString($field);
-            break;
+                break;
 
             case 'integer':
                 $rules->validateInteger($field);
-            break;
+                break;
 
             case 'email':
                 $rules->validateEmail($field);
-            break;
+                break;
 
             case 'alpha_numeric':
                 $rules->validateAlphaNumeric($field);
-            break;
+                break;
 
             case 'numeric':
                 $rules->validateNumeric($field);
-            break;
+                break;
 
             case 'file':
                 $rules->validateFile($field);
-            break;
+                break;
 
             case 'image':
                 $rules->validateImage($field);
-            break;
+                break;
         }
     }
 
     /**
      * This method with do the actual validation
      * from each parametered rule.
-     * 
+     *
      * @param string $field
      * @param string $rule
      * @return void
      */
-    protected function validateParamRule($field,$rule)
+    protected function validateParamRule($field, $rule)
     {
         $rules = $this->getRules();
 
-        switch($rule[0]){
+        switch ($rule[0]) {
             case 'min':
                 $rules->validateMin(
-                    $field,$rule[1]
+                    $field,
+                    $rule[1]
                 );
-            break;
-            
+                break;
+
             case 'max':
                 $rules->validateMax(
-                    $field,$rule[1]
+                    $field,
+                    $rule[1]
                 );
-            break;
+                break;
 
             case 'unique':
                 $rules->validateUnique(
-                    $field,...explode(',',$rule[1])
+                    $field,
+                    ...explode(',', $rule[1])
                 );
-            break;
+                break;
 
             case 'mime':
                 $rules->validateMimeTYpe(
-                    $field, explode(',',$rule[1])
+                    $field,
+                    explode(',', $rule[1])
                 );
-            break;
+                break;
         }
     }
 
     /**
      * Get isOptionalField.
-     * 
+     *
      * @return bool
      */
     protected function isOptionalField()
@@ -290,7 +293,7 @@ class Validator
 
     /**
      * Get isOptionalField.
-     * 
+     *
      * @param bool $bool
      * @return void
      */
@@ -301,7 +304,7 @@ class Validator
 
     /**
      * Set rules object.
-     * 
+     *
      * @param \App\Core\Validation\Rules $rules
      * @return void
      */
@@ -312,7 +315,7 @@ class Validator
 
     /**
      * Get rules object.
-     * 
+     *
      * @return \App\Core\Validation\Rules
      */
     protected function getRules()
@@ -340,7 +343,7 @@ class Validator
 
     /**
      * Set current request object.
-     * 
+     *
      * @param \App\Core\Http\Request $request
      * @return void
      */
@@ -351,7 +354,7 @@ class Validator
 
     /**
      * Get current request object.
-     * 
+     *
      * @return \App\Core\Http\Request
      */
     protected function getRequest()
@@ -361,7 +364,7 @@ class Validator
 
     /**
      * Get all the validation errors.
-     * 
+     *
      * @return array
      */
     public function errors()

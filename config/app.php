@@ -1,6 +1,8 @@
 <?php
 
-if (!defined('BASE_PATH')) define('BASE_PATH', str_replace('config', '', __DIR__));
+if (!defined('BASE_PATH')) {
+    define('BASE_PATH', str_replace('config', '', __DIR__));
+}
 
 /**
  * Config values for our application.
@@ -189,7 +191,7 @@ return [
     | Here you may configure all of the mailers used by your application plus
     | their respective settings.
     |
-    | Supported: "smtp", "sendmail" 
+    | Supported: "smtp", "sendmail"
     |
     */
 

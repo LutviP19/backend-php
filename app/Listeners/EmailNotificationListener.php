@@ -11,15 +11,15 @@ use App\Events\OrderPlacedEvent;
  */
 class EmailNotificationListener
 {
-    /**  
-     * Handles the event of an order being placed.  
-     *  
-     * @param OrderPlacedEvent $event The event object. 
+    /**
+     * Handles the event of an order being placed.
+     *
+     * @param OrderPlacedEvent $event The event object.
      */
     public function onOrderPlaced(OrderPlacedEvent $event)
     {
         // Logic to send email
-        $order = $event->getOrder();        
+        $order = $event->getOrder();
         echo "Email sent for order: " . $order['id'] . PHP_EOL;
 
         // Send Email
@@ -30,7 +30,7 @@ class EmailNotificationListener
         $attachment = [BASEPATH.'/DEV.txt', BASEPATH.'/DEMO.txt'];
         $image = [];
 
-        for($i=1; $i <=3; $i++) {
+        for ($i = 1; $i <= 3; $i++) {
             $to = "your-email-$i@here.test, Test User $i";
 
             sendEmail($from, $to, $subject, $bodyText, $bodyHtml, $attachment, $image);

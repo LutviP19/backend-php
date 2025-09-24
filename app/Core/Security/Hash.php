@@ -22,7 +22,7 @@ class Hash
 
     /**
      * Verify a hash against a string.
-     * 
+     *
      * @param string $str
      * @param string $hash
      * @return bool
@@ -34,7 +34,7 @@ class Hash
 
     /**
      * Create a hash from string.
-     * 
+     *
      * @param string $str
      * @return string
      */
@@ -45,7 +45,7 @@ class Hash
 
     /**
      * Verify a hash against a string.
-     * 
+     *
      * @param string $str
      * @param string $hash
      * @return bool
@@ -57,7 +57,7 @@ class Hash
 
     /**
      * Create a unique hash.
-     * 
+     *
      * @param int $len
      * @return string
      */
@@ -68,7 +68,7 @@ class Hash
 
     /**
      * Create a random string.
-     * 
+     *
      * @param int $len
      * @return string
      */

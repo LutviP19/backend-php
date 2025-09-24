@@ -9,7 +9,6 @@ use Exception;
 
 class Broker
 {
-
     protected static $driver;
 
     public function __construct()
@@ -17,12 +16,13 @@ class Broker
         self::$driver = Config::get('default_mb');
     }
 
-    public static function sendMessage($message=null, $method=null)
+    public static function sendMessage($message = null, $method = null)
     {
-        if (is_null($message)) 
+        if (is_null($message)) {
             return;
+        }
 
-        if(self::$driver === 'rabbitmq') {
+        if (self::$driver === 'rabbitmq') {
 
             if (is_null($message)) {
                 throw new Exception('Message is empty.');
@@ -37,12 +37,13 @@ class Broker
 
     }
 
-    public static function getMessage($callback=null, $method=null)
+    public static function getMessage($callback = null, $method = null)
     {
-        if (is_null($callback)) 
+        if (is_null($callback)) {
             return;
-        
-        if(self::$driver === 'rabbitmq') {
+        }
+
+        if (self::$driver === 'rabbitmq') {
 
             if (!is_callable($callback)) {
                 throw new Exception('Invalid callback function.');
@@ -57,7 +58,7 @@ class Broker
 
     }
 
-    private static function sendMessageRabbitMq($message, $method='fanout')
+    private static function sendMessageRabbitMq($message, $method = 'fanout')
     {
         $default_mb = self::$driver;
         $queueName = Config::get("broker.{$default_mb}.queue_name");
@@ -78,12 +79,12 @@ class Broker
         $connection->close();
     }
 
-    private static function getMessageRabbitMq($callback, $method='fanout')
+    private static function getMessageRabbitMq($callback, $method = 'fanout')
     {
         if (!is_callable($callback)) {
             throw new Exception('Invalid callback function.');
         }
-        
+
         $default_mb = self::$driver;
         $queueName = Config::get("broker.{$default_mb}.queue_name");
 
@@ -91,7 +92,7 @@ class Broker
 
         $channel = $connection->channel();
         $channel->exchange_declare($queueName, $method, false, false, false);
-        list($queue_name, ,) = $channel->queue_declare("", false, false, true, false);
+        list($queue_name, , ) = $channel->queue_declare("", false, false, true, false);
 
         $channel->queue_bind($queue_name, $queueName);
         $channel->basic_consume($queue_name, '', false, true, false, false, $callback);

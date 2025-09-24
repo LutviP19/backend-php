@@ -10,42 +10,42 @@ class Request
 {
     /**
      * Current request cookies.
-     * 
+     *
      * @var array
      */
     private $cookies = [];
 
     /**
      * Server details from current request.
-     * 
+     *
      * @var array
      */
     private $server = [];
 
     /**
      * Current request files.
-     * 
+     *
      * @var array
      */
     private $files = [];
 
     /**
      * Current request headers.
-     * 
+     *
      * @var array
      */
     private $headers = [];
 
     /**
      * Query String values from current request.
-     * 
+     *
      * @var array
      */
     private $query = [];
 
     /**
      * Request data for dynamic access.
-     * 
+     *
      * @var array
      */
     protected $attributes = [];
@@ -53,7 +53,7 @@ class Request
     /**
      * Set all the request properties with the
      * class is instantiated.
-     * 
+     *
      * @return void
      */
     public function __construct()
@@ -75,7 +75,8 @@ class Request
     public static function uri()
     {
         return trim(
-            parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/'
+            parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH),
+            '/'
         );
     }
 
@@ -88,9 +89,13 @@ class Request
     {
         if (isset($_POST['_method'])) {
             $method = $_POST['_method'];
-            
-            if ($method == 'PUT') return 'PUT';
-            if ($method == 'DELETE') return 'DELETE';
+
+            if ($method == 'PUT') {
+                return 'PUT';
+            }
+            if ($method == 'DELETE') {
+                return 'DELETE';
+            }
         }
 
         return $_SERVER['REQUEST_METHOD'];
@@ -108,7 +113,7 @@ class Request
         $method = strtoupper($method);
         $validMethods = ["GET","POST","PUT","DELETE"];
 
-        if(!in_array($method,$validMethods)){
+        if (!in_array($method, $validMethods)) {
             throw new Exception("Invalid Request Method!");
         }
         return self::method() == $method ? true : false;
@@ -116,14 +121,15 @@ class Request
 
     /**
      * get an body value.
-     * 
+     *
      * @param string $key
      * @return mixed
      */
     public static function getBody()
     {
-        if(true === self::isJsonRequest())
+        if (true === self::isJsonRequest()) {
             return file_get_contents('php://input');
+        }
 
         return null;
     }
@@ -138,23 +144,24 @@ class Request
         $content = self::getBody();
         // \App\Core\Support\Log::debug($content, 'Request.getPayload.content.'.time());
 
-        if(! empty($content)) {
+        if (! empty($content)) {
             try {
                 $content = json_decode($content, true, 512, \JSON_BIGINT_AS_STRING | \JSON_THROW_ON_ERROR);
-                
+
             } catch (JsonException $e) {
                 throw new JsonException('Could not decode request body.', $e->getCode(), $e);
             }
-    
+
             if (! is_array($content)) {
                 throw new JsonException(sprintf('JSON content was expected to decode to an array, "%s" returned.', gettype($content)));
             }
-    
+
             // \App\Core\Support\Log::debug($content, 'Request.getPayload.content.'.time());
-            foreach($content as $key => $value) {
-                if(is_array($value)) {
-                    foreach($value as $i => $val)
+            foreach ($content as $key => $value) {
+                if (is_array($value)) {
+                    foreach ($value as $i => $val) {
                         $_REQUEST[$key][$i] = $val;
+                    }
                 } else {
                     $_REQUEST[$key] = $value;
                 }
@@ -170,7 +177,7 @@ class Request
 
     /**
      * get an input value.
-     * 
+     *
      * @param string $key
      * @return mixed
      */
@@ -181,7 +188,7 @@ class Request
 
     /**
      * check if an input value exists.
-     * 
+     *
      * @param string $key
      * @return bool
      */
@@ -192,7 +199,7 @@ class Request
 
     /**
      * get an input from "GET" global.
-     * 
+     *
      * @param string $key
      * @return mixed
      */
@@ -203,7 +210,7 @@ class Request
 
     /**
      * get an input from "POST" global.
-     * 
+     *
      * @param string $key
      * @return mixed
      */
@@ -214,20 +221,20 @@ class Request
 
     /**
      * Check if a file was uploaded file.
-     * 
+     *
      * @return
      */
     public static function hasFile($key)
     {
-        return isset($_FILES[$key]) 
-        ? is_uploaded_file($_FILES[$key]['tmp_name']) 
+        return isset($_FILES[$key])
+        ? is_uploaded_file($_FILES[$key]['tmp_name'])
         : false ;
     }
 
     /**
      * retrieve the uploaded file.
-     * 
-     * @return 
+     *
+     * @return
      */
     public static function file($key)
     {
@@ -236,7 +243,7 @@ class Request
 
     /**
      * Check whether the request accepts json.
-     * 
+     *
      * @return bool
      */
     public static function isJsonRequest()
@@ -247,19 +254,19 @@ class Request
 
     /**
      * Validate the current Request.
-     * 
+     *
      * @param array $rules
      * @return void
      */
     public function validate($rules)
     {
         $validator = new Validator();
-        $validator->validate($this,$rules);
+        $validator->validate($this, $rules);
     }
 
     /**
      * Get the previous request url.
-     * 
+     *
      * @return string
      */
     public static function previousUrl()
@@ -279,7 +286,7 @@ class Request
 
     /**
      * Get all the cookies.
-     * 
+     *
      * @return array
      */
     public function cookies()
@@ -289,7 +296,7 @@ class Request
 
     /**
      * Set all the cookies.
-     * 
+     *
      * @return void
      */
     protected function setCookies()
@@ -299,7 +306,7 @@ class Request
 
     /**
      * Get the query string.
-     * 
+     *
      * @return array key/value pairs of query string
      */
     public function query()
@@ -310,19 +317,21 @@ class Request
     /**
      * Set the query string values as an
      * associative array.
-     * 
+     *
      * @return void
      */
     protected function setQuery()
     {
-        if(!isset($_SERVER['QUERY_STRING'])) return;
-        
-        $strings = explode('&',$_SERVER['QUERY_STRING']);
+        if (!isset($_SERVER['QUERY_STRING'])) {
+            return;
+        }
+
+        $strings = explode('&', $_SERVER['QUERY_STRING']);
         $query = [];
-        
-        foreach($strings as $string){
-            $val = explode('=',e($string));
-            
+
+        foreach ($strings as $string) {
+            $val = explode('=', e($string));
+
             //we will check if we don't have something like
             //url/key instead of url/key=value or else we will
             //get an error.
@@ -334,7 +343,7 @@ class Request
 
     /**
      * Get the $_SERVER values.
-     * 
+     *
      * @return array
      */
     public function server()
@@ -344,7 +353,7 @@ class Request
 
     /**
      * Set the $_SERVER global values.
-     * 
+     *
      * @return void
      */
     protected function setServer()
@@ -374,7 +383,7 @@ class Request
 
     /**
      * Get all the headers
-     * 
+     *
      * @return array
      */
     public function headers()
@@ -384,7 +393,7 @@ class Request
 
     /**
      * Set all the headers
-     * 
+     *
      * @return void
      */
     protected function setHeaders()
@@ -394,7 +403,7 @@ class Request
 
     /**
      * Get all the uploaded files.
-     * 
+     *
      * @return void
      */
     public function files()
@@ -404,7 +413,7 @@ class Request
 
     /**
      * Set all the uploaded files.
-     * 
+     *
      * @return void
      */
     protected function setFiles()
@@ -413,23 +422,24 @@ class Request
     }
 
     /**
-     * Set all the $_REQUEST and $_FILES to 
+     * Set all the $_REQUEST and $_FILES to
      * $attributes property for dynamic
      * access.
-     * 
+     *
      * @return void
      */
     protected function setAttributes()
     {
-        $inputs = array_merge($_GET,$_POST,$_REQUEST);
+        $inputs = array_merge($_GET, $_POST, $_REQUEST);
         // \App\Core\Support\Log::debug($inputs, 'Request.setAttributes.inputs.'.time());
 
         $request = [];
 
         foreach ($inputs as $key => $value) {
-            if(is_array($value)) {
-                foreach($value as $i => $val)
+            if (is_array($value)) {
+                foreach ($value as $i => $val) {
                     $request[e($key)][e($i)] = gettype($val) === 'boolean' ? $val : e($val);
+                }
             } else {
                 $request[e($key)] = gettype($value) === 'boolean' ? $value : e($value);
             }
@@ -440,27 +450,29 @@ class Request
 
     /**
      * Dynamically get request attributes.
-     * 
+     *
      * @return mixed
      */
-    public function __get($key){
+    public function __get($key)
+    {
         return $this->attributes[$key];
     }
 
     /**
      * Dynamically get request attributes.
-     * 
+     *
      * @param string $key
      * @param mixed $value
      * @return void
      */
-    public function __set($key,$value){
+    public function __set($key, $value)
+    {
         $this->attributes[e($key)] = e($value);
     }
 
     /**
      * Dynamically check for request attributes.
-     * 
+     *
      * @param string $key
      * @return mixed
      */
@@ -471,7 +483,7 @@ class Request
 
     /**
      * Dynamically unset request attributes.
-     * 
+     *
      * @param string $key
      * @return void
      */

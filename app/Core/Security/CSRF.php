@@ -11,7 +11,7 @@ class CSRF
 {
     /**
      * Generate a csrf token.
-     * 
+     *
      * @return string
      */
     public static function generate()
@@ -25,7 +25,7 @@ class CSRF
     /**
      * Match the csrf token and delete the
      * token if exists.
-     * 
+     *
      * @return string $token
      * @return string
      */
@@ -42,7 +42,7 @@ class CSRF
 
     /**
      * Create a hidden csrf input field.
-     * 
+     *
      * @return string
      */
     public static function csrfField()

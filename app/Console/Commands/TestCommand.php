@@ -4,11 +4,12 @@ namespace App\Console\Commands;
 
 use App\Core\Events\Event;
 use App\Core\Message\Broker;
-use function Amp\async;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+
+use function Amp\async;
 
 class TestCommand extends Command
 {
@@ -38,7 +39,8 @@ class TestCommand extends Command
 
         // Event Listener
         Event::listen($this->eventName, function ($body) {
-            echo "EventListener[{$this->eventName}]: {$body}\n" . PHP_EOL;;
+            echo "EventListener[{$this->eventName}]: {$body}\n" . PHP_EOL;
+            ;
 
             // concurrent process
             $data = json_decode($body, true);
@@ -47,7 +49,8 @@ class TestCommand extends Command
                 $output = $this->simulateConcurrent($data[$index]);
 
                 $json = is_array($output) ? json_encode($output) : 'xxx';
-                echo "simulateConcurrent-output: {$json}\n" . PHP_EOL;;
+                echo "simulateConcurrent-output: {$json}\n" . PHP_EOL;
+                ;
             }
         });
 
@@ -93,7 +96,7 @@ class TestCommand extends Command
                                         $v = json_encode($v);
                                     }
                                     $k = $key . '-' . $k;
-    
+
                                     echo "$k: $v\n";
                                 }
                             }
@@ -130,7 +133,8 @@ class TestCommand extends Command
                 $counter = $i;
             }
 
-            return $data['id'] . " counter: {$counter}x";;
+            return $data['id'] . " counter: {$counter}x";
+            ;
         });
 
         $future2 = async(function () use ($data) {
@@ -144,7 +148,8 @@ class TestCommand extends Command
                 $counter = $i;
             }
 
-            return $data['title'] . " counter: {$counter}x";;
+            return $data['title'] . " counter: {$counter}x";
+            ;
         });
 
         $future3 = async(function () use ($data) {

@@ -5,9 +5,7 @@
  */
 
 use App\Core\Http\Request;
-
 use App\Core\Security\CSRF;
-
 use App\Core\Support\App;
 use App\Core\Support\Config;
 use App\Core\Support\Session;
@@ -61,7 +59,7 @@ function url($uri = '')
 function assets($uri = '')
 {
     $uri = sanitizeUri($uri);
-    if($_SERVER['SERVER_PORT'] === 9501) { // OpenSwoole Server
+    if ($_SERVER['SERVER_PORT'] === 9501) { // OpenSwoole Server
         return "http://{$_SERVER['HTTP_HOST']}/{$uri}";
     }
 
@@ -259,8 +257,9 @@ function decryptData($value, $key = null)
 
 function generateRandomString($len = 64, $base64 = false): string
 {
-    if($base64)
+    if ($base64) {
         return base64_encode(\App\Core\Security\Hash::randomString($len));
+    }
 
     return \App\Core\Security\Hash::randomString($len);
 }
@@ -281,7 +280,7 @@ function sendMessageQueue($message): void
 
 function sendEmail(string $from = '', string $to, string $subject, $bodyText = '', $bodyHtml = '', array $attachment = [], array $image = []): void
 {
-    $email = (new \App\Core\Mailer\Email);
+    $email = (new \App\Core\Mailer\Email());
     $email->prepareData($from, $to, $subject, $bodyText, $bodyHtml, $attachment, $image);
     $email->send();
 }

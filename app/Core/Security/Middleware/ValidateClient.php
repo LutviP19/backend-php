@@ -33,7 +33,7 @@ class ValidateClient
         // get cache from redis
         $token = $this->redis->mget(['client_token:'.$this->clientId]);
 
-        if(! is_null($token) && isset($token[0])) {
+        if (! is_null($token) && isset($token[0])) {
             return base64_decode($token[0]);
         }
 
@@ -43,14 +43,14 @@ class ValidateClient
             ->whereAnd('status', '=', 1)
             ->first();
 
-        
-        if($user && 
-           isset($user->client_token) && 
+
+        if ($user &&
+           isset($user->client_token) &&
            $user->client_token != '') {
 
             // cache to redis
             $this->redis->mset(['client_token:'.$this->clientId => base64_encode($user->client_token)]);
-            
+
             return $user->client_token;
         }
 
@@ -61,8 +61,9 @@ class ValidateClient
     {
         $token = $this->getToken();
 
-        if (! is_null($token))
+        if (! is_null($token)) {
             return $this->hash->create($token);
+        }
 
         return null;
     }
@@ -71,8 +72,9 @@ class ValidateClient
     {
         $token = User::updateClientToken($this->columnId, $this->clientId);
 
-        if (! is_null($token)) // cache to redis
+        if (! is_null($token)) { // cache to redis
             $this->redis->mset(['client_token:'.$this->clientId => base64_encode($token)]);
+        }
 
         return $token;
     }
@@ -81,10 +83,10 @@ class ValidateClient
     {
         $token = $this->getToken($this->columnId);
 
-        if (is_null($token) || 
-            false === $clientToken || 
+        if (is_null($token) ||
+            false === $clientToken ||
             ! is_string($clientToken)) {
-            
+
             return false;
         }
 
@@ -96,13 +98,13 @@ class ValidateClient
         // get cache from redis
         $token = $this->redis->mget(['client_token:'.$this->clientId]);
 
-        if(! is_null($token) && isset($token[0])) {
+        if (! is_null($token) && isset($token[0])) {
             // delete cache from redis
             $this->redis->del(['client_token:'.$this->clientId]);
         }
     }
 
-    private function __checkColumnId($column) 
+    private function __checkColumnId($column)
     {
         $this->clientId = $column === 'id' && gettype($this->clientId) === 'string' ? null : $this->clientId;
     }

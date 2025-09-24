@@ -15,7 +15,6 @@ use Exception;
 
 class AuthController extends ApiController
 {
-
     protected $id;
     protected $ulid;
 
@@ -24,19 +23,19 @@ class AuthController extends ApiController
         parent::__construct();
     }
 
-    public function login(Request $request,Response $response)
+    public function login(Request $request, Response $response)
     {
 
         try {
-            $validator = new Validator;
+            $validator = new Validator();
             $validator->validate($request, [
                 'email' => 'required|email',
                 'password'  => 'required|min:8|max:100',
             ]);
             $errors = errors()->all();
 
-            
-            if($errors) {
+
+            if ($errors) {
 
                 $status = 203;
                 $callback = false;
@@ -44,7 +43,7 @@ class AuthController extends ApiController
 
                 $status = 401;
                 $errors = ['auth' => 'Invalid credentials,',];
-                
+
                 $payload = $request->all();
                 $email = readJson('email', $payload);
                 $password = readJson('password', $payload);
@@ -57,30 +56,32 @@ class AuthController extends ApiController
             (new \App\Core\Security\Middleware\RateLimiter('login_request'))
                 ->setupForm(clientIP(), $callback, 5, 10, 1200);
 
-            if(false == $callback || empty($user)) {
+            if (false == $callback || empty($user)) {
                 die(
                     $response->json(
-                       $this->getOutput(false, $status, [
+                        $this->getOutput(false, $status, [
                             $errors
-                       ])
-                    , $status)
+                       ]),
+                        $status
+                    )
                 );
             }
-        }
-        catch(Exception $exception) {
+        } catch (Exception $exception) {
             die(
                 $response->json(
-                   $this->getOutput(false, 429, [
+                    $this->getOutput(false, 429, [
                       $exception->getMessage(),
-                   ])
-                , 429)
-             );
+                   ]),
+                    429
+                )
+            );
         }
 
         // Generate credentials
-        foreach($user as $key => $value) {
-            if($key === 'ulid')
+        foreach ($user as $key => $value) {
+            if ($key === 'ulid') {
                 $key = 'uid';
+            }
 
             Session::set($key, $value);
         }
@@ -95,14 +96,15 @@ class AuthController extends ApiController
         $clientTokenGen = $validateClient->generateToken();
         Session::set('client_token', $clientTokenGen);
 
-        if(false === $validateClient->matchToken($clientTokenGen)) {
+        if (false === $validateClient->matchToken($clientTokenGen)) {
             die(
                 $response->json(
-                   $this->getOutput(false, 401, [
+                    $this->getOutput(false, 401, [
                       'auth' => 'Client not found!',
-                   ], 'Invalid Client!')
-                , 401)
-             );
+                   ], 'Invalid Client!'),
+                    401
+                )
+            );
         }
 
         // initJwtToken
@@ -123,7 +125,7 @@ class AuthController extends ApiController
                 ]), 201);
     }
 
-    public function updateToken(Request $request,Response $response)
+    public function updateToken(Request $request, Response $response)
     {
         // Validate header X-Client-Token
         $this->validateClientToken($request, $response);
@@ -132,15 +134,15 @@ class AuthController extends ApiController
         $this->validateJwt($request, $response);
 
         try {
-            $validator = new Validator;
+            $validator = new Validator();
             $validator->validate($request, [
                 'email' => 'required|email',
                 'password'  => 'required|min:8|max:100',
             ]);
             $errors = errors()->all();
 
-            
-            if($errors) {
+
+            if ($errors) {
 
                 $status = 203;
                 $callback = false;
@@ -148,7 +150,7 @@ class AuthController extends ApiController
 
                 $status = 401;
                 $errors = ['auth' => 'Invalid credentials,',];
-                
+
                 $payload = $request->all();
                 $email = readJson('email', $payload);
                 $password = readJson('password', $payload);
@@ -161,26 +163,27 @@ class AuthController extends ApiController
             (new \App\Core\Security\Middleware\RateLimiter('uptoken_request'))
                 ->setupForm(clientIP(), $callback, 5, 10, 1200);
 
-            if(false == $callback || empty($user)) {
+            if (false == $callback || empty($user)) {
                 die(
                     $response->json(
-                       $this->getOutput(false, $status, [
+                        $this->getOutput(false, $status, [
                             $errors
-                       ])
-                    , $status)
+                       ]),
+                        $status
+                    )
                 );
             }
-        }
-        catch(Exception $exception) {
+        } catch (Exception $exception) {
             die(
                 $response->json(
-                   $this->getOutput(false, 429, [
+                    $this->getOutput(false, 429, [
                       $exception->getMessage(),
-                   ])
-                , 429)
-             );
+                   ]),
+                    429
+                )
+            );
         }
-        
+
         // Update Client Token
         $userId = Session::get('uid');
         $validateClient = new ValidateClient($userId);
@@ -193,7 +196,7 @@ class AuthController extends ApiController
         ]), 201);
     }
 
-    public function logout(Request $request,Response $response)
+    public function logout(Request $request, Response $response)
     {
         // Validate header X-Client-Token
         $this->validateClientToken($request, $response);
@@ -215,11 +218,12 @@ class AuthController extends ApiController
 
     private function checkCredentials($user, $password): bool
     {
-        if($user) {
+        if ($user) {
             $hash = new Hash();
 
-            if($hash->matchPassword($password, $user->password))
+            if ($hash->matchPassword($password, $user->password)) {
                 return true;
+            }
         }
 
         return false;

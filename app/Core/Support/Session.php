@@ -9,8 +9,8 @@ class Session
 {
     /**
      * Get all value.
-     * 
-     * 
+     *
+     *
      * @return mixed
      */
     public static function all()
@@ -18,8 +18,9 @@ class Session
         $sessions = [];
         $escaped = ['password', 'errors', 'secret', 'jwtId', 'tokenJwt', '_previous_uri', '_old_input'];
         foreach ($_SESSION as $key => $value) {
-            if (in_array($key, $escaped))
+            if (in_array($key, $escaped)) {
                 continue;
+            }
 
             $sessions[$key] = $value;
         }
@@ -30,7 +31,7 @@ class Session
 
     /**
      * Get a value.
-     * 
+     *
      * @param string $key
      * @return mixed
      */
@@ -41,7 +42,7 @@ class Session
 
     /**
      * Set a value.
-     * 
+     *
      * @param string $key
      * @param string $value
      * @return bool
@@ -53,7 +54,7 @@ class Session
 
     /**
      * Determine if a value exists.
-     * 
+     *
      * @param string $key
      * @return bool
      */
@@ -64,7 +65,7 @@ class Session
 
     /**
      * Unset/Remove a value.
-     * 
+     *
      * @param string $key
      * @return void
      */
@@ -75,7 +76,7 @@ class Session
 
     /**
      * Completely destroy the session.
-     * 
+     *
      * @return void
      */
     public static function destroy()
@@ -87,7 +88,7 @@ class Session
     /**
      * Make the value available for the next request.
      * (Flash message)
-     * 
+     *
      * @param string $key
      * @param string|null $value
      * @return mixed
@@ -128,7 +129,7 @@ class Session
 
     /**
      * Get the input value from the previous request.
-     * 
+     *
      * @param string $key
      * @return mixed
      */
@@ -140,7 +141,7 @@ class Session
 
     /**
      * set the input (POST) values from the previous request.
-     * 
+     *
      * @return void
      */
     public static function setOldInput()

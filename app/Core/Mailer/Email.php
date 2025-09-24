@@ -19,7 +19,6 @@ use Exception;
  */
 class Email
 {
-
     protected $transport;
     protected $mailer;
     protected SymfonyEmail $email;
@@ -30,14 +29,14 @@ class Email
         $this->mailer = new Mailer($this->transport);
     }
 
-    /**  
-     * Handles to sending email.  
-     *  
+    /**
+     * Handles to sending email.
+     *
      */
     public function send()
     {
         try {
-            
+
             $this->mailer->send($this->email);
 
         } catch (TransportExceptionInterface $e) {
@@ -56,9 +55,9 @@ class Email
         }
     }
 
-    /**  
-     * Handles to build email message.  
-     *  
+    /**
+     * Handles to build email message.
+     *
      * @param string $from Set sender of email.
      * @param string $to Set email rescepients.
      * @param string $subject Set email subject.
@@ -66,7 +65,7 @@ class Email
      * @param string $bodyHtml Set message html.
      * @param array $attachment Set message attachments.
      * @param array $image Set message images.
-     * 
+     *
      */
     public function prepareData(string $from = '', string $to, string $subject, $bodyText = '', $bodyHtml = '', array $attachment = [], array $image = [])
     {
@@ -77,14 +76,15 @@ class Email
         $email->text($bodyText);
         $email->html($bodyHtml);
 
-        if(empty($from)) {
+        if (empty($from)) {
             $email->from(new Address(env('MAIL_FROM_ADDRESS'), env('MAIL_FROM_NAME')));
         } else {
-            if(is_string($from)) {
+            if (is_string($from)) {
                 $from = explode(",", $from);
 
-                if(! isset($from[0]) || ! isset($from[1]))
+                if (! isset($from[0]) || ! isset($from[1])) {
                     throw new Exception('Invalid sender email address.!');
+                }
 
                 $email->from(new Address($from[0], $from[1]));
             } else {
@@ -92,35 +92,38 @@ class Email
             }
         }
 
-        if(is_string($to)) {
+        if (is_string($to)) {
             $to = explode(",", $to);
 
-            if(! isset($to[0]) || ! isset($to[1]))
-                    throw new Exception('Invalid recepient email address.!');
+            if (! isset($to[0]) || ! isset($to[1])) {
+                throw new Exception('Invalid recepient email address.!');
+            }
 
             $email->to(new Address($to[0], $to[1]));
-        }  else {
+        } else {
             throw new Exception('Invalid recepient email address.!');
-        }                
+        }
 
         // Attachments
-        if(count($attachment)) {
-            foreach($attachment as $file)
+        if (count($attachment)) {
+            foreach ($attachment as $file) {
                 $email->addPart(new DataPart(new File($file)));
+            }
         }
-        
+
         // get the image contents from an existing file
-        if(count($image)) {
-            foreach($image as $file)
+        if (count($image)) {
+            foreach ($image as $file) {
                 $email->addPart((new DataPart(new File('/path/to/images/signature.gif'), 'footer-signature', 'image/gif'))->asInline());
+            }
         }
 
         $this->email = $email;
     }
 
-    /**  
-     * Handles to build dsn transport.  
-     *  
+    /**
+     * Handles to build dsn transport.
+     *
      */
     private function __getSettings()
     {

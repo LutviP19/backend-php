@@ -164,8 +164,9 @@ class Encryption
      */
     public function match(#[\SensitiveParameter] $value, $encryptedData): bool
     {
-        if (empty($value) || empty($encryptedData))
+        if (empty($value) || empty($encryptedData)) {
             return false;
+        }
 
         $encryptedData = $this->decrypt($encryptedData);
 

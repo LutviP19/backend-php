@@ -4,7 +4,6 @@
 
 namespace App\Core\Events;
 
-
 use Symfony\Component\EventDispatcher\EventDispatcher as SymfonyEventDispatcher;
 use App\Listeners\InventoryUpdateListener;
 use App\Listeners\EmailNotificationListener;
@@ -16,17 +15,17 @@ class EventDispatcher
     {
         $eventName = $event::NAME;
 
-        /**  
-         * Registering event listeners with the Event Dispatcher.  
+        /**
+         * Registering event listeners with the Event Dispatcher.
          */
         $dispatcher = new SymfonyEventDispatcher();
 
         // onOrderPlaced
-        if($eventName === 'order.placed') {
+        if ($eventName === 'order.placed') {
             $dispatcher->addListener($eventName, [
                                                     (new InventoryUpdateListener())->{$method}($event),
                                                     (new PaymentProcessingListener())->{$method}($event),
-                                                    (new EmailNotificationListener())->{$method}($event),                                                    
+                                                    (new EmailNotificationListener())->{$method}($event),
                                                 ]);
         }
     }

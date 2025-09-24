@@ -4,19 +4,16 @@ namespace App\Controllers;
 
 use App\Models\User;
 use App\Core\Events\Event;
-
 use App\Core\Http\{Request, Response};
 use App\Core\Message\Broker;
 use App\Core\Support\Config;
 use App\Core\Support\Session;
-
 // Events
 use App\Core\Events\EventDispatcher;
 use App\Services\OrderService;
 
 class PagesController extends Controller
 {
-
     /**
      * Show the home page.
      *
@@ -27,7 +24,7 @@ class PagesController extends Controller
     public function index(Request $request, Response $response)
     {
         $users = (new User())->all();
-        Session::set('users', generateUlid());
+        // Session::set('users', generateUlid());
         $server = $_SERVER['SERVER_PORT'] !== 9501 ? "PHP FPM" : "OpenSwoole";
 
         $this->view('home', ['users' => $users, 'server' => $server]);

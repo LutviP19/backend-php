@@ -79,18 +79,20 @@ class Log
         // You can now use your logger
         $logs = self::__formatedString($logs);
 
-        if ($type === 'info')
+        if ($type === 'info') {
             $logger->info(!empty($modul) ? "[$modul]:" . $logs : $logs);
-        elseif ($type === 'error')
+        } elseif ($type === 'error') {
             $logger->error(!empty($modul) ? "[$modul]:" . $logs : $logs);
-        else
+        } else {
             $logger->debug(!empty($modul) ? "[$modul]:" . $logs : $logs);
+        }
     }
 
     private static function __formatedString($logs)
     {
-        if (is_array($logs) || is_object($logs))
+        if (is_array($logs) || is_object($logs)) {
             $logs = json_encode($logs, JSON_UNESCAPED_SLASHES);
+        }
 
         return $logs;
     }

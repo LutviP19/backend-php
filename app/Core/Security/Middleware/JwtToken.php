@@ -12,7 +12,7 @@ use ReallySimpleJWT\Encoders\EncodeHS256 as EncodeHS256Jwt;
 use ReallySimpleJWT\Helper\Validator as HelperValidator;
 use Exception;
 
-class JwtToken 
+class JwtToken
 {
     /**
      * Defines the JWT secret.
@@ -43,7 +43,7 @@ class JwtToken
     protected $audience;
 
 
-    public function __construct($secret = null, $expirationTime = 3600, $jwtId = null, $issuer = null, $audience = null) 
+    public function __construct($secret = null, $expirationTime = 3600, $jwtId = null, $issuer = null, $audience = null)
     {
         $this->secret = (string) $secret ?: generateRandomString(16);
         $this->expirationTime = $expirationTime;
@@ -54,13 +54,14 @@ class JwtToken
 
     /**
      * create JWT token.
-     * 
+     *
      * @return string
      */
     public function createToken($userId, $info = null, $subject = null): string
     {
-        if(! $userId)
+        if (! $userId) {
             throw new Exception('userId not set!');
+        }
 
         $info = $info ?: Config::get('app.name');
         $subject = $subject ?: 'api access';
@@ -78,73 +79,73 @@ class JwtToken
                 ->setJwtId($this->jwtId)
                 ->setPayloadClaim('uid', $userId)
                 ->build();
-        
+
         return $token->getToken();
     }
 
     /**
      * parse JWT values.
-     * 
+     *
      * @return array
      */
     public function parseJwt($token, $isArray = true)
     {
-        if(! $token)
+        if (! $token) {
             throw new Exception('token not set!');
+        }
 
         try {
             $jwt = new Jwt($token);
-            
-            if($isArray) {
+
+            if ($isArray) {
                 $parse = new ParseJwt($jwt, new DecodeJwt());
                 $parsed = $parse->parse();
-            
+
                 return [
                     'header' => $parsed->getHeader(),
                     'payload' => $parsed->getPayload()
                 ];
             }
 
-            return $jwt;          
-        }
-        catch(Exception $ex) {
+            return $jwt;
+        } catch (Exception $ex) {
             throw new Exception('Failed to parsing JWT token!, '.$ex->getMessage());
         }
     }
 
     /**
      * validate JWT values.
-     * 
+     *
      * @return bool
      */
     public function validateToken($token): bool
     {
-        if(! $token)
+        if (! $token) {
             throw new Exception('token not set!');
+        }
 
         try {
             $jwt = $this->parseJwt($token, false);
 
             $parse = new ParseJwt($jwt, new DecodeJwt());
             $parsed = $parse->parse();
-    
+
             $validate = new ValidateJwt(
                 $parsed,
                 new EncodeHS256Jwt($this->secret),
                 new HelperValidator()
             );
-    
-            if(false === $validate->expiration() || 
-                false === $validate->notBefore() || 
-                false === $validate->audience($this->audience) || 
+
+            if (false === $validate->expiration() ||
+                false === $validate->notBefore() ||
+                false === $validate->audience($this->audience) ||
                 false === $validate->signature()) {
 
                 return false;
             }
-            
+
             return true;
-        }
-        catch(Exception $ex) {
+        } catch (Exception $ex) {
             throw new Exception('Failed to validated JWT token!, '.$ex->getMessage());
         }
     }

@@ -1,6 +1,7 @@
 .env
 .env.backup
 *.pid
+*.cache
 NOTES.txt
 /tools
 /node_modules

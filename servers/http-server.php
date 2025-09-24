@@ -22,10 +22,13 @@ use Psr\Http\Server\RequestHandlerInterface;
 
 $serverip = "127.0.0.1";
 $serverport = 9501;
-$max_request = 1000;
+$max_request = 10000;
 $ssl_dir = __DIR__ . "/../storage/ssl";
 
 $server = new Server($serverip, $serverport);
+
+// https
+// $server = new Server($serverip, $serverport, Server::SIMPLE_MODE, \OpenSwoole\Constant::SOCK_TCP | \OpenSwoole\Constant::SSL);
 
 $redis = new \Predis\Client([
     'host' => config('redis.cache.host'),
@@ -37,7 +40,11 @@ $redis = new \Predis\Client([
 $server->set([
     // Process ID
     "pid_file" => __DIR__ . "/swoole.pid",
-    // 'document_root' => __DIR__,
+    'document_root' => __DIR__ .'../public',
+
+    // // Setup SSL files
+    // 'ssl_cert_file' => $ssl_dir . '/ssl.crt',
+    // 'ssl_key_file' => $ssl_dir . '/ssl.key',
 
     // Logging
     "log_file" => __DIR__ . "/../storage/logs/swoole.log",
@@ -61,10 +68,6 @@ $server->set([
     // 'open_websocket_protocol' => true,
     // 'open_mqtt_protocol' => true,
 
-    // Setup SSL files
-    'ssl_cert_file' => $ssl_dir . '/ssl.crt',
-    'ssl_key_file' => $ssl_dir . '/ssl.key',
-
     // // HTTP2
     // 'http2_header_table_size' => 4095,
     // 'http2_initial_window_size' => 65534,
@@ -72,6 +75,19 @@ $server->set([
     // 'http2_max_frame_size' => 16383,
     // 'http2_max_header_list_size' => 4095,
 ]);
+
+// $process = new OpenSwoole\Process(function ($process) use ($server) {
+//     while (true) {
+//         $msg = $process->read();
+//         var_dump($msg);
+
+//         foreach ($server->connections as $conn) {
+//             $server->send($conn, $msg);
+//         }
+//     }
+// });
+
+// $server->addProcess($process);
 
 
 // Start Server
@@ -125,7 +141,7 @@ class MiddlewareB implements MiddlewareInterface
 }
 
 
-$server->on('request', function (OpenSwoole\Http\Request $request, OpenSwoole\Http\Response $response) {
+$server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse $response) {
     try {
         // returned of fetchDataAsynchronously
         $returned = ['response', 'content', 'tmp', 'void'];
@@ -133,34 +149,7 @@ $server->on('request', function (OpenSwoole\Http\Request $request, OpenSwoole\Ht
 
         // Simulate some asynchronous operation (e.g., fetching data from a database)
         go(function () use ($request, $response, $returned) {
-            // Perform some asynchronous task (e.g., database query)
-            // Replace this with your actual asynchronous operation
             try {
-                // // Return response
-                // while(true) {
-                //     ob_flush();
-                //     fetchDataAsynchronously($request, $response, $returned[0]);
-                //     ob_end_flush();
-                //     break;
-                // }
-                
-                // // Return content
-                // while(true) {
-                //     $content = fetchDataAsynchronously($request, $response, $returned[1]);
-                //     $content = (string) $content;
-                //     (new PsrResponse($content))->withHeader();
-                //     break;
-                // }
-
-                // // Return tmp
-                // while(true) {
-                //     ob_flush();
-                //     $tmp = fetchDataAsynchronously($request, $response, $returned[2]);
-                //     include($tmp);
-                //     ob_end_flush();
-                //     break;
-                // }
-
                 // Return void
                 while(true) {
                     // ob_flush();
@@ -169,46 +158,6 @@ $server->on('request', function (OpenSwoole\Http\Request $request, OpenSwoole\Ht
                     break;
                 }
 
-                // // Force Include index.php
-                // $file = __DIR__ .'/../public/index.php';
-                // initializeServerConstant($request);
-
-                // // if($response->isWritable()) {
-                // //     ob_start();
-                // //     include($file);
-                // //     $content = ob_get_clean();
-                // //     $response->header("Content-Type", "application/json");
-                // //     $response->end($content);
-                // // } else {
-                //     // $response = \OpenSwoole\Http\Response::create($request->fd);
-                //     // echo "New-FD:{$request->fd}, Created!\n";
-
-                //     // Get Assets
-                //     fetchDataAsynchronously($request, $response, 'assets');
-        
-                //     ob_start();
-                //     include($file);
-                //     $content = ob_get_clean();
-                //     // $response->header("Content-Type", "application/json");
-                //     $response->end($content);
-                    
-
-                //     // $content = (string) $content;
-                //     // \App\Core\Support\Log::debug($content, 'OpenSwoole.request.$content');
-                //     // (new PsrResponse($content))->withHeader("Content-Type", "application/json");
-                // // }
-
-                // Send response once the asynchronous task is complete
-                // if($response->isWritable())
-                    // $response->write($data);
-                    // Detach the response, making it independent and send the file descriptor of the client to a task
-                    // $response->detach();
-                // else 
-                    // $response->end($data);
-
-
-                // Stop state
-                // exit(1);
                 throw new ExitException();
             } catch(ExitException $e) {
                 // ... handle gracefully ...
@@ -224,7 +173,7 @@ $server->on('request', function (OpenSwoole\Http\Request $request, OpenSwoole\Ht
     }
 });
 
-// Use Middleware
+// // Use Middleware
 // $stack = (new StackHandler())
 //     ->add(new DefaultResponseMiddleware())
 //     ->add(new MiddlewareA())
@@ -236,13 +185,13 @@ $server->start();
 
 
 // Simulated asynchronous function to fetch data from a database
-function fetchDataAsynchronously(OpenSwoole\Http\Request $request, OpenSwoole\Http\Response $response, $returned = 'response') {
+function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse $response, $returned = 'response') {
 
     // Check response status
     if($response->isWritable())
         echo "FD:{$request->fd}, rendered!\n";
     else {
-        $response = \OpenSwoole\Http\Response::create($request->fd);
+        $response = $response::create($request->fd);
         echo "New-FD:{$request->fd}, Created!\n";
     }
     
@@ -272,11 +221,11 @@ function fetchDataAsynchronously(OpenSwoole\Http\Request $request, OpenSwoole\Ht
                 ob_start();
                 include $filePath;
                 $content = ob_get_clean();
-                $response->header('Content-Type', 'text/html');
+                $response->header('Content-Type', 'text/html; charset=UTF-8');
                 $response->header('Content-Encoding', 'gzip');
                 $response->header('Content-Length', strlen(gzencode($content)));
 
-                $setHeaders[] = "Content-Type, text/html";
+                $setHeaders[] = "Content-Type, text/html; charset=UTF-8";
                 $setHeaders[] = "Content-Encoding, gzip";
                 $setHeaders[] = "Content-Length, ".strlen(gzencode($content));
 
@@ -284,20 +233,20 @@ function fetchDataAsynchronously(OpenSwoole\Http\Request $request, OpenSwoole\Ht
                 break;
             case 'ico':
                 $content = file_get_contents($filePath);
-                $response->header('Content-Type', 'font/otf');
+                $response->header('Content-Type', 'image/vnd.microsoft.icon');
                 $response->header('Content-Length', strlen($content));
 
-                $setHeaders[] = "Content-Type, font/otf";
+                $setHeaders[] = "Content-Type, image/vnd.microsoft.icon";
                 $setHeaders[] = "Content-Length, ".strlen($content);
 
                 $response->end($content);
                 break;
             case 'css':
                 $content = file_get_contents($filePath);
-                $response->header('Content-Type', 'text/css');
+                $response->header('Content-Type', 'text/css; charset=UTF-8');
                 $response->header('Content-Length', strlen($content));
 
-                $setHeaders[] = "Content-Type, text/css";
+                $setHeaders[] = "Content-Type, text/css; charset=UTF-8";
                 $setHeaders[] = "Content-Length, ".strlen($content);
 
                 $response->end($content);
@@ -412,11 +361,11 @@ function fetchDataAsynchronously(OpenSwoole\Http\Request $request, OpenSwoole\Ht
                 ob_start();
                 include $filePath;
                 $content = ob_get_clean();
-                $response->header('Content-Type', 'text/html');
+                $response->header('Content-Type', 'text/html; charset=UTF-8');
                 $response->header('Content-Encoding', 'gzip');
                 $response->header('Content-Length', strlen(gzencode($content)));
 
-                $setHeaders[] = "Content-Type, text/html";
+                $setHeaders[] = "Content-Type, text/html; charset=UTF-8";
                 $setHeaders[] = "Content-Encoding, gzip";
                 $setHeaders[] = "Content-Length, ".strlen(gzencode($content));
 
@@ -553,10 +502,12 @@ function startSession($response) {
     $sessionExp = 60*60*24*2;
     $sessionId = session_id();
 
-    if (is_null($_COOKIE['BACKENDPHPSESSID'])) {
+    if (!isset($_COOKIE['BACKENDPHPSESSID']) || is_null($_COOKIE['BACKENDPHPSESSID'])) {
+
         $response->header('Set-Cookie', "BACKENDPHPSESSID={$sessionId}; Max-Age={$sessionExp}; Path=/; SameSite=Lax;");
 
         $redis->set("session:$sessionId", serialize($_SESSION));
+        $_COOKIE['BACKENDPHPSESSID'] = $sessionId;
     } else {
         $sessionId = $_COOKIE['BACKENDPHPSESSID'];
     }

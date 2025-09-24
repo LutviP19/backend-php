@@ -6,7 +6,8 @@
 - Redis CLI
 - RabbitMQ
 - MySQL / SQLite
-- Docker Desktop(optional)
+- Docker Desktop (optional)
+- [OpenSwoole 22.x](https://openswoole.com/docs) (optional)
 
 # Setup the app up and running
 - Install depedencies.
@@ -36,7 +37,11 @@ $ docker compose up docker-compose/mailpit/docker-compose.yml
 ```
 - Run server.
 ```bash
-    php -S localhost:8000 -t public/
+$ php -S localhost:8000 -t public/
+```
+- Or using swoole.
+```bash
+$ php servers/http-server.php
 ```
 
 # Console App

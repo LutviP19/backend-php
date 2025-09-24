@@ -28,9 +28,7 @@ session_name('BACKENDPHPSESSID'); // Set a custom session name
 session_start();
 /* ----------------------------- Default settings END -------------------------------- */
 
-/**
- * Bootstrap the Application
- */
+
 use App\Console\Commands\InfoCommand;
 use App\Console\Commands\TestCommand;
 use App\Core\Support\App;

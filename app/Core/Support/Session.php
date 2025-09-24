@@ -4,14 +4,14 @@ namespace App\Core\Support;
 
 /**
  * Handle all the stuff related to session.
+ * @author Lutvi <lutvip19@gmail.com>
  */
 class Session
 {
     /**
-     * Get all value.
+     * Get all session values.
      *
-     *
-     * @return mixed
+     * @return array
      */
     public static function all()
     {
@@ -30,7 +30,7 @@ class Session
 
 
     /**
-     * Get a value.
+     * Get a session value by key.
      *
      * @param string $key
      * @return mixed

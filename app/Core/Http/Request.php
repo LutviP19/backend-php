@@ -6,6 +6,10 @@ use App\Core\Support\Session;
 use App\Core\Validation\Validator;
 use Exception;
 
+/**
+ * Request class
+ * @author Lutvi <lutvip19@gmail.com>
+ */
 class Request
 {
     /**

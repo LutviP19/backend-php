@@ -2,6 +2,10 @@
 
 namespace App\Core\Database;
 
+/**
+ * Model class
+ * @author Lutvi <lutvip19@gmail.com>
+ */
 class Model extends QueryBuilder
 {
     /**

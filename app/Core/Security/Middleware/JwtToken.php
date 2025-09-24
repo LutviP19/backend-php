@@ -12,6 +12,10 @@ use ReallySimpleJWT\Encoders\EncodeHS256 as EncodeHS256Jwt;
 use ReallySimpleJWT\Helper\Validator as HelperValidator;
 use Exception;
 
+/**
+ * JwtToken class
+ * @author Lutvi <lutvip19@gmail.com>
+ */
 class JwtToken
 {
     /**

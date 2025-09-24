@@ -4,6 +4,7 @@ namespace App\Core\Support;
 
 /**
  * Handle all the stuff related to cookies.
+ * @author Lutvi <lutvip19@gmail.com>
  */
 class Cookie
 {

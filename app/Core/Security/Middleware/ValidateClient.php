@@ -2,12 +2,17 @@
 
 namespace App\Core\Security\Middleware;
 
+
 use App\Models\User;
 use App\Core\Support\Config;
 use App\Core\Security\Hash;
 use Exception;
 use RuntimeException;
 
+/**
+ * ValidateClient class
+ * @author Lutvi <lutvip19@gmail.com>
+ */
 class ValidateClient
 {
     protected $clientId;
@@ -28,6 +33,11 @@ class ValidateClient
                         ]);
     }
 
+    /**
+     * getToken function
+     *
+     * @return mixed
+     */
     public function getToken()
     {
         // get cache from redis
@@ -57,6 +67,11 @@ class ValidateClient
         return null;
     }
 
+    /**
+     * generateToken function
+     *
+     * @return mixed
+     */
     public function generateToken()
     {
         $token = $this->getToken();
@@ -68,6 +83,11 @@ class ValidateClient
         return null;
     }
 
+    /**
+     * updateToken function
+     *
+     * @return void
+     */
     public function updateToken()
     {
         $token = User::updateClientToken($this->columnId, $this->clientId);
@@ -79,6 +99,13 @@ class ValidateClient
         return $token;
     }
 
+    /**
+     * matchToken function
+     *
+     * @param  [string]  $clientToken
+     *
+     * @return boolean
+     */
     public function matchToken($clientToken): bool
     {
         $token = $this->getToken($this->columnId);
@@ -93,6 +120,11 @@ class ValidateClient
         return $this->hash->matchHash($token, $clientToken);
     }
 
+    /**
+     * delToken function
+     *
+     * @return void
+     */
     public function delToken(): void
     {
         // get cache from redis
@@ -104,6 +136,13 @@ class ValidateClient
         }
     }
 
+    /**
+     * __checkColumnId function
+     *
+     * @param  [string] $column
+     *
+     * @return void
+     */
     private function __checkColumnId($column)
     {
         $this->clientId = $column === 'id' && gettype($this->clientId) === 'string' ? null : $this->clientId;

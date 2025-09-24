@@ -8,6 +8,8 @@ use Exception;
  * Router for our MVC Application.
  * This router supports both static routes as
  * well as routes with dynamic parameters.
+ * 
+ * @author Lutvi <lutvip19@gmail.com>
  */
 class Router
 {

@@ -8,12 +8,12 @@ use App\Core\Support\Config;
 
 /**
  * Connection Class
- *  
+ *  @author Lutvi <lutvip19@gmail.com>
  */
 class Connection
 {    
     /**
-     * Method make
+     * Method make PDO connection
      *
      * @return void
      */

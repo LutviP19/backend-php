@@ -9,6 +9,10 @@ use App\Listeners\InventoryUpdateListener;
 use App\Listeners\EmailNotificationListener;
 use App\Listeners\PaymentProcessingListener;
 
+/**
+ * EventDispatcher class
+ * @author Lutvi <lutvip19@gmail.com>
+ */
 class EventDispatcher
 {
     public function dispatch($event, $method)

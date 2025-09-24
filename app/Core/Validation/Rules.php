@@ -7,6 +7,10 @@ use App\Core\Http\Request;
 use App\Core\Support\Session;
 use App\Core\Database\QueryBuilder;
 
+/**
+ * Rules class
+ * @author Lutvi <lutvip19@gmail.com>
+ */
 class Rules
 {
     /**

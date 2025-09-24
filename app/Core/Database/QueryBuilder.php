@@ -5,6 +5,10 @@ namespace App\Core\Database;
 use Exception;
 use PDOException;
 
+/**
+ * QueryBuilder class
+ * @author Lutvi <lutvip19@gmail.com>
+ */
 class QueryBuilder
 {
     /*

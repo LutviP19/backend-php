@@ -7,6 +7,10 @@ use App\Core\Security\CSRF;
 use App\Core\Support\Session;
 use App\Core\Http\{Request,Response};
 
+/**
+ * BaseController class
+ * @author Lutvi <lutvip19@gmail.com>
+ */
 class BaseController
 {
     public function __construct()

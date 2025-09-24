@@ -4,6 +4,10 @@ namespace App\Core\Events;
 
 use Roolith\Event\Event as RoolithEvent;
 
+/**
+ * Event class
+ * @author Lutvi <lutvip19@gmail.com>
+ */
 class Event extends RoolithEvent
 {
 }

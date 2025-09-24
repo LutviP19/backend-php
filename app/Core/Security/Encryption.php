@@ -6,6 +6,10 @@ use App\Core\Support\Config;
 use Exception;
 use RuntimeException;
 
+/**
+ * Encryption class
+ * @author Lutvi <lutvip19@gmail.com>
+ */
 class Encryption
 {
     protected $encryptionKey;

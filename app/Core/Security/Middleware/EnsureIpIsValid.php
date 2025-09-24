@@ -5,6 +5,10 @@ namespace App\Core\Security\Middleware;
 use App\Core\Http\{Request,Response};
 use App\Core\Support\Config;
 
+/**
+ * EnsureIpIsValid class
+ * @author Lutvi <lutvip19@gmail.com>
+ */
 class EnsureIpIsValid
 {
     /**

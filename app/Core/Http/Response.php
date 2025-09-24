@@ -5,6 +5,10 @@ namespace App\Core\Http;
 use App\Core\Support\Session;
 use App\Core\Http\Request;
 
+/**
+ * Response class
+ * @author Lutvi <lutvip19@gmail.com>
+ */
 class Response
 {
     /**

@@ -13,6 +13,10 @@ use App\Controllers\Api\ApiController;
 use App\Core\Http\{Request,Response};
 use Exception;
 
+/**
+ * AuthController class
+ * @author Lutvi <lutvip19@gmail.com>
+ */
 class AuthController extends ApiController
 {
     protected $id;
@@ -23,6 +27,14 @@ class AuthController extends ApiController
         parent::__construct();
     }
 
+    /**
+     * login function
+     *
+     * @param  Request  $request
+     * @param  Response $response
+     *
+     * @return response
+     */
     public function login(Request $request, Response $response)
     {
 
@@ -125,6 +137,14 @@ class AuthController extends ApiController
                 ]), 201);
     }
 
+    /**
+     * updateToken function
+     *
+     * @param  Request  $request
+     * @param  Response $response
+     *
+     * @return $response->json
+     */
     public function updateToken(Request $request, Response $response)
     {
         // Validate header X-Client-Token
@@ -196,6 +216,14 @@ class AuthController extends ApiController
         ]), 201);
     }
 
+    /**
+     * logout function
+     *
+     * @param  Request  $request
+     * @param  Response $response
+     *
+     * @return $response->json
+     */
     public function logout(Request $request, Response $response)
     {
         // Validate header X-Client-Token
@@ -216,6 +244,14 @@ class AuthController extends ApiController
         ]), 200);
     }
 
+    /**
+     * checkCredentials function
+     *
+     * @param  [string]  $user
+     * @param  [string]  $password
+     *
+     * @return boolean
+     */
     private function checkCredentials($user, $password): bool
     {
         if ($user) {

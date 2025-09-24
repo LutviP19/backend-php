@@ -7,6 +7,10 @@ use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
 use Exception;
 
+/**
+ * Broker class
+ * @author Lutvi <lutvip19@gmail.com>
+ */
 class Broker
 {
     protected static $driver;
@@ -16,6 +20,14 @@ class Broker
         self::$driver = Config::get('default_mb');
     }
 
+    /**
+     * sendMessage function
+     *
+     * @param  [string] $message
+     * @param  [typstringe] $method
+     *
+     * @return void
+     */
     public static function sendMessage($message = null, $method = null)
     {
         if (is_null($message)) {
@@ -37,6 +49,14 @@ class Broker
 
     }
 
+    /**
+     * getMessage function
+     *
+     * @param  [callable] $callback
+     * @param  [string] $method
+     *
+     * @return void
+     */
     public static function getMessage($callback = null, $method = null)
     {
         if (is_null($callback)) {
@@ -58,6 +78,14 @@ class Broker
 
     }
 
+    /**
+     * sendMessageRabbitMq function
+     *
+     * @param  [string] $message
+     * @param  string $method
+     *
+     * @return void
+     */
     private static function sendMessageRabbitMq($message, $method = 'fanout')
     {
         $default_mb = self::$driver;
@@ -79,6 +107,14 @@ class Broker
         $connection->close();
     }
 
+    /**
+     * getMessageRabbitMq function
+     *
+     * @param  [callable] $callback
+     * @param  string $method
+     *
+     * @return void
+     */
     private static function getMessageRabbitMq($callback, $method = 'fanout')
     {
         if (!is_callable($callback)) {

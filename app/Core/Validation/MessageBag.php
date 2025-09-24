@@ -4,6 +4,10 @@ namespace App\Core\Validation;
 
 use App\Core\Support\Session;
 
+/**
+ * MessageBag class
+ * @author Lutvi <lutvip19@gmail.com>
+ */
 class MessageBag
 {
     /**

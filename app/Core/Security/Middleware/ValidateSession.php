@@ -5,6 +5,10 @@ namespace App\Core\Security\Middleware;
 use App\Core\Support\Session;
 use App\Core\Http\{Request, Response};
 
+/**
+ * ValidateSession class
+ * @author Lutvi <lutvip19@gmail.com>
+ */
 class ValidateSession
 {
     /**

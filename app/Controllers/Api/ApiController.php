@@ -10,6 +10,10 @@ use App\Core\Security\Middleware\JwtToken;
 use App\Core\Support\Config;
 use App\Core\Support\Session;
 
+/**
+ * ApiController class
+ * @author Lutvi <lutvip19@gmail.com>
+ */
 class ApiController extends BaseController
 {
     protected $jwtToken;
@@ -57,6 +61,14 @@ class ApiController extends BaseController
      * used in every controller.
      */
 
+    /**
+     * validateToken function
+     *
+     * @param  Request  $request
+     * @param  Response $response
+     *
+     * @return void
+     */
     public function validateToken(Request $request, Response $response)
     {
         $header = $request->headers();
@@ -75,6 +87,14 @@ class ApiController extends BaseController
         }
     }
 
+    /**
+     * validateClientToken function
+     *
+     * @param  Request  $request
+     * @param  Response $response
+     *
+     * @return void
+     */
     public function validateClientToken(Request $request, Response $response)
     {
         $header = $request->headers();
@@ -131,6 +151,11 @@ class ApiController extends BaseController
         }
     }
 
+    /**
+     * initJwtToken function
+     *
+     * @return void
+     */
     public function initJwtToken()
     {
         $secret = Session::get('secret');

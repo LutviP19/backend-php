@@ -16,6 +16,7 @@ use Exception;
 
 /**
  * Mailer transport
+ * @author Lutvi <lutvip19@gmail.com>
  */
 class Email
 {

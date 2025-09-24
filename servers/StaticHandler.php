@@ -11,9 +11,10 @@ $serverip = "127.0.0.1";
 $serverport = 9501;
 
 /**
- * initializeServerConstant function 
+ * initializeServerConstant function
  *
- * @param \OpenSwoole\Http\Request $request
+ * @param  \OpenSwoole\Http\Request $request
+ *
  * @return void
  */
 function initializeServerConstant(\OpenSwoole\Http\Request $request): void

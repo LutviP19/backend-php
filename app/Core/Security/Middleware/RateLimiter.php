@@ -11,6 +11,10 @@ use Maba\GentleForce\Exception\RateLimitReachedException;
 use Predis\Client as PredisClient;
 use Exception;
 
+/**
+ * RateLimiter class
+ * @author Lutvi <lutvip19@gmail.com>
+ */
 class RateLimiter
 {
     /**

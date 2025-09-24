@@ -531,7 +531,7 @@ function startSession($response)
 
     // \App\Core\Support\Log::debug("Current Session ID: " . $sessionId, 'startSession.sessionId');
     // \App\Core\Support\Log::debug($sessionData, 'startSession.sessionData');
-    \App\Core\Support\Log::debug($_COOKIE, 'startSession.$_COOKIE');
+    // \App\Core\Support\Log::debug($_COOKIE, 'startSession.$_COOKIE');
 
     if ($sessionData) {
         $_SESSION = unserialize($sessionData);

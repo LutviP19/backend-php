@@ -12,7 +12,7 @@ use App\Core\Support\Session;
 use App\Core\Validation\MessageBag;
 
 /**
- * get environment varible.
+ * get environment variable.
  *
  * @param array $data
  * @return void
@@ -22,11 +22,25 @@ function env($key, $alt = '')
     return isset($_ENV[$key]) ? $_ENV[$key] : $alt;
 }
 
+/**
+ * get config
+ *
+ * @param  [string] $key
+ *
+ * @return string
+ */
 function config($key)
 {
     return Config::get($key);
 }
 
+/**
+ * default database path for sqlite
+ *
+ * @param  [string] $key
+ *
+ * @return string
+ */
 function database_path($db_name)
 {
     return BASE_PATH . 'storage/database/' . $db_name;
@@ -173,6 +187,11 @@ function old($key)
     return Session::getOldInput($key);
 }
 
+/**
+ * Get client IP
+ *
+ * @return string
+ */
 function clientIP()
 {
     // return (new \App\Core\Security\Middleware\EnsureIpIsValid)->ip();
@@ -198,6 +217,15 @@ function clientIP()
     return $ip == '::1' ? '127.0.0.1' : $ip;
 }
 
+/**
+ * Match encryption data
+ *
+ * @param  [string] $value
+ * @param  [string] $encryptedData
+ * @param  [string] $key
+ *
+ * @return mixed
+ */
 function matchEncryptedData($value, $encryptedData, $key = null)
 {
     try {
@@ -217,6 +245,14 @@ function matchEncryptedData($value, $encryptedData, $key = null)
     }
 }
 
+/**
+ * sort function to encypt data
+ *
+ * @param  [string] $value
+ * @param  [string] $key
+ *
+ * @return string|null
+ */
 function encryptData($value, $key = null)
 {
     try {
@@ -236,6 +272,14 @@ function encryptData($value, $key = null)
     }
 }
 
+/**
+ * sort function to decypt data
+ *
+ * @param  [string] $value
+ * @param  [string] $key
+ *
+ * @return string|null
+ */
 function decryptData($value, $key = null)
 {
     try {
@@ -255,6 +299,14 @@ function decryptData($value, $key = null)
     }
 }
 
+/**
+ * sort function to generate random string
+ *
+ * @param  integer $len
+ * @param  boolean $base64
+ *
+ * @return string
+ */
 function generateRandomString($len = 64, $base64 = false): string
 {
     if ($base64) {
@@ -264,6 +316,14 @@ function generateRandomString($len = 64, $base64 = false): string
     return \App\Core\Security\Hash::randomString($len);
 }
 
+/**
+ * sort function to generate ulid
+ *
+ * @param  boolean $lowercased
+ * @param  int  $timestamp
+ *
+ * @return string
+ */
 function generateUlid($lowercased = false, $timestamp = null): string
 {
     if (!is_null($timestamp)) {
@@ -273,11 +333,31 @@ function generateUlid($lowercased = false, $timestamp = null): string
     return (string) \Ulid\Ulid::generate($lowercased);
 }
 
+/**
+ * sort function to send queue message to rabbitmq
+ *
+ * @param  [string] $message
+ *
+ * @return void
+ */
 function sendMessageQueue($message): void
 {
     (new \App\Core\Message\Broker())->sendMessage($message);
 }
 
+/**
+ * sort function to sending email
+ *
+ * @param  string $from
+ * @param  string $to
+ * @param  string $subject
+ * @param  string $bodyText
+ * @param  string $bodyHtml
+ * @param  array  $attachment
+ * @param  array  $image
+ *
+ * @return void
+ */
 function sendEmail(string $from = '', string $to, string $subject, $bodyText = '', $bodyHtml = '', array $attachment = [], array $image = []): void
 {
     $email = (new \App\Core\Mailer\Email());
@@ -285,6 +365,13 @@ function sendEmail(string $from = '', string $to, string $subject, $bodyText = '
     $email->send();
 }
 
+/**
+ * sort function to validate json
+ *
+ * @param  [string]  $value
+ *
+ * @return boolean
+ */
 function isJson($value): bool
 {
     if (!is_string($value)) {
@@ -304,6 +391,15 @@ function isJson($value): bool
     return true;
 }
 
+/**
+ * sort function to read json node
+ *
+ * @param  [string] $key
+ * @param  [string] $payload
+ * @param  [string] $default
+ *
+ * @return void
+ */
 function readJson($key = null, $payload = null, $default = null)
 {
     if (empty($key) || empty($payload)) {
@@ -322,6 +418,16 @@ function readJson($key = null, $payload = null, $default = null)
     return $payload;
 }
 
+/**
+ * slug function
+ *
+ * @param  [string] $title
+ * @param  string $separator
+ * @param  string $language
+ * @param  array  $dictionary
+ *
+ * @return void
+ */
 function slug($title, $separator = '-', $language = 'en', $dictionary = ['@' => 'at'])
 {
     // Convert all dashes/underscores into separator

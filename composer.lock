@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b1cbfcbd044121cd1a97663f9d73305e",
+    "content-hash": "003045cc2b5d10182700fc2bc5fc3f59",
     "packages": [
         {
             "name": "amphp/amp",
@@ -4357,6 +4357,101 @@
                 }
             ],
             "time": "2025-08-25T06:35:40+00:00"
+        },
+        {
+            "name": "upscale/ext-openswoole",
+            "version": "v22.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/upscalesoftware/ext-openswoole.git",
+                "reference": "201f253d0b5a28fb9d0e45476b64c617d39d5d23"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/upscalesoftware/ext-openswoole/zipball/201f253d0b5a28fb9d0e45476b64c617d39d5d23",
+                "reference": "201f253d0b5a28fb9d0e45476b64c617d39d5d23",
+                "shasum": ""
+            },
+            "require": {
+                "ext-openswoole": "self.version"
+            },
+            "replace": {
+                "upscale/ext-swoole": "*"
+            },
+            "type": "metapackage",
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "description": "Wrapper for ext-openswoole interchangeable with ext-swoole",
+            "keywords": [
+                "Open Swoole",
+                "ext-openswoole",
+                "ext-swoole",
+                "extension",
+                "openswoole",
+                "swoole"
+            ],
+            "support": {
+                "issues": "https://github.com/upscalesoftware/ext-openswoole/issues",
+                "source": "https://github.com/upscalesoftware/ext-openswoole/tree/v22.0.0"
+            },
+            "time": "2022-11-21T02:18:44+00:00"
+        },
+        {
+            "name": "upscale/swoole-session",
+            "version": "2.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/upscalesoftware/swoole-session.git",
+                "reference": "092d3ae14239df7cf018d0fdcbc5042966d768cf"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/upscalesoftware/swoole-session/zipball/092d3ae14239df7cf018d0fdcbc5042966d768cf",
+                "reference": "092d3ae14239df7cf018d0fdcbc5042966d768cf",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.0",
+                "upscale/ext-openswoole": "^4.0||^22.0",
+                "upscale/ext-swoole": "^4.0||^5.0"
+            },
+            "require-dev": {
+                "ext-curl": "*",
+                "phpunit/phpunit": "^9.5",
+                "upscale/swoole-launchpad": "^2.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Upscale\\Swoole\\Session\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "authors": [
+                {
+                    "name": "Upscale Software Team",
+                    "email": "info@upscalesoftware.com"
+                }
+            ],
+            "description": "PHP sessions compatibility with Swoole web-server",
+            "homepage": "https://github.com/upscalesoftware/swoole-session",
+            "keywords": [
+                "compatibility",
+                "php",
+                "server",
+                "session",
+                "swoole"
+            ],
+            "support": {
+                "issues": "https://github.com/upscalesoftware/swoole-session/issues",
+                "source": "https://github.com/upscalesoftware/swoole-session/tree/2.1.0"
+            },
+            "time": "2023-06-12T20:07:21+00:00"
         },
         {
             "name": "vlucas/phpdotenv",

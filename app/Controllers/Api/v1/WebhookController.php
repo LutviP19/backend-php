@@ -66,7 +66,8 @@ class WebhookController extends ApiController
             }
         }
 
-        // \App\Core\Support\Log::debug($_REQUEST, 'WebhookController.index.$_REQUEST');
+        \App\Core\Support\Log::debug($_SERVER, 'WebhookController.index.$_SERVER');
+        \App\Core\Support\Log::debug($_COOKIE, 'WebhookController.index.$_COOKIE');
 
         $payload = $request->all();
         \App\Core\Support\Log::debug($payload, 'WebhookController.index.payload');

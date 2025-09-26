@@ -78,6 +78,10 @@ class PagesController extends Controller
         $broker = new Broker();
         $broker->sendMessage($message);
 
+        \App\Core\Support\Log::debug($_SERVER, 'PagesController.extra.$_SERVER');
+        \App\Core\Support\Log::debug($_COOKIE, 'PagesController.extra.$_COOKIE');
+
+        echo "[x] SESSION_ID: ", \session_id(), "<br>\r\n";
         echo "[x] Sent[$date]: ", decryptData($message), "<br>\r\n";
         echo "Sending message to RabbitMQ: {$message}";
 

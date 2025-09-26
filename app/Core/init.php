@@ -1,6 +1,5 @@
 <?php
 
-
 if (!defined('BASEPATH')) {
     define('BASEPATH', __DIR__ . '/../..');
 }
@@ -18,7 +17,8 @@ $dotenv->load();
 
 date_default_timezone_set(env('APP_TIMEZONE', 'Asia/Jakarta'));
 
-if ($_SERVER['SERVER_PORT'] !== 9501) { // OpenSwoole Server
+
+if (session_status() == PHP_SESSION_NONE) {
     //Starting the session will be the first we do.
     ini_set('session.save_handler', env('SESSION_DRIVER', 'file'));
     if (env('SESSION_DRIVER') === "redis") {
@@ -32,6 +32,20 @@ if ($_SERVER['SERVER_PORT'] !== 9501) { // OpenSwoole Server
 
     session_start();
 }
+
+if ($_SERVER['SERVER_PORT'] === 9501) { // OpenSwoole Server
+
+    if(isset($_COOKIE['BACKENDPHPSESSID'])){
+        session_id($_COOKIE['BACKENDPHPSESSID']);
+        // var_dump($_COOKIE);
+    }
+
+    \App\Core\Support\Log::debug($_COOKIE, 'init.$_SERVER');
+    \App\Core\Support\Log::debug(session_id(), 'init.session_id()');
+}
+
+
+
 /* ----------------------------- Default settings END -------------------------------- */
 
 /**

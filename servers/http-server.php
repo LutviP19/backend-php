@@ -10,7 +10,7 @@ error_reporting(~E_NOTICE & ~E_DEPRECATED);
 
 require_once __DIR__ . '/bootstrap.php';
 
-
+use Upscale\Swoole\Session\SessionDecorator;
 use OpenSwoole\Http\Request as OpenSwooleRequest;
 use OpenSwoole\Http\Response as OpenSwooleResponse;
 use OpenSwoole\Core\Psr\Middleware\StackHandler;
@@ -32,9 +32,9 @@ $server = new Server($serverip, $serverport);
 // $server = new Server($serverip, $serverport, Server::SIMPLE_MODE, \OpenSwoole\Constant::SOCK_TCP | \OpenSwoole\Constant::SSL);
 
 $redis = new \Predis\Client([
-    'host' => config('redis.cache.host'),
-    'port' => config('redis.cache.port'),
-    'database' => config('redis.cache.database')
+    'host' => config('redis.default.host'),
+    'port' => config('redis.default.port'),
+    'database' => config('redis.default.database')
 ]);
 
 // Server settings
@@ -60,9 +60,7 @@ $server->set([
     'compression_min_length' => 20,
 
     // // Coroutine
-    // 'enable_coroutine' => true,
-    // 'max_coroutine' => 3000,
-    // 'send_yield' => false,
+    'enable_coroutine' => false,
 
     // // Protocol
     // 'open_http_protocol' => true,
@@ -91,13 +89,6 @@ $server->set([
 
 // $server->addProcess($process);
 
-
-// Start Server
-$server->on("Start", function (Server $server) {
-    global $serverip, $serverport;
-
-    echo "Swoole http server is started at http://" . $serverip . ":" . $serverport . "\n";
-});
 
 class CustomServerRequest extends \OpenSwoole\Core\Psr\ServerRequest
 {
@@ -146,9 +137,42 @@ class MiddlewareB implements MiddlewareInterface
     }
 }
 
+// Start Server
+$server->on("Start", function (Server $server) {
+    global $serverip, $serverport;
 
-$server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse $response) use ($server) {
+    echo "Swoole http server is started at http://" . $serverip . ":" . $serverport . "\n";
+});
+
+$server->on("Connect", function (Server $server, int $fd) {
+    global $sessID;
+
+    $sessID = $server->session_id;
+    $clientInfo = $server->getClientInfo($fd);
+
+    session_start();
+
+    if ($clientInfo) {
+        echo "Client connected: " . $clientInfo['remote_ip'] . "\n";
+        echo "Http sessStatus: " . session_status() . "\n";
+        echo "Http sessID: " . $sessID . "\n";
+    }
+});
+
+$server->on('request', new SessionDecorator(function (OpenSwooleRequest $request, OpenSwooleResponse $response) use ($server) {
     try {
+        // Log the incoming request method
+        echo "Received a '{$request->server['request_method']}:'{$request->server['request_uri']} request\n";
+
+        // Handle an OPTIONS request with an empty response
+        if ($request->server['request_method'] === 'OPTIONS') {
+            // Explicitly set an HTTP status code for preflight requests
+            $response->status(204); // 204 No Content
+            // End the response without a body
+            $response->end();
+            return;
+        }
+
         // returned of fetchDataAsynchronously
         $returned = ['response', 'content', 'tmp', 'void'];
 
@@ -161,17 +185,23 @@ $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse 
                 // Return void
                 while (true) {
                     // ob_flush();
-                    fetchDataAsynchronously($request, $response, $returned[3]);
+                    $response = fetchDataAsynchronously($request, $response, 'response');
                     // ob_end_flush();
                     break;
                 }
 
+                startSession($response);                
+                $response->end();
+                // saveSession();
+
+                session_write_close(); // Ensure session data is saved
                 throw new ExitException();
             } catch (ExitException $e) {
                 // ... handle gracefully ...
                 exit(1);
             }
         });
+
     } catch (Throwable $e) {
         // Handle exceptions and errors
         $response->status(500);
@@ -179,7 +209,7 @@ $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse 
         // Log the exception or send it to an error monitoring service
         echo "Exception: " . $e->getMessage() . "\n";
     }
-});
+}));
 
 // // Use Middleware
 // $stack = (new StackHandler())
@@ -196,9 +226,9 @@ $server->start();
 function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse $response, $returned = 'response')
 {
 
-    // Check response status
+    // Check response Writable status
     if ($response->isWritable()) {
-        echo "FD:{$request->fd}, rendered!\n";
+        echo "FD:{$request->fd}, Writable!\n";
     } else {
         $response = $response::create($request->fd);
         echo "New-FD:{$request->fd}, Created!\n";
@@ -209,6 +239,14 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
 
     // Get header metadata
     $headers = getallheaders();
+
+    if (isset($request->header['user-agent'])) {
+        $userAgent = $request->header['user-agent'];
+        echo  "Client User-Agent: " . $userAgent . PHP_EOL . "---------" . PHP_EOL;
+    } else {
+        echo "Client User-Agent header not found." . PHP_EOL . "---------" . PHP_EOL;
+    }
+
 
     $baseDir = __DIR__ .'/../public';
 
@@ -238,7 +276,7 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
                 $setHeaders[] = "Content-Encoding, gzip";
                 $setHeaders[] = "Content-Length, ".strlen(gzencode($content));
 
-                $response->end(gzencode($content));
+                $response->write(gzencode($content));
                 break;
             case 'ico':
                 $content = file_get_contents($filePath);
@@ -248,7 +286,7 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
                 $setHeaders[] = "Content-Type, image/vnd.microsoft.icon";
                 $setHeaders[] = "Content-Length, ".strlen($content);
 
-                $response->end($content);
+                $response->write($content);
                 break;
             case 'css':
                 $content = file_get_contents($filePath);
@@ -258,7 +296,7 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
                 $setHeaders[] = "Content-Type, text/css; charset=UTF-8";
                 $setHeaders[] = "Content-Length, ".strlen($content);
 
-                $response->end($content);
+                $response->write($content);
                 break;
             case 'js':
                 $content = file_get_contents($filePath);
@@ -268,7 +306,7 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
                 $setHeaders[] = "Content-Type, application/javascript";
                 $setHeaders[] = "Content-Length, ".strlen($content);
 
-                $response->end($content);
+                $response->write($content);
                 break;
             case 'jpg':
             case 'jpeg':
@@ -352,6 +390,8 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
                 $response->write($content);
                 break;
             default:
+                // Explicitly set an HTTP status code for preflight requests
+                $response->status(204); // 204 No Content
                 break;
         }
     } else {
@@ -379,7 +419,7 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
                 $setHeaders[] = "Content-Length, ".strlen(gzencode($content));
 
                 if ($response->isWritable()) {
-                    $response->end(gzencode($content));
+                    $response->write(gzencode($content));
                 } else {
                     echo "{$filePath}, URI Not rendered!";
                 }
@@ -393,19 +433,20 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
                 $setHeaders[] = "Content-Type, application/json";
 
                 if ($response->isWritable()) {
-                    $response->end($content);
+                    $response->write($content);
                 } else {
                     echo "{$filePath}, URI Not rendered!";
                 }
                 break;
             default:
+                // Handle any other unmatched requests with a 404 Not Found
+                $content = "404 Not Found";
+                $response->status(404);
+                $response->header("Content-Type", "text/plain");
+                $response->write($content);
                 break;
         }
     }
-
-    startSession($response);
-    saveSession();
-    session_write_close(); // Ensure session data is saved
 
     if ($returned === 'tmp') {
         $tmpFile = createTmp($fd, $fileName, $setHeaders, $content);
@@ -512,40 +553,45 @@ function initializeServerConstant($request) //OpenSwoole\Http\Request
 
 function startSession($response)
 {
-    global $redis;
+    global $redis, $sessID;
+
+    custom_session_regenerate_id();
 
     $sessionExp = 60 * 60 * 24 * 2;
+    $sessionId = $sessID;
 
-
-    if (!isset($_COOKIE['BACKENDPHPSESSID']) || is_null($_COOKIE['BACKENDPHPSESSID'])) {
-        $sessionId = session_id();
+    // if (!isset($_COOKIE['BACKENDPHPSESSID']) || is_null($_COOKIE['BACKENDPHPSESSID'])) {
         $response->header('Set-Cookie', "BACKENDPHPSESSID={$sessionId}; Max-Age={$sessionExp}; Path=/; SameSite=Lax;");
+    //     // setcookie('BACKENDPHPSESSID', $sessionId, $sessionExp);
 
-        $redis->set("session:$sessionId", serialize($_SESSION));
+    //     $redis->set("session:$sessionId", "");
         $_COOKIE['BACKENDPHPSESSID'] = $sessionId;
-    } else {
-        $sessionId = $_COOKIE['BACKENDPHPSESSID'];
-    }
+    // } else {
+    //     $sessionId = $_COOKIE['BACKENDPHPSESSID'];
+    //     $redis->set("session:$sessionId", serialize($_SESSION));
+    // }
 
-    $sessionData = $redis->get("session:$sessionId");
+    // $sessionData = $redis->get("session:$sessionId");
 
-    // \App\Core\Support\Log::debug("Current Session ID: " . $sessionId, 'startSession.sessionId');
+    \App\Core\Support\Log::debug("http-server Current Session ID: " . $sessionId, 'http-server.startSession.sessionId');
     // \App\Core\Support\Log::debug($sessionData, 'startSession.sessionData');
     // \App\Core\Support\Log::debug($_COOKIE, 'startSession.$_COOKIE');
 
-    if ($sessionData) {
-        $_SESSION = unserialize($sessionData);
-    } else {
-        $_SESSION = [];
-    }
+    // if ($sessionData) {
+    //     $_SESSION = unserialize($sessionData);
+    // } else {
+    //     $_SESSION = [];
+    // }
+
+    $SESSION['Server'] = "Open Swoole Http Server";
 }
 
 function saveSession()
 {
     global $redis;
 
-    if (!is_null($_COOKIE['BACKENDPHPSESSID'])) {
-        $sessionId = $_COOKIE['BACKENDPHPSESSID'];
-        $redis->set("session:$sessionId", serialize($_SESSION));
-    }
+    // if (!is_null($_COOKIE['BACKENDPHPSESSID'])) {
+    //     $sessionId = $_COOKIE['BACKENDPHPSESSID'];
+    //     $redis->set("session:$sessionId", serialize($_SESSION));
+    // }
 }

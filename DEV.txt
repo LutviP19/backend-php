@@ -8,12 +8,13 @@
 - Rate Limiter (done)
 - Caching Redis (done)
 - Mailer (done)
-- Message Bus
+- Message Bus [Symfony Message]
 - Sanitize Input [XSS, SQL Injection]
 - GraphQL
 - No SQL [MongoDB]
+- PHP FFI performance
 
-- Open Swoole [PHP Server]
+- Open Swoole [PHP Server] (done)
 - Health checks [Auto recovery]
 - Tools monitoring [Prometheus, ELK Stack, Jaeger]
 

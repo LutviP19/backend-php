@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "02b7519fa09107d4a4ba0917e5b5384a",
+    "content-hash": "2ad3fef853360c34f8635ac0231ad043",
     "packages": [
         {
             "name": "amphp/amp",
@@ -1291,6 +1291,56 @@
                 }
             ],
             "time": "2024-08-03T19:31:26+00:00"
+        },
+        {
+            "name": "bayfrontmedia/php-sanitize",
+            "version": "v2.1.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/bayfrontmedia/php-sanitize.git",
+                "reference": "4e3d81455ad0dd8496171f806f32902a4063059c"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/bayfrontmedia/php-sanitize/zipball/4e3d81455ad0dd8496171f806f32902a4063059c",
+                "reference": "4e3d81455ad0dd8496171f806f32902a4063059c",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^8.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Bayfront\\Sanitize\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "John Robinson",
+                    "email": "john@bayfrontmedia.com",
+                    "homepage": "https://www.bayfrontmedia.com"
+                }
+            ],
+            "description": "Simple class used to sanitize, filter and cast data.",
+            "homepage": "https://github.com/bayfrontmedia/php-sanitize",
+            "keywords": [
+                "Escape",
+                "cast",
+                "filter",
+                "php",
+                "sanitize",
+                "xss"
+            ],
+            "support": {
+                "issues": "https://github.com/bayfrontmedia/php-sanitize/issues",
+                "source": "https://github.com/bayfrontmedia/php-sanitize/tree/v2.1.2"
+            },
+            "time": "2025-06-17T12:42:57+00:00"
         },
         {
             "name": "daverandom/libdns",

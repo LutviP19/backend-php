@@ -35,13 +35,13 @@ if (session_status() == PHP_SESSION_NONE) {
 
 if ($_SERVER['SERVER_PORT'] === 9501) { // OpenSwoole Server
 
-    if(isset($_COOKIE['BACKENDPHPSESSID'])){
-        session_id($_COOKIE['BACKENDPHPSESSID']);
-        // var_dump($_COOKIE);
-    }
+    // if(isset($_COOKIE['BACKENDPHPSESSID'])){
+    //     session_id($_COOKIE['BACKENDPHPSESSID']);
+    //     // var_dump($_COOKIE);
+    // }
 
-    \App\Core\Support\Log::debug($_COOKIE, 'init.$_SERVER');
-    \App\Core\Support\Log::debug(session_id(), 'init.session_id()');
+    // \App\Core\Support\Log::debug($_COOKIE, 'init.$_SERVER');
+    // \App\Core\Support\Log::debug(session_id(), 'init.session_id()');
 }
 
 

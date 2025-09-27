@@ -28,7 +28,8 @@
         "amphp/http-server-session": "^3",
         "amphp/log": "^2.0",
         "amphp/byte-stream": "^2.1",
-        "symfony/messenger": "^7.3"
+        "symfony/messenger": "^7.3",
+        "bayfrontmedia/php-sanitize": "^2.1"
     },
     "bin": [
         "bin/console"

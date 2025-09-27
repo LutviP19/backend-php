@@ -27,7 +27,8 @@
         "amphp/http-server-router": "^2.0",
         "amphp/http-server-session": "^3",
         "amphp/log": "^2.0",
-        "amphp/byte-stream": "^2.1"
+        "amphp/byte-stream": "^2.1",
+        "symfony/messenger": "^7.3"
     },
     "bin": [
         "bin/console"

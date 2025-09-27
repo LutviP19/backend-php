@@ -2,54 +2,22 @@
 
 declare(strict_types=1);
 
-// // Disabled Log Errors
-// ini_set('log_errors', 0);
-// // ini_set('display_errors', 0);
-// // ini_set('display_startup_errors', 0);
-error_reporting(~E_NOTICE & ~E_DEPRECATED & ~E_WARNING);
-
-require_once __DIR__ . '/bootstrap.php';
-
+require_once __DIR__ . '/../vendor/autoload.php';
 
 use FastRoute\RouteCollector;
 use OpenSwoole\Core\Psr\Middleware\StackHandler;
 use OpenSwoole\Core\Psr\Response;
+use OpenSwoole\HTTP\Server;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
-use OpenSwoole\HTTP\Server;
-use OpenSwoole\Http\Request as OpenSwooleRequest;
-use OpenSwoole\Http\Response as OpenSwooleResponse;
+$server = new Server('127.0.0.1', 9501, Server::SIMPLE_MODE);
 
-$server = new Server($serverip, $serverport);
-// $server->set([
-// });
-
-// Start Server
-$server->on("Start", function (Server $server) {
-    global $serverip, $serverport;
-
-    echo "Swoole http server is started at http://" . $serverip . ":" . $serverport . "\n";
+$server->on('start', function (Server $server) {
+    echo "OpenSwoole http server is started at http://127.0.0.1:9501\n";
 });
-
-// $server->on("Connect", function (Server $server, int $fd) {
-//     global $sessID;
-
-//     // $clientInfo = $server->getClientInfo($fd);
-//     // // $sessID = custom_session_regenerate_id();
-
-//     // if(session_status() == PHP_SESSION_ACTIVE)
-//     //     session_destroy();
-
-//     if ($clientInfo) {
-//         echo "Client connected: " . $clientInfo['remote_ip'] . "\n";
-//         echo "Client FD: " . $fd . "\n";
-//         echo "Http sessStatus: " . session_status() . "\n";
-//         echo "Http sessID: " . $sessID . "\n";
-//     }
-// });
 
 class MiddlewareA implements MiddlewareInterface
 {
@@ -75,18 +43,10 @@ class MiddlewareB implements MiddlewareInterface
     }
 }
 
-// Routing API here
 $dispatcher = \FastRoute\simpleDispatcher(function (RouteCollector $r) {
     $r->addRoute('GET', '/hello/{name}', function ($request) {
         $name = $request->getAttribute('name');
-        $json = json_encode(
-                    [
-                        'message' => $name,
-                        'data' => ['users' => [['id' => 1, 'name' => 'Alice'], ['id' => 2, 'name' => 'Bob']]]
-                    ]
-                );
-
-        return (new Response($json))->withHeaders(["Content-Type" => "application/json"])->withStatus(200);
+        return new Response(sprintf('Hello %s', $name));
     });
 });
 

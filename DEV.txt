@@ -9,12 +9,17 @@
 - Caching Redis (done)
 - Mailer (done)
 - Message Bus [Symfony Message]
+- Open Swoole [PHP Server] (done)
 - Sanitize Input [XSS, SQL Injection]
 - GraphQL
 - No SQL [MongoDB]
 - PHP FFI performance
+- PHP Unit Testing [Pest] 
+- Server Swithching [Network Route, Erlang]
 
-- Open Swoole [PHP Server] (done)
+- Docker Grafana Dashboard
+
+
 - Health checks [Auto recovery]
 - Tools monitoring [Prometheus, ELK Stack, Jaeger]
 

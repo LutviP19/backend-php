@@ -2,6 +2,10 @@
 
 namespace App\Core\Database;
 
+/**
+ * BpDatabase class
+ * @author Lutvi <lutvip19@gmail.com>
+ */
 class BpDatabase extends BpQuery 
 {
     
@@ -18,7 +22,7 @@ class BpDatabase extends BpQuery
         $query = parent::query;
         $result = $this->setQuery($query ." LIMIT 1")->execute();
         
-        return $result['result'] ?: null;
+        return $result['result'] ?? null;
     }
 
     public function execute() {

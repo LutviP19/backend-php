@@ -10,6 +10,10 @@ use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;
 use Symfony\Component\Uid\Uuid;
 
+/**
+ * BpTransport class
+ * @author Lutvi <lutvip19@gmail.com>
+ */
 class BpTransport implements TransportInterface
 {
     private SerializerInterface $serializer;

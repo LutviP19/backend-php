@@ -2,13 +2,14 @@
 
 /**
  * Global helpers.
+ * @author Lutvi <lutvip19@gmail.com>
  */
 
-use App\Core\Http\Request;
-use App\Core\Security\CSRF;
+// use App\Core\Http\Request;
+// use App\Core\Security\CSRF;
+// use App\Core\Support\Session;
 use App\Core\Support\App;
 use App\Core\Support\Config;
-use App\Core\Support\Session;
 use App\Core\Validation\MessageBag;
 
 /**
@@ -67,17 +68,84 @@ function dd($data = [])
 function url($uri = '')
 {
     $uri = sanitizeUri($uri);
-    return "http://{$_SERVER['HTTP_HOST']}/{$uri}";
+    return "//{$_SERVER['HTTP_HOST']}/{$uri}";
 }
 
 function assets($uri = '')
 {
     $uri = sanitizeUri($uri);
     if ($_SERVER['SERVER_PORT'] === 9501) { // OpenSwoole Server
-        return "http://{$_SERVER['HTTP_HOST']}/{$uri}";
+        return "//{$_SERVER['HTTP_HOST']}/{$uri}";
     }
 
-    return "http://{$_SERVER['HTTP_HOST']}/{$uri}";
+    return "//{$_SERVER['HTTP_HOST']}/{$uri}";
+}
+
+function cacheContent($method, $id, $content = null) {
+    if($method === 'set') {
+        (new \App\Core\Support\Cache)->saveData($id, $content);
+    }
+    if ($method === 'get') {
+        return (new \App\Core\Support\Cache)->getData($id);
+    }
+
+    return $content;
+}
+
+function clearRedisDataByPrefix($prefix = null) {
+    // Connect to Redis
+    $redis = new \Predis\Client([
+        'host' => Config::get('redis.cache.host'),
+        'port' => Config::get('redis.cache.port'),
+        'database' => Config::get('redis.cache.database')
+    ]);
+
+    $prefix = $prefix ?: 'bp';
+    $pattern = $prefix.':*'; // The pattern to match keys (e.g., all keys starting with 'my_prefix:')
+    $cursor = 0;
+    $keysToDelete = [];
+
+    do {
+        // Perform a SCAN operation to find keys matching the pattern
+        // The 'MATCH' option specifies the pattern, and 'COUNT' suggests how many keys to return per iteration
+        $scanResult = $redis->scan($cursor, 'MATCH', $pattern, 'COUNT', 1000);
+
+        $cursor = $scanResult[0]; // Update the cursor for the next iteration
+        $keysFound = $scanResult[1]; // Get the keys found in this iteration
+
+        if (!empty($keysFound)) {
+            // Add the found keys to the list of keys to delete
+            $keysToDelete = array_merge($keysToDelete, $keysFound);
+        }
+
+    } while ($cursor !== 0); // Continue scanning until the cursor is 0 (all keys scanned)
+
+    // Delete the collected keys if any were found
+    if (!empty($keysToDelete)) {
+        // You can use DEL to delete multiple keys at once
+        $redis->del($keysToDelete);
+    }
+}
+
+function clearCacheFileByPrefix($directory = null, $pattern = null)
+{
+    $directory = $directory ?: __DIR__ . '/../../storage/framework/cache/'; // Specify the directory where files are located
+    $pattern = $pattern ?: '*.cache'; // Default: Delete all files ending with .cache
+    
+    // Combine directory and pattern to form the full pattern for glob()
+    $fullPattern = $directory . $pattern;
+    
+    // Use glob() to find files matching the pattern
+    $filesToDelete = glob($fullPattern);
+    
+    // Check if any files were found
+    if ($filesToDelete !== false && !empty($filesToDelete)) {
+        foreach ($filesToDelete as $file) {
+            if (is_file($file)) { // Ensure it's a file and not a directory
+                unlink($file);
+            }
+        }
+    }
 }
 
 /**
@@ -87,7 +155,7 @@ function assets($uri = '')
  */
 function currentUrl()
 {
-    return url(Request::uri());
+    return url(\App\Core\Http\Request::uri());
 }
 
 /**
@@ -115,7 +183,7 @@ function sanitizeUri($uri)
  */
 function token()
 {
-    return CSRF::generate();
+    return \App\Core\Security\CSRF::generate();
 }
 
 /**
@@ -125,7 +193,7 @@ function token()
  */
 function csrfField()
 {
-    return CSRF::csrfField();
+    return \App\Core\Security\CSRF::csrfField();
 }
 
 /**
@@ -152,7 +220,7 @@ function e($str, $doubleEncode = true)
  */
 function session($key)
 {
-    return Session::get($key);
+    return \App\Core\Support\Session::get($key);
 }
 
 /**
@@ -164,7 +232,7 @@ function session($key)
  */
 function flash($key, $value = null)
 {
-    return Session::flash($key, $value);
+    return \App\Core\Support\Session::flash($key, $value);
 }
 
 /**
@@ -184,7 +252,7 @@ function errors()
  */
 function old($key)
 {
-    return Session::getOldInput($key);
+    return \App\Core\Support\Session::getOldInput($key);
 }
 
 /**

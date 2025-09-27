@@ -4,6 +4,10 @@ namespace App\Core\Security;
 
 use App\Core\Support\Config;
 
+/**
+ * Hash class
+ * @author Lutvi <lutvip19@gmail.com>
+ */
 class Hash
 {
     /**

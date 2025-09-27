@@ -2,7 +2,7 @@
 
 /**
  * Inject php native functions.
- *
+ * @author Lutvi <lutvip19@gmail.com>
  */
 
 function array_keys_exists(array $keys, array $array): bool

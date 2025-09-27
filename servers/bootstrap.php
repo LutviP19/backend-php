@@ -7,6 +7,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 /**
  * Bootstrap the Application.
+ * @author Lutvi <lutvip19@gmail.com>
  */
 /* ----------------------------- Default settings START -------------------------------- */
 // Looking for .env at the root directory

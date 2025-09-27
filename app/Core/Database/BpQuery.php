@@ -72,7 +72,7 @@ class BpQuery {
 
     public function addParam($param, $value, $validate = null) {
         if ($validate && !$this->validateParam($value, $validate)) {
-            $this->logSecurityEvent("INVALID_PARAMETER_VALUE", $param, $value); // Log invalid parameter event
+            // $this->logSecurityEvent("INVALID_PARAMETER_VALUE", $param, $value); // Log invalid parameter event
             throw new Exception("Validation failed for parameter: $param"); // Throw validation exception
         }
         $this->params[$param] = $value; // Add parameter to array
@@ -155,13 +155,13 @@ class BpQuery {
         $logEntry = date("Y-m-d H:i:s") . " - ERROR: $message\n";
         file_put_contents($this->logFile, $logEntry, FILE_APPEND); // Write error to log file
 
-        if (in_array("database", $this->logTo)) {
-            $this->logToDatabase($message); // Log error to database
-        }
+        // if (in_array("database", $this->logTo)) {
+        //     $this->logToDatabase($message); // Log error to database
+        // }
 
-        if (in_array("email", $this->logTo)) {
-            $this->sendEmail($message); // Send error via email
-        }
+        // if (in_array("email", $this->logTo)) {
+        //     $this->sendEmail($message); // Send error via email
+        // }
     }
 
     private function logToDatabase($message) {

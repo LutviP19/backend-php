@@ -1,12 +1,17 @@
 <?php
 
+/**
+ * Init the Application
+ * @author Lutvi <lutvip19@gmail.com>
+ */
+
 if (!defined('BASEPATH')) {
     define('BASEPATH', __DIR__ . '/../..');
 }
 
 /* ----------------------------- Default settings START -------------------------------- */
 
-//prettify the errors.
+// prettify the errors.
 ini_set("html_errors", 1);
 ini_set("error_prepend_string", "<pre style='color: #333; font-face:monospace; font-size:14px;'>");
 ini_set("error_append_string ", "</pre>");

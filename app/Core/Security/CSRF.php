@@ -6,6 +6,7 @@ use App\Core\Support\{Config, Session};
 
 /**
  * CSRF Protection.
+ * @author Lutvi <lutvip19@gmail.com>
  */
 class CSRF
 {

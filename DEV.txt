@@ -8,9 +8,9 @@
 - Rate Limiter (done)
 - Caching Redis (done)
 - Mailer (done)
-- Message Bus [Symfony Message]
 - Open Swoole [PHP Server] (done)
-- Sanitize Input [XSS, SQL Injection]
+- Sanitize Input [XSS, SQL Injection] (done)
+- Message Bus [Symfony Message]
 - GraphQL
 - No SQL [MongoDB]
 - PHP FFI performance

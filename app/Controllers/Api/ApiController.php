@@ -22,8 +22,9 @@ class ApiController extends BaseController
     {
         parent::__construct();
 
-        // Accepted type is JSON
-        if ($_SERVER['SERVER_PORT'] !== 9501) { // OpenSwoole Server
+        // \App\Core\Support\Log::debug($_SERVER['SERVER_PORT'], 'ApiController.SERVER_PORT');
+        if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // OpenSwoole Server
+            // Accepted type is JSON
             if (false === $this->request()->isJsonRequest()) {
                 die(
                     $this->response()->json(
@@ -34,25 +35,21 @@ class ApiController extends BaseController
                     )
                 );
             }
-        }
 
-        // Middlewares
-        (new \App\Core\Security\Middleware\EnsureIpIsValid())
-            ->handle($this->request(), $this->response(), $this->response());
-
-        if ($_SERVER['SERVER_PORT'] !== 9501) { // OpenSwoole Server
+            // Middlewares
+            (new \App\Core\Security\Middleware\EnsureIpIsValid())
+                ->handle($this->request(), $this->response(), $this->response());
             (new \App\Core\Security\Middleware\EnsureHeaderIsValid())
-            ->handle($this->request(), $this->response());
+                ->handle($this->request(), $this->response());
 
             // Validate token
             $this->validateToken($this->request(), $this->response());
-        }
-        // \App\Core\Support\Log::debug($_SERVER['SERVER_PORT'], 'ApiController.SERVER_PORT');
 
-        // Validate with session data
-        if (Session::has('uid') && Session::has('secret') && Session::has('jwtId')) {
-            // JWT
-            $this->jwtToken = $this->initJwtToken();
+            // Validate with session data
+            if (Session::has('uid') && Session::has('secret') && Session::has('jwtId')) {
+                // JWT
+                $this->jwtToken = $this->initJwtToken();
+            }
         }
     }
 
@@ -183,24 +180,5 @@ class ApiController extends BaseController
 
         return str_replace('Bearer ', '', $headers['Authorization']);
     }
-
-    protected function getOutput(bool $status, int $statusCode, array $data, string $message = '')
-    {
-        if ($status) {
-            return [
-                'status' => true,
-                'statusCode' => $statusCode,
-                'message' => $message ?: 'success',
-                'data' => $data,
-            ];
-        } else {
-            return [
-                'status' => false,
-                'statusCode' => $statusCode,
-                'message' => $message ?: 'failed',
-                'errors' => $data,
-            ];
-        }
-    }
-
+    
 }

@@ -24,9 +24,11 @@ return [
         'env' => env('APP_ENV', 'production'),
         'debug' => (bool) env('APP_DEBUG', false),
         'logdir' => __DIR__ . '/../storage/logs/',
+        'ignore_port' => [9501, 8080], // OpenSwoole Server port
     ],
 
     'trusted_ips' => [
+        '',
         '::1',
         '127.0.0.1',
     ],

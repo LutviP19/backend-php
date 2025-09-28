@@ -21,7 +21,7 @@ class WebhookController extends ApiController
         parent::__construct();
 
         // Middlewares
-        if ($_SERVER['SERVER_PORT'] !== 9501) { // OpenSwoole Server
+        if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // OpenSwoole Server
             try {
                 (new \App\Core\Security\Middleware\RateLimiter('webhook_request'))
                     ->setup(clientIP(), 5, 500, 1200);
@@ -29,6 +29,24 @@ class WebhookController extends ApiController
                 die($exception->getMessage());
             }
         }
+    }
+
+    // Test Api Server OpenSwoole
+    public function bpIndex($request, $data): \Psr\Http\Message\ResponseInterface
+    {
+        \App\Core\Support\Log::debug($request, 'WebhookController.bpIndex.$request');
+        $name = $request->getAttribute('name');
+        $name = $data['attributes']['name'] ?: '';
+
+        $output = $this->getOutput(true, 200, [
+                        'message' => 'Hello world!, '.$name,
+                        'jsonData' => $data['jsonData'],
+                        'requestQuery' => $data['requestQuery'],
+                    ]);
+
+        return (new \OpenSwoole\Core\Psr\Response(\json_encode($output)))
+                ->withHeaders(["Content-Type" => "application/json"])
+                ->withStatus(200);
     }
 
     /**
@@ -43,7 +61,7 @@ class WebhookController extends ApiController
         // \App\Core\Support\Log::debug(gettype($request), 'WebhookController.index.gettype($request)');
         \App\Core\Support\Log::debug($request, 'WebhookController.index.$request');
 
-        if ($_SERVER['SERVER_PORT'] !== 9501) { // OpenSwoole Server
+        if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // OpenSwoole Server
             $validator = new Validator();
             $validator->validate($request, [
                 'email' => 'required|email',
@@ -151,7 +169,7 @@ class WebhookController extends ApiController
                 'rand_str' => generateRandomString(16),
                 'unique' => $hash->unique(32),
             ]);
-        \App\Core\Support\Log::debug($output, 'WebhookController');
+        // \App\Core\Support\Log::debug($output, 'WebhookController');
 
         return $response->json($output, 200);
     }

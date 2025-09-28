@@ -122,6 +122,35 @@ class BaseController
     }
 
     /**
+     * getOutput function for formated json response struct
+     *
+     * @param  boolean $status
+     * @param  integer $statusCode
+     * @param  array   $data
+     * @param  string  $message
+     *
+     * @return void
+     */
+    protected function getOutput(bool $status, int $statusCode, array $data, string $message = '')
+    {
+        if ($status) {
+            return [
+                'status' => true,
+                'statusCode' => $statusCode,
+                'message' => $message ?: 'success',
+                'data' => $data,
+            ];
+        } else {
+            return [
+                'status' => false,
+                'statusCode' => $statusCode,
+                'message' => $message ?: 'failed',
+                'errors' => $data,
+            ];
+        }
+    }
+
+    /**
      * Get the response object.
      *
      * @return \App\Core\Http\Response

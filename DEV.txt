@@ -8,7 +8,7 @@
 - Rate Limiter (done)
 - Caching Redis (done)
 - Mailer (done)
-- Open Swoole [PHP Server] (done)
+- Open Swoole [PHP Server: WebSocket, Api Server, Http Server] (done)
 - Sanitize Input [XSS, SQL Injection] (done)
 - Message Bus [Symfony Message]
 - GraphQL

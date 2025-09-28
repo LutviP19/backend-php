@@ -10,6 +10,7 @@ error_reporting(~E_NOTICE & ~E_DEPRECATED & ~E_WARNING);
 
 require_once __DIR__ . '/bootstrap.php';
 
+use App\Core\Support\Config;
 
 use FastRoute\RouteCollector;
 use OpenSwoole\Core\Psr\Middleware\StackHandler;
@@ -74,11 +75,18 @@ class MiddlewareSetup implements MiddlewareInterface
 {
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        var_dump('Setup start');
+        initializeServerConstant($request->getServerParams());
 
+        var_dump('Middleware start clientIP:'.clientIP());
+        // \App\Core\Support\Log::debug($request->getServerParams(), 'ApiServer.MiddlewareSetup.process.$serverP');
+
+        // EnsureIpIsValid
+        if (!in_array(clientIP(), Config::get('trusted_ips'))) {
+            return new Response('Service Unavailable', 503, '', ['Content-Type' => 'text/plain']);
+        }
 
         $response = $handler->handle($request);
-        var_dump('Setup end');
+        var_dump('Middleware end');
 
         return $response;
     }
@@ -123,7 +131,7 @@ $dispatcher = \FastRoute\simpleDispatcher(function (RouteCollector $r) {
     });
 
     // Testing Call Controller
-    $r->addRoute('POST', '/webhook/{name}', function ($request) {
+    $r->addRoute(['GET','POST'], '/webhook/{event}', function ($request) {
         // return  (new \App\Controllers\Api\v1\WebhookController())->bpIndex($request, getRequestData($request));
         return  (new \App\Controllers\ServerApi\WebhookController())->indexAction($request, getRequestData($request));
     });
@@ -144,13 +152,12 @@ class RouteMiddleware implements MiddlewareInterface
         // Init $_SERVER attributes
         $serverParams = $request->getServerParams();
         initializeServerConstant($serverParams);
-        \App\Core\Support\Log::debug($_SERVER, 'ApiServer.RouteMiddleware.process.$_SERVER');
+        // \App\Core\Support\Log::debug($_SERVER, 'ApiServer.RouteMiddleware.process.$_SERVER');
 
         $contentType = $request->headers['content-type'];
 
         // Only accept JSON content
-        if (str_contains($contentType, 'application/json')) {
-            
+        if (! is_null($contentType) && str_contains($contentType, 'application/json')) {
             // Get JSON
             $body = $request->getBody();
             $body->rewind();
@@ -182,7 +189,7 @@ class RouteMiddleware implements MiddlewareInterface
             }
 
         } else {
-            return new Response('Not Acceptable format', 406, '', ['Content-Type' => 'text/plain']);
+            return new Response('Not Acceptable content type.', 406, '', ['Content-Type' => 'text/plain']);
         }
     }
 }

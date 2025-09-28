@@ -31,7 +31,11 @@ class OrderService
     public function placeOrder($order)
     {
         // Logic to place order
+        if($order['id'] == 123)
         echo "Order placed: " . $order['id'] . PHP_EOL;
+
+        if($order['id'] <= 0)
+            return false;
 
         // Dispatch event
         $event = new OrderPlacedEvent($order);

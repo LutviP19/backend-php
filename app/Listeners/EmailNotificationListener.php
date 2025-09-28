@@ -20,6 +20,7 @@ class EmailNotificationListener
     {
         // Logic to send email
         $order = $event->getOrder();
+        if($order['id'] == 123)
         echo "Email sent for order: " . $order['id'] . PHP_EOL;
 
         // Send Email

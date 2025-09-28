@@ -20,6 +20,7 @@ class PaymentProcessingListener
     {
         // Logic to process payment
         $order = $event->getOrder();
+        if($order['id'] == 123)
         echo "Payment processed for order: " . $order['id'] . PHP_EOL;
     }
 }

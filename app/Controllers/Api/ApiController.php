@@ -31,14 +31,14 @@ class ApiController extends BaseController
                         $this->getOutput(false, 403, [
                             'Invalid format!',
                         ], 'Only accepted JSON.'),
-                        403
+                        406
                     )
                 );
             }
 
             // Middlewares
             (new \App\Core\Security\Middleware\EnsureIpIsValid())
-                ->handle($this->request(), $this->response(), $this->response());
+                ->handle($this->request(), $this->response());
             (new \App\Core\Security\Middleware\EnsureHeaderIsValid())
                 ->handle($this->request(), $this->response());
 

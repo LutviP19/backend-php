@@ -20,6 +20,7 @@ class InventoryUpdateListener
     {
         // Logic to update inventory
         $order = $event->getOrder();
+        if($order['id'] == 123)
         echo "Inventory updated for order: " . $order['id'] . PHP_EOL;
     }
 }

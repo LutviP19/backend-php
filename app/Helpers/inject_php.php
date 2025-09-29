@@ -73,3 +73,15 @@ function custom_session_regenerate_id() {
     return $newid;
 }
 
+/**
+ * Implemented to replace FILTER_SANITIZE_STRING behaviour deprecated in php8.1
+ *
+ * @param mixed $value
+ * @return string
+ */
+function polyfill_filter_var_string($value)
+{
+    $str = preg_replace('/\x00|<[^>]*>?/', '', $value);
+    return (string)str_replace(["'", '"'], ['&#39;', '&#34;'], $str);
+}
+

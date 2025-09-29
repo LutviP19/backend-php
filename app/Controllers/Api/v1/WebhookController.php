@@ -62,13 +62,19 @@ class WebhookController extends ApiController
         \App\Core\Support\Log::debug($request, 'WebhookController.index.$request');
 
         if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // OpenSwoole Server
+            $reqData = $request->all();
+            $filter = new \App\Core\Validation\Filter();
+
+            // Validate Input
+            \App\Core\Support\Session::unset('errors');
             $validator = new Validator();
-            $validator->validate($request, [
+            $validator->validate($reqData, [
                 'email' => 'required|email',
                 'password'  => 'required|min:8|max:100',
             ]);
-            $errors = errors()->all();
+            $errors = \App\Core\Support\Session::get('errors');
             \App\Core\Support\Log::debug($errors, 'WebhookController.index.errors');
+
 
             if ($errors) {
                 $callback = function () { return false; };
@@ -82,6 +88,17 @@ class WebhookController extends ApiController
                     203
                 ));
             }
+
+            // Filter Input
+            $reqData = $filter->filter($reqData, [
+                'email' => 'trim|sanitize_string|sanitize_email',
+                'password'  => 'trim|sanitize_string',
+            ]);
+            \App\Core\Support\Log::debug($reqData, 'WebhookController.index.$filtered');
+
+            // Sanitize Input
+            $reqData = $filter->sanitize($reqData, ['email', 'password', 'credentials']);
+            \App\Core\Support\Log::debug($reqData, 'WebhookController.index.sanitize.$reqData');
         }
 
         \App\Core\Support\Log::debug($_SERVER, 'WebhookController.index.$_SERVER');

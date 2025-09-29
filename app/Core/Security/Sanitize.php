@@ -1,7 +1,7 @@
 <?php
+declare(strict_types=1);
 
 // Modified from package: bayfrontmedia/php-sanitize
-
 namespace App\Core\Security;
 
 class Sanitize

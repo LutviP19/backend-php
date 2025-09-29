@@ -49,7 +49,7 @@ class Rules
      *
      * @return void
      */
-    public function __construct(Request $request, MessageBag $messageBag)
+    public function __construct($request, MessageBag $messageBag)
     {
         $this->setRequest($request);
         $this->setMessageBag($messageBag);
@@ -67,6 +67,33 @@ class Rules
     }
 
     /**
+     * Determine if the provided input is a valid date (ISO 8601) or specify a custom format (optional).
+     *
+     * @example_parameter d/m/Y
+     *
+     * @param string $field
+     * @param array $input
+     * @param array $params
+     * @param mixed $value
+     *
+     * @return bool
+     */
+    public function validateDate($field, array $input, array $params = [], $value = null)
+    {
+        // Default
+        if (count($params) === 0) {
+            $cdate1 = date('Y-m-d', strtotime($value));
+            $cdate2 = date('Y-m-d H:i:s', strtotime($value));
+
+            return !($cdate1 != $value && $cdate2 != $value);
+        }
+
+        $date = \DateTime::createFromFormat($params[0], $value);
+
+        return !($date === false || $value != date($params[0], $date->getTimestamp()));
+    }
+
+    /**
      * Check if an input/file exists.
      *
      * @param string $field
@@ -74,8 +101,14 @@ class Rules
      */
     public function validateRequired($field)
     {
-        if (!$this->getRequest()->has($field)) {
-            $this->error($field, 'is required!');
+        if (\is_array($this->request)) {
+            if (! isset($this->request[$field])) {
+                $this->error($field, 'is required!');
+            }
+        } else {
+            if (!$this->getRequest()->has($field)) {
+                $this->error($field, 'is required!');
+            }
         }
     }
 
@@ -156,8 +189,15 @@ class Rules
      */
     public function validateFile($field)
     {
-        if (!$this->getRequest()->hasFile($field)) {
+        if (\is_array($this->getRequest())) {
+            $file = isset($_FILES[$field]) ? is_uploaded_file($_FILES[$field]['tmp_name']) : false ;
+
+            if(false === $file)
             $this->error($field, 'should be a file!');
+        } else {
+            if (!$this->getRequest()->hasFile($field)) {
+                $this->error($field, 'should be a file!');
+            }
         }
     }
 
@@ -310,7 +350,11 @@ class Rules
      */
     protected function value($field)
     {
-        return $this->getRequest()->input($field);
+        if (\is_array($this->getRequest())) {
+            return e($this->request[$field]);
+        } else {
+            return $this->getRequest()->input($field);
+        }
     }
 
     /**
@@ -333,7 +377,7 @@ class Rules
      * @param \App\Core\Http\Request $request
      * @return void
      */
-    protected function setRequest(Request $request)
+    protected function setRequest($request)
     {
         $this->request = $request;
     }

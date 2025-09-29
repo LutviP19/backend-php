@@ -72,7 +72,7 @@ App::register('config', require __DIR__ . '/../../config/app.php');
  * can use them later.
  */
 $messageBag = new MessageBag(new Session());
-$messageBag->setMessages(Session::flash('errors'));
+$messageBag->setMessages(Session::set('errors', null));
 App::register('errors', $messageBag);
 
 //Call the appropriate route.

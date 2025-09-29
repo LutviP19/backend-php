@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e501f2ff411f7250ee6cfa6978f8a659",
+    "content-hash": "838ba0b88832ac794215f86cc6ac6534",
     "packages": [
         {
             "name": "amphp/amp",
@@ -86,56 +86,6 @@
                 }
             ],
             "time": "2025-08-27T21:42:00+00:00"
-        },
-        {
-            "name": "bayfrontmedia/php-sanitize",
-            "version": "v2.1.2",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/bayfrontmedia/php-sanitize.git",
-                "reference": "4e3d81455ad0dd8496171f806f32902a4063059c"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/bayfrontmedia/php-sanitize/zipball/4e3d81455ad0dd8496171f806f32902a4063059c",
-                "reference": "4e3d81455ad0dd8496171f806f32902a4063059c",
-                "shasum": ""
-            },
-            "require": {
-                "php": "^8.0"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "Bayfront\\Sanitize\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "John Robinson",
-                    "email": "john@bayfrontmedia.com",
-                    "homepage": "https://www.bayfrontmedia.com"
-                }
-            ],
-            "description": "Simple class used to sanitize, filter and cast data.",
-            "homepage": "https://github.com/bayfrontmedia/php-sanitize",
-            "keywords": [
-                "Escape",
-                "cast",
-                "filter",
-                "php",
-                "sanitize",
-                "xss"
-            ],
-            "support": {
-                "issues": "https://github.com/bayfrontmedia/php-sanitize/issues",
-                "source": "https://github.com/bayfrontmedia/php-sanitize/tree/v2.1.2"
-            },
-            "time": "2025-06-17T12:42:57+00:00"
         },
         {
             "name": "doctrine/lexer",
@@ -3085,101 +3035,6 @@
                 }
             ],
             "time": "2025-09-11T14:36:48+00:00"
-        },
-        {
-            "name": "upscale/ext-openswoole",
-            "version": "v22.0.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/upscalesoftware/ext-openswoole.git",
-                "reference": "201f253d0b5a28fb9d0e45476b64c617d39d5d23"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/upscalesoftware/ext-openswoole/zipball/201f253d0b5a28fb9d0e45476b64c617d39d5d23",
-                "reference": "201f253d0b5a28fb9d0e45476b64c617d39d5d23",
-                "shasum": ""
-            },
-            "require": {
-                "ext-openswoole": "self.version"
-            },
-            "replace": {
-                "upscale/ext-swoole": "*"
-            },
-            "type": "metapackage",
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "Apache-2.0"
-            ],
-            "description": "Wrapper for ext-openswoole interchangeable with ext-swoole",
-            "keywords": [
-                "Open Swoole",
-                "ext-openswoole",
-                "ext-swoole",
-                "extension",
-                "openswoole",
-                "swoole"
-            ],
-            "support": {
-                "issues": "https://github.com/upscalesoftware/ext-openswoole/issues",
-                "source": "https://github.com/upscalesoftware/ext-openswoole/tree/v22.0.0"
-            },
-            "time": "2022-11-21T02:18:44+00:00"
-        },
-        {
-            "name": "upscale/swoole-session",
-            "version": "2.1.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/upscalesoftware/swoole-session.git",
-                "reference": "092d3ae14239df7cf018d0fdcbc5042966d768cf"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/upscalesoftware/swoole-session/zipball/092d3ae14239df7cf018d0fdcbc5042966d768cf",
-                "reference": "092d3ae14239df7cf018d0fdcbc5042966d768cf",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=8.0",
-                "upscale/ext-openswoole": "^4.0||^22.0",
-                "upscale/ext-swoole": "^4.0||^5.0"
-            },
-            "require-dev": {
-                "ext-curl": "*",
-                "phpunit/phpunit": "^9.5",
-                "upscale/swoole-launchpad": "^2.0"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "Upscale\\Swoole\\Session\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "Apache-2.0"
-            ],
-            "authors": [
-                {
-                    "name": "Upscale Software Team",
-                    "email": "info@upscalesoftware.com"
-                }
-            ],
-            "description": "PHP sessions compatibility with Swoole web-server",
-            "homepage": "https://github.com/upscalesoftware/swoole-session",
-            "keywords": [
-                "compatibility",
-                "php",
-                "server",
-                "session",
-                "swoole"
-            ],
-            "support": {
-                "issues": "https://github.com/upscalesoftware/swoole-session/issues",
-                "source": "https://github.com/upscalesoftware/swoole-session/tree/2.1.0"
-            },
-            "time": "2023-06-12T20:07:21+00:00"
         },
         {
             "name": "vlucas/phpdotenv",

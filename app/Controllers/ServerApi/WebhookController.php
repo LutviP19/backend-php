@@ -1,13 +1,20 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Controllers\ServerApi;
 
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 
+use App\Core\Validation\Validator;
+use App\Core\Support\Session;
 use App\Core\Support\Config;
 use App\Models\User;
 // Events
 use App\Core\Events\EventDispatcher;
 use App\Services\OrderService;
+use OpenSwoole\Core\Psr\Response as OpenSwooleResponse;
 
 class WebhookController extends ServerApiController
 {
@@ -21,9 +28,9 @@ class WebhookController extends ServerApiController
         $this->orderService = new OrderService($dispatcher);
     }
 
-    
+
     public function indexAction($request, $data): \Psr\Http\Message\ResponseInterface {
-        // \App\Core\Support\Log::debug($request, 'WebhookController.indexAction.$request');
+        // \App\Core\Support\Log::debug($request, 'APIWebhookController.indexAction.$request');
         $event = $request->getAttribute('event');
         $event = $data['attributes']['event'] ?: 'users.get';
 
@@ -32,6 +39,44 @@ class WebhookController extends ServerApiController
                             'jsonData' => $data['jsonData'],
                             'requestQuery' => $data['requestQuery']
                         ];
+
+        $jsonData = $data['jsonData'];
+        $filter = new \App\Core\Validation\Filter();
+
+        // Validate Input
+        \App\Core\Support\Session::unset('errors');
+        $validator = new Validator();
+        $validator->validate($jsonData, [
+            'email' => 'required|email',
+            'password'  => 'required|min:8|max:100',
+        ]);
+        $errors = \App\Core\Support\Session::get('errors');
+        // \App\Core\Support\Log::debug($errors, 'APIWebhookController.indexAction.errors');
+            
+        if ($errors) {
+            $statusCode = 203;
+            $output = $this->getOutput(false, $statusCode, [
+                $errors
+             ], 'Validation errors.');
+
+            return $this->SetOpenSwooleResponse($output, $statusCode);
+        }
+
+        // Filter Input
+        $jsonData = $filter->filter($jsonData, [
+            'email' => 'trim|sanitize_string',
+            'password'  => 'trim|sanitize_string',
+        ]);
+        // \App\Core\Support\Log::debug($jsonData, 'APIWebhookController.indexAction.$filtered');
+
+        // Sanitize Input
+        $jsonData = $filter->sanitize($jsonData, ['email', 'password', 'credentials']);
+        // \App\Core\Support\Log::debug($jsonData, 'APIWebhookController.indexAction.sanitize.$jsonData');
+
+        // If Session not set
+        if (false === Session::has('indexAction')) {
+            Session::set('indexAction', \generateUlid());
+        }
         
         // Get Status
         $status = false;
@@ -55,12 +100,15 @@ class WebhookController extends ServerApiController
         // Format output
         $statusCode = $status ? 200 : 404;
         $output = $this->getOutput($status, $statusCode, [
-                        'event'=> $event
+                        'event' => $event,
+                        'errors' => $errors,
+                        'session' => Session::all(),
                     ], 'Execute event: '. $event . ($status ? ' successfully.' : ' failed.!'));
 
+        // Unset Session
+        // Session::unset('indexAction');
+
         // Return \OpenSwoole\Core\Psr\Response
-        return (new \OpenSwoole\Core\Psr\Response(\json_encode($output)))
-                ->withHeaders(["Content-Type" => "application/json"])
-                ->withStatus($statusCode);
+        return $this->SetOpenSwooleResponse($output, $statusCode);
     }
 }

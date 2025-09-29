@@ -100,9 +100,12 @@ class Validator
      * @param array $rules
      * @return void
      */
-    public function validate(Request $request, $rules)
+    public function validate($request, $rules)
     {
         $this->setRequest($request);
+
+        \App\Core\Support\Log::debug($this->request, 'Validator.validate.request');
+        \App\Core\Support\Log::debug($rules, 'Validator.validate.rules');
 
         //set the rules object where all the rule methods are.
         $this->setRules(
@@ -116,13 +119,13 @@ class Validator
 
         if ($this->errors()) {
 
-            $response = new Response();
-
             //if we have at least one failed error then we
             //will store the messageBag errors to the session.
             $this->getRules()->getMessageBag()->store();
 
-            if (false === $request::isJsonRequest()) {
+            if (! is_array($request) && false === $request::isJsonRequest()) {
+                $response = new Response();
+
                 //store the post request input values in the session.
                 Session::setOldInput();
 
@@ -351,7 +354,7 @@ class Validator
      * @param \App\Core\Http\Request $request
      * @return void
      */
-    protected function setRequest(Request $request)
+    protected function setRequest($request)
     {
         $this->request = $request;
     }

@@ -48,6 +48,7 @@ $serverport = 8080;
 $sessID = '';
 
 // Modified from Upscale\Swoole\Session\SessionDecorator;
+// Unstable with OpenSwoole Core
 class SessionDecorator
 {
     /**

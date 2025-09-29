@@ -8,8 +8,8 @@
 - Redis CLI
 - RabbitMQ
 - MySQL / SQLite
+- [OpenSwoole 22.x](https://openswoole.com/docs)
 - Docker Desktop (optional)
-- [OpenSwoole 22.x](https://openswoole.com/docs) (optional)
 
 # Setup the app up and running
 

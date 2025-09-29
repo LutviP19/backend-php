@@ -94,6 +94,8 @@ class ValidateClient
 
         if (! is_null($token)) { // cache to redis
             $this->redis->mset(['client_token:'.$this->clientId => base64_encode($token)]);
+        } else {
+            return false;
         }
 
         return $token;

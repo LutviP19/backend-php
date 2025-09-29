@@ -35,28 +35,46 @@ class AuthController extends ApiController
      *
      * @return response
      */
-    public function login(Request $request, Response $response)
+    public function login($request, array $data)
     {
+        // $requestData = [
+        //     'attributes' => $data['attributes'],
+        //     'jsonData' => $data['jsonData'],
+        //     'requestQuery' => $data['requestQuery']
+        // ];
+        $jsonData = $data['jsonData'];
+        // $filter = new \App\Core\Validation\Filter();
 
         try {
+
+            // Validate Input
+            \App\Core\Support\Session::unset('errors');
             $validator = new Validator();
             $validator->validate($request, [
                 'email' => 'required|email',
                 'password'  => 'required|min:8|max:100',
             ]);
-            $errors = errors()->all();
+            $errors = \App\Core\Support\Session::get('errors');
 
 
             if ($errors) {
-
-                $status = 203;
+                $statusCode = 203;
                 $callback = false;
             } else {
 
-                $status = 401;
+                // Filter Input
+                $jsonData = $this->filter->filter($jsonData, [
+                    'email' => 'trim|sanitize_string',
+                    'password'  => 'trim|sanitize_string',
+                ]);
+
+                // Sanitize Input
+                $payload = $this->filter->sanitize($jsonData, ['email', 'password']);
+
+                $statusCode = 401;
                 $errors = ['auth' => 'Invalid credentials,',];
 
-                $payload = $request->all();
+                // $payload = $jsonData;
                 $email = readJson('email', $payload);
                 $password = readJson('password', $payload);
 
@@ -69,26 +87,16 @@ class AuthController extends ApiController
                 ->setupForm(clientIP(), $callback, 5, 10, 1200);
 
             if (false == $callback || empty($user)) {
-                die(
-                    $response->json(
-                        $this->getOutput(false, $status, [
-                            $errors
-                       ]),
-                        $status
-                    )
-                );
+
+                return $this->SetOpenSwooleResponse(false, $statusCode, $errors, 'Validation errors.');
             }
         } catch (Exception $exception) {
-            die(
-                $response->json(
-                    $this->getOutput(false, 429, [
-                      $exception->getMessage(),
-                   ]),
-                    429
-                )
-            );
+
+            $statusCode = 429;
+            return $this->SetOpenSwooleResponse(false, $statusCode, $exception->getMessage(), 'Validation errors.');
         }
 
+        
         // Generate credentials
         foreach ($user as $key => $value) {
             if ($key === 'ulid') {
@@ -109,14 +117,9 @@ class AuthController extends ApiController
         Session::set('client_token', $clientTokenGen);
 
         if (false === $validateClient->matchToken($clientTokenGen)) {
-            die(
-                $response->json(
-                    $this->getOutput(false, 401, [
-                      'auth' => 'Client not found!',
-                   ], 'Invalid Client!'),
-                    401
-                )
-            );
+
+            $statusCode = 401;
+            return $this->SetOpenSwooleResponse(false, $statusCode, ['auth' => 'Client not found!'], 'Invalid Client!');
         }
 
         // initJwtToken
@@ -130,22 +133,25 @@ class AuthController extends ApiController
         $tokenJwt =  $this->jwtToken->createToken($userId, $info, $subject);
         Session::set('tokenJwt', $tokenJwt);
 
-        return $response->json($this->getOutput(true, 201, [
+        $statusCode = 201;
+        $output = [
                     'token' => $tokenJwt,
                     'sessid' => session_id(),
                     'account' => Session::all()
-                ]), 201);
+                ];
+
+        return $this->SetOpenSwooleResponse(true, $statusCode, $output);
     }
 
     /**
      * updateToken function
      *
      * @param  Request  $request
-     * @param  Response $response
+     * @param  Response $data
      *
      * @return $response->json
      */
-    public function updateToken(Request $request, Response $response)
+    public function updateToken($request, array $data)
     {
         // Validate header X-Client-Token
         $this->validateClientToken($request, $response);
@@ -153,22 +159,40 @@ class AuthController extends ApiController
         // Validate JWT
         $this->validateJwt($request, $response);
 
+        // $requestData = [
+        //     'attributes' => $data['attributes'],
+        //     'jsonData' => $data['jsonData'],
+        //     'requestQuery' => $data['requestQuery']
+        // ];
+        $jsonData = $data['jsonData'];
+
         try {
+            // Validate Input
+            \App\Core\Support\Session::unset('errors');
             $validator = new Validator();
-            $validator->validate($request, [
+            $validator->validate($jsonData, [
                 'email' => 'required|email',
                 'password'  => 'required|min:8|max:100',
             ]);
-            $errors = errors()->all();
-
+            $errors = \App\Core\Support\Session::get('errors');
 
             if ($errors) {
 
-                $status = 203;
+                $statusCode = 203;
                 $callback = false;
+
             } else {
 
-                $status = 401;
+                // Filter Input
+                $jsonData = $this->filter->filter($jsonData, [
+                    'email' => 'trim|sanitize_string',
+                    'password'  => 'trim|sanitize_string',
+                ]);
+
+                // Sanitize Input
+                $payload = $this->filter->sanitize($jsonData, ['email', 'password']);
+
+                $statusCode = 401;
                 $errors = ['auth' => 'Invalid credentials,',];
 
                 $payload = $request->all();
@@ -184,36 +208,34 @@ class AuthController extends ApiController
                 ->setupForm(clientIP(), $callback, 5, 10, 1200);
 
             if (false == $callback || empty($user)) {
-                die(
-                    $response->json(
-                        $this->getOutput(false, $status, [
-                            $errors
-                       ]),
-                        $status
-                    )
-                );
+                return $this->SetOpenSwooleResponse(false, $statusCode, $errors, 'Validation errors.');
             }
         } catch (Exception $exception) {
-            die(
-                $response->json(
-                    $this->getOutput(false, 429, [
-                      $exception->getMessage(),
-                   ]),
-                    429
-                )
-            );
+            $statusCode = 429;
+            return $this->SetOpenSwooleResponse(false, $statusCode, $exception->getMessage(), 'Validation errors.');
         }
 
         // Update Client Token
         $userId = Session::get('uid');
         $validateClient = new ValidateClient($userId);
-        $validateClient->updateToken();
+        
+        if (false === $validateClient->updateToken()) {
+            $statusCode = 203;
+            $output = [
+                        'auth' => 'Failed update your token, please try again, in few moments!',
+                    ];
+            return $this->SetOpenSwooleResponse(false, $statusCode, $output, 'Failed update');
+        }
 
+        // Auto logout
         Session::destroy();
 
-        return $response->json($this->getOutput(true, 201, [
-            'auth' => 'Token successfully updated, please re-login to use new token!',
-        ]), 201);
+        $statusCode = 201;
+        $output = [
+                    'auth' => 'Token successfully updated, please re-login to use new token!',
+                ];
+
+        return $this->SetOpenSwooleResponse(true, $statusCode, $output);
     }
 
     /**
@@ -224,13 +246,20 @@ class AuthController extends ApiController
      *
      * @return $response->json
      */
-    public function logout(Request $request, Response $response)
+    public function logout($request, array $data)
     {
         // Validate header X-Client-Token
         $this->validateClientToken($request, $response);
 
         // Validate JWT
         $this->validateJwt($request, $response);
+
+        // $requestData = [
+        //     'attributes' => $data['attributes'],
+        //     'jsonData' => $data['jsonData'],
+        //     'requestQuery' => $data['requestQuery']
+        // ];
+        $jsonData = $data['jsonData'];
 
         // clear cache token
         $userId = Session::get('uid');
@@ -239,9 +268,12 @@ class AuthController extends ApiController
 
         Session::destroy();
 
-        return $response->json($this->getOutput(true, 200, [
-            'auth' => 'You are logged out!',
-        ]), 200);
+        $statusCode = 200;
+        $output = [
+                    'auth' => 'You are logged out!',
+                ];
+
+        return $this->SetOpenSwooleResponse(true, $statusCode, $output);
     }
 
     /**

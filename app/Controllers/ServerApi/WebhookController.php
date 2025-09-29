@@ -29,7 +29,7 @@ class WebhookController extends ServerApiController
     }
 
 
-    public function indexAction($request, $data): \Psr\Http\Message\ResponseInterface {
+    public function indexAction($request, array $data) {
         // \App\Core\Support\Log::debug($request, 'APIWebhookController.indexAction.$request');
         $event = $request->getAttribute('event');
         $event = $data['attributes']['event'] ?: 'users.get';
@@ -55,22 +55,18 @@ class WebhookController extends ServerApiController
             
         if ($errors) {
             $statusCode = 203;
-            $output = $this->getOutput(false, $statusCode, [
-                $errors
-             ], 'Validation errors.');
-
-            return $this->SetOpenSwooleResponse($output, $statusCode);
+            return $this->SetOpenSwooleResponse(false, $statusCode, $errors, 'Validation errors.');
         }
 
         // Filter Input
-        $jsonData = $filter->filter($jsonData, [
+        $jsonData = $this->filter->filter($jsonData, [
             'email' => 'trim|sanitize_string',
             'password'  => 'trim|sanitize_string',
         ]);
         // \App\Core\Support\Log::debug($jsonData, 'APIWebhookController.indexAction.$filtered');
 
         // Sanitize Input
-        $jsonData = $filter->sanitize($jsonData, ['email', 'password', 'credentials']);
+        $jsonData = $this->filter->sanitize($jsonData, ['email', 'password', 'credentials']);
         // \App\Core\Support\Log::debug($jsonData, 'APIWebhookController.indexAction.sanitize.$jsonData');
 
         // If Session not set
@@ -99,16 +95,17 @@ class WebhookController extends ServerApiController
 
         // Format output
         $statusCode = $status ? 200 : 404;
-        $output = $this->getOutput($status, $statusCode, [
+        $message = 'Execute event: '. $event . ($status ? ' successfully.' : ' failed.!');
+        $output = [
                         'event' => $event,
                         'errors' => $errors,
                         'session' => Session::all(),
-                    ], 'Execute event: '. $event . ($status ? ' successfully.' : ' failed.!'));
+                    ];
 
         // Unset Session
         // Session::unset('indexAction');
 
         // Return \OpenSwoole\Core\Psr\Response
-        return $this->SetOpenSwooleResponse($output, $statusCode);
+        return $this->SetOpenSwooleResponse($status, $statusCode, $output);
     }
 }

@@ -7,16 +7,21 @@ use OpenSwoole\Core\Psr\Response as OpenSwooleResponse;
 
 class ServerApiController extends BaseController
 {
+    protected $filter;
+
     public function __construct()
     {
         parent::__construct();
+        $this->filter = new \App\Core\Validation\Filter();
 
         // Session::unset('errors');
     }
 
-    protected function SetOpenSwooleResponse($output, $statusCode, $headers = [])
+    protected function SetOpenSwooleResponse(bool $status, int $statusCode, array $output, string $message = '', array $headers = []) : OpenSwooleResponse
     {
-        return (new OpenSwooleResponse(\json_encode($output)))
+        $json = $this->getOutput($status, $statusCode, $output, $message);
+
+        return (new OpenSwooleResponse(\json_encode($json)))
                 ->withHeaders(["Content-Type" => "application/json"] + $headers)
                 ->withStatus($statusCode);
     }

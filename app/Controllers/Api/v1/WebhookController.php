@@ -164,7 +164,7 @@ class WebhookController extends ApiController
         $subject = 'Access Webhook API';
         $tokenJwt = $jwtToken->createToken($userId, $info, $subject);
 
-
+        $token_api = encryptData($this->getPass());
         $output = $this->getOutput(true, 200, [
                 'message' => 'Hello world!',
                 'client_ip' => clientIP(),
@@ -178,7 +178,9 @@ class WebhookController extends ApiController
                 'match_token' => $validateClient->matchToken($clientToken),
                 'strlen' => strlen('5gbSVtgMFs96tGNGyBKVyjwREtj6uzPHmVnauvyhFpkLuZXEW4GIh8HGM2lW'),
                 'genkey' => Encryption::generateKey(),
-                'pass' => encryptData($this->getPass()),
+                'pass' => $token_api,
+                'decrypt_pass' => \decryptData($token_api),
+                'match_pass' => matchEncryptedData($this->getPass(), $token_api),
                 'myhash' => $myhash,
                 'check_hash' => $hash->matchHash($unik, $myhash),
                 'password' => $password,

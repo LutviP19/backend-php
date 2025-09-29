@@ -165,11 +165,6 @@ class ApiController extends BaseController
         return (new JwtToken($secret, $expirationTime, $jwtId, $issuer, $audience));
     }
 
-    protected function getPass()
-    {
-        return config('app.token');
-    }
-
     protected function getBearerToken()
     {
         $headers = $this->request()->headers();

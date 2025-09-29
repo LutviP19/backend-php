@@ -121,6 +121,11 @@ class BaseController
         }
     }
 
+    protected function getPass()
+    {
+        return config('app.token');
+    }
+
     /**
      * getOutput function for formated json response struct
      *

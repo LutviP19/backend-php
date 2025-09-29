@@ -174,7 +174,8 @@ function initializeServerConstant($request): void
 
     $_REQUEST = array_merge($_GET, $_POST);
 
-    foreach ($request->header as $key => $value) {
+    $headers = array_merge((new \Swoole\Http\Request)->header ?? [], getallheaders() ?? [], $request ?? []);
+    foreach ($headers as $key => $value) {
         $_SERVER['HTTP_' . strtoupper(str_replace('-', '_', $key))] = $value;
     }
 

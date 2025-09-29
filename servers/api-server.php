@@ -75,14 +75,54 @@ class MiddlewareSetup implements MiddlewareInterface
 {
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        initializeServerConstant($request->getServerParams());
+        $serverParams = $request->getServerParams() ?? [];
+        initializeServerConstant(array_merge($serverParams, $request->getHeaders() ?? []));
 
         var_dump('Middleware start clientIP:'.clientIP());
-        // \App\Core\Support\Log::debug($request->getServerParams(), 'ApiServer.MiddlewareSetup.process.$serverP');
+        // \App\Core\Support\Log::debug($_SERVER, 'ApiServer.MiddlewareSetup.process.$serverP');
+        // \App\Core\Support\Log::debug(getallheaders(), 'ApiServer.MiddlewareSetup.process.getallheaders()');
 
         // EnsureIpIsValid
         if (!in_array(clientIP(), Config::get('trusted_ips'))) {
             return new Response('Service Unavailable', 503, '', ['Content-Type' => 'text/plain']);
+        }
+
+        // Validate Header
+        $headers = getallheaders();
+        $valid_headers = array_keys_exists(Config::get('valid_headers'), $headers);
+        if (false === $valid_headers || ! isset($headers['X-Api-Token'])) {
+
+            if (false === $valid_headers) {
+                $statusCode = 500;
+                $json = [
+                            'status' => false,
+                            'statusCode' => $statusCode,
+                            'message' => 'Invalid header!',
+                        ];
+            }
+
+            if ( ! isset($headers['X-Api-Token'])) {
+                $statusCode = 403;
+                $json = [
+                            'status' => false,
+                            'statusCode' => $statusCode,
+                            'message' => 'Missing token header!',
+                        ];
+            }
+
+            return new Response(\json_encode($json), $statusCode, '', ['Content-Type' => 'application/json']);
+        }
+
+        // Validate Api Token
+        if(matchEncryptedData(config('app.token'), $headers['X-Api-Token'][0]) === false) {
+            $statusCode = 403;
+            $json = [
+                        'status' => false,
+                        'statusCode' => $statusCode,
+                        'message' => 'Invalid api token!',
+                    ];
+
+            return new Response(\json_encode($json), $statusCode, '', ['Content-Type' => 'application/json']);
         }
 
         $response = $handler->handle($request);
@@ -150,13 +190,12 @@ class RouteMiddleware implements MiddlewareInterface
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         // Init $_SERVER attributes
-        $serverParams = $request->getServerParams();
-        initializeServerConstant($serverParams);
+        $serverParams = $request->getServerParams() ?? [];
+        initializeServerConstant(array_merge($serverParams, $request->getHeaders() ?? []));
         // \App\Core\Support\Log::debug($_SERVER, 'ApiServer.RouteMiddleware.process.$_SERVER');
 
+        // Only accept valid JSON content
         $contentType = $request->headers['content-type'];
-
-        // Only accept JSON content
         if (! is_null($contentType) && str_contains($contentType, 'application/json')) {
             // Get JSON
             $body = $request->getBody();

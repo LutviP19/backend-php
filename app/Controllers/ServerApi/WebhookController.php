@@ -106,6 +106,6 @@ class WebhookController extends ServerApiController
         // Session::unset('indexAction');
 
         // Return \OpenSwoole\Core\Psr\Response
-        return $this->SetOpenSwooleResponse($status, $statusCode, $output);
+        return $this->SetOpenSwooleResponse($status, $statusCode, $output, $message, ['X-Reply-Code' => \generateUlid()]);
     }
 }

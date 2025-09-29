@@ -104,8 +104,8 @@ class Validator
     {
         $this->setRequest($request);
 
-        \App\Core\Support\Log::debug($this->request, 'Validator.validate.request');
-        \App\Core\Support\Log::debug($rules, 'Validator.validate.rules');
+        // \App\Core\Support\Log::debug($this->request, 'Validator.validate.request');
+        // \App\Core\Support\Log::debug($rules, 'Validator.validate.rules');
 
         //set the rules object where all the rule methods are.
         $this->setRules(

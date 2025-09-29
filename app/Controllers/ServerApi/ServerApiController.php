@@ -8,11 +8,16 @@ use OpenSwoole\Core\Psr\Response as OpenSwooleResponse;
 class ServerApiController extends BaseController
 {
     protected $filter;
+    protected $headers;
 
     public function __construct()
     {
         parent::__construct();
         $this->filter = new \App\Core\Validation\Filter();
+        $this->headers = getallheaders();
+
+        // \App\Core\Support\Log::debug($_SERVER, 'ServerApiController.__construct.$_SERVER');
+        // \App\Core\Support\Log::debug($this->headers, 'ServerApiController.__construct.$this->headers');
 
         // Session::unset('errors');
     }
@@ -25,4 +30,5 @@ class ServerApiController extends BaseController
                 ->withHeaders(["Content-Type" => "application/json"] + $headers)
                 ->withStatus($statusCode);
     }
+
 }

@@ -1,7 +1,9 @@
-<?php
+<?php 
+declare(strict_types=1);
 
 namespace App\Controllers\ServerApi\Auth;
 
+use App\Controllers\ServerApi\ServerApiController;
 use App\Core\Support\Session;
 use App\Core\Security\Middleware\ValidateClient;
 use App\Core\Security\Middleware\JwtToken;
@@ -17,7 +19,7 @@ use Exception;
  * AuthController class
  * @author Lutvi <lutvip19@gmail.com>
  */
-class AuthController extends ApiController
+class AuthController extends ServerApiController
 {
     protected $id;
     protected $ulid;
@@ -37,20 +39,19 @@ class AuthController extends ApiController
      */
     public function login($request, array $data)
     {
-        // $requestData = [
-        //     'attributes' => $data['attributes'],
-        //     'jsonData' => $data['jsonData'],
-        //     'requestQuery' => $data['requestQuery']
-        // ];
+        $requestData = [
+            'attributes' => $data['attributes'],
+            'jsonData' => $data['jsonData'],
+            'requestQuery' => $data['requestQuery']
+        ];
         $jsonData = $data['jsonData'];
-        // $filter = new \App\Core\Validation\Filter();
 
         try {
 
             // Validate Input
             \App\Core\Support\Session::unset('errors');
             $validator = new Validator();
-            $validator->validate($request, [
+            $validator->validate($jsonData, [
                 'email' => 'required|email',
                 'password'  => 'required|min:8|max:100',
             ]);
@@ -71,10 +72,10 @@ class AuthController extends ApiController
                 // Sanitize Input
                 $payload = $this->filter->sanitize($jsonData, ['email', 'password']);
 
+                // Default status
                 $statusCode = 401;
-                $errors = ['auth' => 'Invalid credentials,',];
+                $errors = ['auth' => 'Invalid credentials.'];
 
-                // $payload = $jsonData;
                 $email = readJson('email', $payload);
                 $password = readJson('password', $payload);
 
@@ -153,11 +154,11 @@ class AuthController extends ApiController
      */
     public function updateToken($request, array $data)
     {
-        // Validate header X-Client-Token
-        $this->validateClientToken($request, $response);
+        // // Validate header X-Client-Token
+        // $this->validateClientToken($request, $response);
 
-        // Validate JWT
-        $this->validateJwt($request, $response);
+        // // Validate JWT
+        // $this->validateJwt($request, $response);
 
         // $requestData = [
         //     'attributes' => $data['attributes'],

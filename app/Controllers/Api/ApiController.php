@@ -1,4 +1,5 @@
-<?php
+<?php 
+declare(strict_types=1);
 
 namespace App\Controllers\Api;
 
@@ -148,32 +149,4 @@ class ApiController extends BaseController
         }
     }
 
-    /**
-     * initJwtToken function
-     *
-     * @return void
-     */
-    public function initJwtToken()
-    {
-        $secret = Session::get('secret');
-        $expirationTime = 3600;
-        $jwtId = Session::get('jwtId');
-        $issuer = clientIP();
-        $audience = Config::get('app.url');
-
-        // Init JwtToken
-        return (new JwtToken($secret, $expirationTime, $jwtId, $issuer, $audience));
-    }
-
-    protected function getBearerToken()
-    {
-        $headers = $this->request()->headers();
-
-        if (!isset($headers['Authorization'])) {
-            return false;
-        }
-
-        return str_replace('Bearer ', '', $headers['Authorization']);
-    }
-    
 }

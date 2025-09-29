@@ -237,7 +237,7 @@ class Filter
         return [ $param ];
     }
 
-    // ** ------------------------- Filters --------------------------------------- ** //
+    // ** ------------------------- Custom Filters --------------------------------------- ** //
 
     /**
      * Remove all known punctuation from a string.

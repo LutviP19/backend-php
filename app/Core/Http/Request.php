@@ -252,7 +252,7 @@ class Request
      */
     public static function isJsonRequest()
     {
-        return (strtolower($_SERVER['HTTP_ACCEPT']) == 'application/json')
+        return (strtolower($_SERVER['HTTP_ACCEPT'][0] ?? $_SERVER['HTTP_ACCEPT']) == 'application/json')
         ? true : false;
     }
 

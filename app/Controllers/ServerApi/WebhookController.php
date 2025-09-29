@@ -3,9 +3,6 @@ declare(strict_types=1);
 
 namespace App\Controllers\ServerApi;
 
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
 
 use App\Core\Validation\Validator;
 use App\Core\Support\Session;
@@ -30,7 +27,6 @@ class WebhookController extends ServerApiController
 
 
     public function indexAction($request, array $data) {
-        // \App\Core\Support\Log::debug($request, 'APIWebhookController.indexAction.$request');
         $event = $request->getAttribute('event');
         $event = $data['attributes']['event'] ?: 'users.get';
 

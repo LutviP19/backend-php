@@ -1,11 +1,18 @@
 <?php
+declare(strict_types=1);
+
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 
 namespace App\Core\Http;
 
-use Exception;
-use App\Core\Security\CSRF;
+use App\Core\Security\Middleware\JwtToken;
+use App\Core\Support\Config;
 use App\Core\Support\Session;
+use App\Core\Security\CSRF;
 use App\Core\Http\{Request,Response};
+use Exception;
 
 /**
  * BaseController class
@@ -124,6 +131,34 @@ class BaseController
     protected function getPass()
     {
         return config('app.token');
+    }
+
+    /**
+     * initJwtToken function
+     *
+     * @return void
+     */
+    public function initJwtToken()
+    {
+        $secret = Session::get('secret');
+        $expirationTime = 3600;
+        $jwtId = Session::get('jwtId');
+        $issuer = clientIP();
+        $audience = Config::get('app.url');
+
+        // Init JwtToken
+        return (new JwtToken($secret, $expirationTime, $jwtId, $issuer, $audience));
+    }
+
+    protected function getBearerToken()
+    {
+        $headers = $this->request()->headers();
+
+        if (!isset($headers['Authorization'])) {
+            return false;
+        }
+
+        return str_replace('Bearer ', '', $headers['Authorization']);
     }
 
     /**

@@ -59,7 +59,7 @@ class WebhookController extends ApiController
     public function index(Request $request, Response $response)
     {
         // \App\Core\Support\Log::debug(gettype($request), 'WebhookController.index.gettype($request)');
-        \App\Core\Support\Log::debug($request, 'WebhookController.index.$request');
+        // \App\Core\Support\Log::debug($request, 'WebhookController.index.$request');
 
         if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // OpenSwoole Server
             $reqData = $request->all();
@@ -73,7 +73,7 @@ class WebhookController extends ApiController
                 'password'  => 'required|min:8|max:100',
             ]);
             $errors = \App\Core\Support\Session::get('errors');
-            \App\Core\Support\Log::debug($errors, 'WebhookController.index.errors');
+            // \App\Core\Support\Log::debug($errors, 'WebhookController.index.errors');
 
 
             if ($errors) {
@@ -101,11 +101,11 @@ class WebhookController extends ApiController
             \App\Core\Support\Log::debug($reqData, 'WebhookController.index.sanitize.$reqData');
         }
 
-        \App\Core\Support\Log::debug($_SERVER, 'WebhookController.index.$_SERVER');
-        \App\Core\Support\Log::debug($_COOKIE, 'WebhookController.index.$_COOKIE');
+        // \App\Core\Support\Log::debug($_SERVER, 'WebhookController.index.$_SERVER');
+        // \App\Core\Support\Log::debug($_COOKIE, 'WebhookController.index.$_COOKIE');
 
         $payload = $request->all();
-        \App\Core\Support\Log::debug($payload, 'WebhookController.index.payload');
+        // \App\Core\Support\Log::debug($payload, 'WebhookController.index.payload');
 
         $email = readJson('email', $payload);
         $password = readJson('password', $payload);

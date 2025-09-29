@@ -157,25 +157,7 @@ class MiddlewareB implements MiddlewareInterface
 }
 
 // Routing API here
-$dispatcher = \FastRoute\simpleDispatcher(function (RouteCollector $r) {
-    $r->addRoute('GET', '/hello/{name}', function ($request) {
-        $name = $request->getAttribute('name');
-        $json = json_encode(
-            [
-                        'message' => $name,
-                        'data' => ['users' => [['id' => 1, 'name' => 'Alice'], ['id' => 2, 'name' => 'Bob']]]
-                    ]
-        );
-
-        return (new Response($json))->withHeaders(["Content-Type" => "application/json"])->withStatus(200);
-    });
-
-    // Testing Call Controller
-    $r->addRoute(['GET','POST'], '/webhook/{event}', function ($request) {
-        // return  (new \App\Controllers\Api\v1\WebhookController())->bpIndex($request, getRequestData($request));
-        return  (new \App\Controllers\ServerApi\WebhookController())->indexAction($request, getRequestData($request));
-    });
-});
+$dispatcher = include __DIR__ .'/../routes/api-server.php';
 
 class RouteMiddleware implements MiddlewareInterface
 {

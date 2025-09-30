@@ -22,6 +22,16 @@ $ docker compose docker-compose/rabbitmq-python/docker-compose.yaml
 mailpit :
 $ docker compose docker-compose/mailpit/docker-compose.yml
 
+APP TOOLS :
+--------------
+Create Self Signed Development Certificates
+$ bin/mkcert 
+Benchmarking OpenSwoole server performance [change uri to specific server]
+$ bin/benchmark
+Running Pest unit test on this framework
+$ bin/pest
+Third party binary files for Support this framework performance
+$ bin/ffi/*
 
 APP COMMANDS :
 --------------

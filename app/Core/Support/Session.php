@@ -16,7 +16,7 @@ class Session
     public static function all()
     {
         $sessions = [];
-        $escaped = ['password', 'errors', 'secret', 'jwtId', 'tokenJwt', '_previous_uri', '_old_input'];
+        $escaped = ['password', 'errors', 'secret', 'jwtId', 'tokenJwt', 'gnr', '_previous_uri', '_old_input'];
         foreach ($_SESSION as $key => $value) {
             if (in_array($key, $escaped)) {
                 continue;

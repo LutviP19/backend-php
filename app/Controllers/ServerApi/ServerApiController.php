@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controllers\ServerApi;
@@ -9,6 +10,7 @@ use App\Core\Security\Encryption;
 use App\Core\Security\Middleware\JwtToken;
 use App\Core\Support\Config;
 use App\Core\Support\Session;
+use App\Core\Security\Hash;
 
 class ServerApiController extends BaseController
 {
@@ -22,16 +24,22 @@ class ServerApiController extends BaseController
         $this->filter = new \App\Core\Validation\Filter();
         $this->headers = getallheaders();
 
-        // \App\Core\Support\Log::debug($_SERVER, 'ServerApiController.__construct.$_SERVER');
-        // \App\Core\Support\Log::debug($this->headers, 'ServerApiController.__construct.$this->headers');
+        \App\Core\Support\Log::debug($_SERVER, 'ServerApiController.__construct.$_SERVER');
+        \App\Core\Support\Log::debug($this->headers, 'ServerApiController.__construct.$this->headers');
 
         if (session_status() != PHP_SESSION_ACTIVE) {
             session_start();
         }
         Session::unset('errors');
+
+        // Validate with session data
+        // if (Session::has('uid') && Session::has('secret') && Session::has('jwtId')) {
+            // JWT
+            $this->jwtToken = $this->initJwtToken();
+        // }
     }
 
-    protected function SetOpenSwooleResponse(bool $status, int $statusCode, array $output, string $message = '', array $headers = []) : OpenSwooleResponse
+    protected function SetOpenSwooleResponse(bool $status, int $statusCode, array $output, string $message = '', array $headers = []): OpenSwooleResponse
     {
         $json = $this->getOutput($status, $statusCode, $output, $message);
 
@@ -40,41 +48,39 @@ class ServerApiController extends BaseController
                 ->withStatus($statusCode);
     }
 
-    public function useMiddleware() {
-        // if (stripos($this->headers['Request-Uri'], '/api') === 0) {
-            // \App\Core\Support\Log::debug($this->headers['Request-Uri'], 'ServerApiController.__construct.Request-Uri');
-
-            // Validate credentials
-            $this->validateClientToken();
-
-            // Validate with session data
-            if (Session::has('uid') && Session::has('secret') && Session::has('jwtId')) {
-                // JWT
-                $this->jwtToken = $this->initJwtToken();
-            }
-        // }
-    }
-
-    public function validateJwt()
-    {
-        $user = Session::all();
-        $tokenJwt = Session::get('tokenJwt');
-        $bearerToken = $this->getBearerToken();
-
-        if (empty($user) ||
-            is_null($this->jwtToken) ||
-            $bearerToken !== $tokenJwt ||
-            false === $this->jwtToken->validateToken($bearerToken)) {
-
-            $statusCode = 401;
-            $output = [
-                        'jwt' => 'Invalid jwt!',
-                    ];
-            return $this->SetOpenSwooleResponse(false, $statusCode, $exception->getMessage(), 'Please login!');
-        }
-    }
-
     /**
+     * checkCredentials function
+     *
+     * @param  [string]  $user
+     * @param  [string]  $password
+     *
+     * @return boolean
+     */
+    protected function checkCredentials($user, $password): bool
+    {
+        if ($user) {
+            $hash = new Hash();
+
+            if ($hash->matchPassword($password, $user->password)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function useMiddleware()
+    {
+        // Validate header X-Client-Token
+        $validate = $this->validateClientToken();
+        if($validate) return $validate;
+
+        // Validate Jwt
+        $validate = $this->validateJwt();
+        if($validate) return $validate;
+    }
+
+    /** 
      * validateClientToken function
      *
      * @return OpenSwooleResponseon $status === false, or void
@@ -82,29 +88,60 @@ class ServerApiController extends BaseController
     public function validateClientToken()
     {
         // Set default output
-        $status = true; $statusCode = 200; $output = []; $message = ''; $headers = [];
+        $status = true;
+        $statusCode = 200;
+        $output = [];
+        $message = '';
+        $headers = [];
+        
+        if (Session::has('uid')) {
 
-        if(Session::has('uid')) {
-            
+            $clientHeaderToken = $this->headers['X-Client-Token'][0] ?? '';
+
             $clientId = Session::get('uid'); // Get from session
             $validateClient = new \App\Core\Security\Middleware\ValidateClient($clientId);
             $validate = $validateClient->matchToken($clientHeaderToken);
 
             if (! $validate || empty($validate)) {
-                $status = false; $statusCode = 401; $message = 'Invalid client token!';
+                $status = false;
+                $statusCode = 401;
+                $message = 'Invalid client token!';
                 $output = [ 'auth' => 'Invalid token!' ];
             }
-    
         } else {
-            $status = false; $statusCode = 401; $message = 'Please login!';
+
+            $status = false;
+            $statusCode = 401;
+            $message = 'Please login!';
             $output = [ 'auth' => 'Session expired!' ];
         }
-        
-        
-        if(false === $status) {
-            \App\Core\Support\Log::debug($status, 'ServerApiController.validateClientToken.status');
+
+        if (false === $status) {
             return $this->SetOpenSwooleResponse($status, $statusCode, $output, $message, $headers);
         }
+
+        return false;
+    }
+
+    public function validateJwt()
+    {
+        $user = Session::all();
+        $tokenJwt = Session::get('tokenJwt');
+        $bearerToken = str_replace('Bearer ', '', $this->headers['Authorization'][0] ?? '');
+
+        if (empty($user) ||
+            is_null($this->jwtToken) ||
+            $bearerToken !== $tokenJwt ||
+            false === $this->jwtToken->validateToken($bearerToken)) {
+
+            $statusCode = 401;
+            $message = 'Please login!';
+            $output = [ 'jwt' => 'Invalid jwt!' ];
+            
+            return $this->SetOpenSwooleResponse(false, $statusCode, $output, $message);
+        }
+
+        return false;
     }
 
 }

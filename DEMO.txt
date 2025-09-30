@@ -74,7 +74,7 @@ Note:
 
 - Login 
 --------
-curl --location 'http://localhost:8000/auth/login' \
+curl --location --request POST 'http://localhost:8000/auth/login' \
 --header 'Accept: application/json' \
 --header 'Content-Type: application/json' \
 --header 'X-Api-Token: [REPLACE_WITH_YOUR_OWN_SETUP]' \
@@ -100,7 +100,7 @@ curl --location --request POST 'http://localhost:8000/auth/logout' \
 
 - Update Client token
 ----------------------
-curl --location 'http://localhost:8000/auth/uptoken' \
+curl --location --request POST 'http://localhost:8000/auth/uptoken' \
 --header 'Authorization: Bearer [REPLACE_WITH_VALID_JWT]' \
 --header 'Cookie: BACKENDPHPSESSID=[REPLACE_WITH_VALID_SESION_ID]' \
 --header 'Accept: application/json' \

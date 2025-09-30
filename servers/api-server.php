@@ -11,7 +11,6 @@ error_reporting(~E_NOTICE & ~E_DEPRECATED & ~E_WARNING);
 require_once __DIR__ . '/bootstrap.php';
 
 use App\Core\Support\Config;
-
 use FastRoute\RouteCollector;
 use OpenSwoole\Core\Psr\Middleware\StackHandler;
 use OpenSwoole\Core\Psr\Response;
@@ -101,7 +100,7 @@ class MiddlewareSetup implements MiddlewareInterface
                         ];
             }
 
-            if ( ! isset($headers['X-Api-Token'])) {
+            if (! isset($headers['X-Api-Token'])) {
                 $statusCode = 403;
                 $json = [
                             'status' => false,
@@ -114,7 +113,7 @@ class MiddlewareSetup implements MiddlewareInterface
         }
 
         // Validate Api Token
-        if(matchEncryptedData(config('app.token'), $headers['X-Api-Token'][0]) === false) {
+        if (matchEncryptedData(config('app.token'), $headers['X-Api-Token'][0]) === false) {
             $statusCode = 403;
             $json = [
                         'status' => false,
@@ -125,48 +124,25 @@ class MiddlewareSetup implements MiddlewareInterface
             return new Response(\json_encode($json), $statusCode, '', ['Content-Type' => 'application/json']);
         }
 
-        // Validate Token Client
-        if (stripos($request->getUri()->getPath(), '/api') === 0) {
-            // echo "URI: ". $request->getUri()->getPath();
+        // Check Token Client Header
+        if (stripos($request->getUri()->getPath(), '/user') === 0 || stripos($request->getUri()->getPath(), '/api') === 0) {
+            echo "URI: ". $request->getUri()->getPath() . PHP_EOL;
 
             $status = true;
-            if ( ! isset($headers['X-Client-Token'])) {
-                $status = false; $statusCode = 403;
+            if (! isset($headers['X-Client-Token'])) {
+                $status = false;
+                $statusCode = 403;
                 $json = [
                             'status' => false,
                             'statusCode' => $statusCode,
                             'message' => 'Missing client token header!',
                         ];
-            } else {
-                if(\App\Core\Support\Session::has('uid')) {
-            
-                    $clientId = \App\Core\Support\Session::get('uid'); // Get from session
-                    $validateClient = new \App\Core\Security\Middleware\ValidateClient($clientId);
-                    $validate = $validateClient->matchToken($clientHeaderToken);
-        
-                    if (! $validate || is_null($validate)) {
-                        $status = false; $statusCode = 401; $message = 'Invalid client token!';
-                        $json = [
-                            'status' => false,
-                            'statusCode' => $statusCode,
-                            'message' => $message,
-                            'errors' => [ 'auth' => 'Invalid token!' ]
-                        ];
-                    }
-                } else {
-                    $status = false; $statusCode = 401; $message = 'Please login!';
-                    $json = [
-                        'status' => false,
-                        'statusCode' => $statusCode,
-                        'message' => $message,
-                        'errors' => [ 'auth' => 'Session expired!' ]
-                    ];
-                }
             }
 
-            if(false === $status)
-            return new Response(\json_encode($json), $statusCode, 'Missing credentials', ['Content-Type' => 'application/json']);
-            
+            if (false === $status) {
+                return new Response(\json_encode($json), $statusCode, 'Missing credentials', ['Content-Type' => 'application/json']);
+            }
+
         }
 
         $response = $handler->handle($request);
@@ -211,7 +187,7 @@ class RouteMiddleware implements MiddlewareInterface
     {
         $this->dispatcher = $dispatcher;
     }
-    
+
     //\OpenSwoole\Core\Psr\ServerRequest ServerRequestInterface
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {

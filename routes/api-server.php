@@ -1,7 +1,7 @@
 <?php
+declare(strict_types=1);
 
-// This a router for Api Server, separated file to describe Fast Router dispacher
-
+// This is a RouteCollector for Api Server, separated file to dispact FastRoute dispacher
 use FastRoute\RouteCollector;
 
 return \FastRoute\simpleDispatcher(function (RouteCollector $r) {
@@ -27,21 +27,31 @@ return \FastRoute\simpleDispatcher(function (RouteCollector $r) {
 
     // Auth Controller
     $r->addGroup('/auth', function (RouteCollector $r) {
+
         $r->addRoute(['POST'], '/login', function ($request) {
             return  (new \App\Controllers\ServerApi\Auth\AuthController())->login($request, getRequestData($request));
         });
+    });
+
+    // User Controller
+    $r->addGroup('/user', function (RouteCollector $r) {
+
+        $r->addRoute(['GET','POST'], '/index', function ($request) {
+            return  (new \App\Controllers\ServerApi\User\UserController())->indexAction($request, getRequestData($request));
+        });
 
         $r->addRoute(['POST'], '/uptoken', function ($request) {
-            return  (new \App\Controllers\ServerApi\Auth\AuthController())->updateToken($request, getRequestData($request));
+            return  (new \App\Controllers\ServerApi\User\UserController())->updateToken($request, getRequestData($request));
         });
 
         $r->addRoute(['GET','POST'], '/logout', function ($request) {
-            return  (new \App\Controllers\ServerApi\Auth\AuthController())->logout($request, getRequestData($request));
+            return  (new \App\Controllers\ServerApi\User\UserController())->logout($request, getRequestData($request));
         });
     });
 
     // Version 1.0
     $r->addGroup('/api/v1.0', function (RouteCollector $r) {
+
         // Client
         $r->addGroup('/client', function (RouteCollector $r) {
 
@@ -49,6 +59,5 @@ return \FastRoute\simpleDispatcher(function (RouteCollector $r) {
                 return  (new \App\Controllers\ServerApi\v1\ClientController())->indexAction($request, getRequestData($request));
             });
         });
-
     });
 });

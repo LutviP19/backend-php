@@ -1,18 +1,14 @@
-<?php 
+<?php
+
 declare(strict_types=1);
 
 namespace App\Controllers\ServerApi\Auth;
 
-use App\Controllers\ServerApi\ServerApiController;
-use App\Core\Support\Session;
-use App\Core\Security\Middleware\ValidateClient;
-use App\Core\Security\Middleware\JwtToken;
-use App\Core\Support\Config;
 use App\Models\User;
-use App\Core\Security\Hash;
+use App\Controllers\ServerApi\ServerApiController;
+use App\Core\Security\Middleware\ValidateClient;
 use App\Core\Validation\Validator;
-use App\Controllers\Api\ApiController;
-use App\Core\Http\{Request,Response};
+use App\Core\Support\Session;
 use Exception;
 
 /**
@@ -95,7 +91,7 @@ class AuthController extends ServerApiController
             //     ->setupForm(clientIP(), $callback, 5, 10, 1200);
 
             if (false == $callback || empty($user)) {
-                
+
                 return $this->SetOpenSwooleResponse(false, $statusCode, $errors, 'Validation errors.');
             }
         } catch (Exception $exception) {
@@ -118,7 +114,7 @@ class AuthController extends ServerApiController
             $cookie['secure'],
             $cookie['httponly']
         );
-        
+
         // Generate credentials
         foreach ($user as $key => $value) {
             if ($key === 'ulid') {
@@ -158,70 +154,14 @@ class AuthController extends ServerApiController
         $statusCode = 201;
         $headers = ['Set-Cookie' => "{$sessionName}={$sessionId}; Max-Age={$sessionExp}; Path=/; SameSite=Lax;"];
         $output = [
-                    'token' => $tokenJwt,
-                    'sessid' => $sessionId,
-                    'account' => Session::all()
+                    'api_token' => encryptData(config('app.token')),
+                    'client_token' => Session::get('client_token'),
+                    'jwt_token' => $tokenJwt,
+                    // 'sessid' => $sessionId,
+                    // 'account' => Session::all()
                 ];
 
         return $this->SetOpenSwooleResponse(true, $statusCode, $output, $message, $headers);
     }
 
-    /**
-     * logout function
-     *
-     * @param  Request  $request
-     * @param  Response $response
-     *
-     * @return $response->json
-     */
-    public function logout($request, array $data)
-    {
-        // // Validate header X-Client-Token
-        // $this->validateClientToken($request, $response);
-
-        // // Validate JWT
-        // $this->validateJwt($request, $response);
-
-        // $requestData = [
-        //     'attributes' => $data['attributes'],
-        //     'jsonData' => $data['jsonData'],
-        //     'requestQuery' => $data['requestQuery']
-        // ];
-        $jsonData = $data['jsonData'];
-
-        // clear cache token
-        $userId = Session::get('uid');
-        $validateClient = new ValidateClient($userId);
-        $validateClient->delToken();
-
-        Session::destroy();
-
-        $statusCode = 200;
-        $output = [
-                    'auth' => 'You are logged out!',
-                ];
-
-        return $this->SetOpenSwooleResponse(true, $statusCode, $output);
-    }
-
-    /**
-     * checkCredentials function
-     *
-     * @param  [string]  $user
-     * @param  [string]  $password
-     *
-     * @return boolean
-     */
-    private function checkCredentials($user, $password): bool
-    {
-        if ($user) {
-            $hash = new Hash();
-
-            if ($hash->matchPassword($password, $user->password)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
 }

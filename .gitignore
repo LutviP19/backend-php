@@ -4,6 +4,7 @@
 *.cache
 NOTES.txt
 /tools
+/bin/ffi/source*
 /node_modules
 /vendor
 /.fleet

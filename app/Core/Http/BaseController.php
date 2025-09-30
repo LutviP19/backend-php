@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
+namespace App\Core\Http;
+
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
-
-namespace App\Core\Http;
 
 use App\Core\Security\Middleware\JwtToken;
 use App\Core\Support\Config;

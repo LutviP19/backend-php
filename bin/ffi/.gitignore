@@ -1,0 +1,6 @@
+*.pid
+*.sock
+*.backup
+*.sample
+*.old
+!.gitignore

@@ -13,7 +13,8 @@
 - Message Bus [Symfony Message]
 - GraphQL
 - No SQL [MongoDB]
-- PHP FFI performance
+- HTTP 2.0 Support
+- PHP FFI performance [Compiled lib from: Python, Golang, Rust]
 - PHP Unit Testing [Pest] 
 - Server Swithching [Network Route, Erlang]
 

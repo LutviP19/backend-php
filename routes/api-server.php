@@ -11,9 +11,9 @@ return \FastRoute\simpleDispatcher(function (RouteCollector $r) {
         $name = $request->getAttribute('name');
         $json = json_encode(
             [
-                        'message' => $name,
-                        'data' => ['users' => [['id' => 1, 'name' => 'Alice'], ['id' => 2, 'name' => 'Bob']]]
-                    ]
+                'message' => $name,
+                'data' => ['users' => [['id' => 1, 'name' => 'Alice'], ['id' => 2, 'name' => 'Bob']]]
+            ]
         );
 
         return (new Response($json))->withHeaders(["Content-Type" => "application/json"])->withStatus(200);
@@ -30,11 +30,25 @@ return \FastRoute\simpleDispatcher(function (RouteCollector $r) {
         $r->addRoute(['POST'], '/login', function ($request) {
             return  (new \App\Controllers\ServerApi\Auth\AuthController())->login($request, getRequestData($request));
         });
+
         $r->addRoute(['POST'], '/uptoken', function ($request) {
             return  (new \App\Controllers\ServerApi\Auth\AuthController())->updateToken($request, getRequestData($request));
         });
+
         $r->addRoute(['GET','POST'], '/logout', function ($request) {
             return  (new \App\Controllers\ServerApi\Auth\AuthController())->logout($request, getRequestData($request));
         });
+    });
+
+    // Version 1.0
+    $r->addGroup('/api/v1.0', function (RouteCollector $r) {
+        // Client
+        $r->addGroup('/client', function (RouteCollector $r) {
+
+            $r->addRoute(['GET','POST'], '/index', function ($request) {
+                return  (new \App\Controllers\ServerApi\v1\ClientController())->indexAction($request, getRequestData($request));
+            });
+        });
+
     });
 });

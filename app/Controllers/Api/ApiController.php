@@ -23,6 +23,8 @@ class ApiController extends BaseController
     {
         parent::__construct();
 
+        Session::unset('errors');
+
         // \App\Core\Support\Log::debug($_SERVER['SERVER_PORT'], 'ApiController.SERVER_PORT');
         if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // OpenSwoole Server
             // Accepted type is JSON

@@ -93,6 +93,9 @@ class Log
         if (is_array($logs) || is_object($logs)) {
             $logs = json_encode($logs, JSON_UNESCAPED_SLASHES);
         }
+        if(\is_bool($logs)) {
+            return $logs ?"true":"false";
+        }
 
         return $logs;
     }

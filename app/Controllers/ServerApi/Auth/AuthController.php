@@ -39,6 +39,8 @@ class AuthController extends ServerApiController
      */
     public function login($request, array $data)
     {
+        // \App\Core\Support\Log::debug($request->getUri()->getPath(), 'AuthController.login.$request-getUri-getPath');
+
         $requestData = [
             'attributes' => $data['attributes'],
             'jsonData' => $data['jsonData'],
@@ -46,10 +48,15 @@ class AuthController extends ServerApiController
         ];
         $jsonData = $data['jsonData'];
 
+        // Set output
+        $status = false;
+        $output = [];
+        $message = '';
+
         try {
 
             // Validate Input
-            \App\Core\Support\Session::unset('errors');
+            // \App\Core\Support\Session::unset('errors');
             $validator = new Validator();
             $validator->validate($jsonData, [
                 'email' => 'required|email',
@@ -83,12 +90,12 @@ class AuthController extends ServerApiController
                 $callback = $this->checkCredentials($user, $password);
             }
 
-            // Middleware
-            (new \App\Core\Security\Middleware\RateLimiter('login_request'))
-                ->setupForm(clientIP(), $callback, 5, 10, 1200);
+            // // Middleware
+            // (new \App\Core\Security\Middleware\RateLimiter('login_request'))
+            //     ->setupForm(clientIP(), $callback, 5, 10, 1200);
 
             if (false == $callback || empty($user)) {
-
+                
                 return $this->SetOpenSwooleResponse(false, $statusCode, $errors, 'Validation errors.');
             }
         } catch (Exception $exception) {
@@ -97,6 +104,20 @@ class AuthController extends ServerApiController
             return $this->SetOpenSwooleResponse(false, $statusCode, $exception->getMessage(), 'Validation errors.');
         }
 
+        // Set cookie
+        $sessionName = session_name();
+        $sessionId = session_create_id('bp-');
+        $sessionExp = (env('SESSION_LIFETIME', 120) * 60);
+        $cookie = session_get_cookie_params();
+        setcookie(
+            $sessionName,
+            $sessionId,
+            $sessionExp,
+            $cookie['path'],
+            $cookie['domain'],
+            $cookie['secure'],
+            $cookie['httponly']
+        );
         
         // Generate credentials
         foreach ($user as $key => $value) {
@@ -135,108 +156,14 @@ class AuthController extends ServerApiController
         Session::set('tokenJwt', $tokenJwt);
 
         $statusCode = 201;
+        $headers = ['Set-Cookie' => "{$sessionName}={$sessionId}; Max-Age={$sessionExp}; Path=/; SameSite=Lax;"];
         $output = [
                     'token' => $tokenJwt,
-                    'sessid' => session_id(),
+                    'sessid' => $sessionId,
                     'account' => Session::all()
                 ];
 
-        return $this->SetOpenSwooleResponse(true, $statusCode, $output);
-    }
-
-    /**
-     * updateToken function
-     *
-     * @param  Request  $request
-     * @param  Response $data
-     *
-     * @return $response->json
-     */
-    public function updateToken($request, array $data)
-    {
-        // // Validate header X-Client-Token
-        // $this->validateClientToken($request, $response);
-
-        // // Validate JWT
-        // $this->validateJwt($request, $response);
-
-        // $requestData = [
-        //     'attributes' => $data['attributes'],
-        //     'jsonData' => $data['jsonData'],
-        //     'requestQuery' => $data['requestQuery']
-        // ];
-        $jsonData = $data['jsonData'];
-
-        try {
-            // Validate Input
-            \App\Core\Support\Session::unset('errors');
-            $validator = new Validator();
-            $validator->validate($jsonData, [
-                'email' => 'required|email',
-                'password'  => 'required|min:8|max:100',
-            ]);
-            $errors = \App\Core\Support\Session::get('errors');
-
-            if ($errors) {
-
-                $statusCode = 203;
-                $callback = false;
-
-            } else {
-
-                // Filter Input
-                $jsonData = $this->filter->filter($jsonData, [
-                    'email' => 'trim|sanitize_string',
-                    'password'  => 'trim|sanitize_string',
-                ]);
-
-                // Sanitize Input
-                $payload = $this->filter->sanitize($jsonData, ['email', 'password']);
-
-                $statusCode = 401;
-                $errors = ['auth' => 'Invalid credentials,',];
-
-                $payload = $request->all();
-                $email = readJson('email', $payload);
-                $password = readJson('password', $payload);
-
-                $user = User::getUserByEmail($email);
-                $callback = $this->checkCredentials($user, $password);
-            }
-
-            // Middleware
-            (new \App\Core\Security\Middleware\RateLimiter('uptoken_request'))
-                ->setupForm(clientIP(), $callback, 5, 10, 1200);
-
-            if (false == $callback || empty($user)) {
-                return $this->SetOpenSwooleResponse(false, $statusCode, $errors, 'Validation errors.');
-            }
-        } catch (Exception $exception) {
-            $statusCode = 429;
-            return $this->SetOpenSwooleResponse(false, $statusCode, $exception->getMessage(), 'Validation errors.');
-        }
-
-        // Update Client Token
-        $userId = Session::get('uid');
-        $validateClient = new ValidateClient($userId);
-        
-        if (false === $validateClient->updateToken()) {
-            $statusCode = 203;
-            $output = [
-                        'auth' => 'Failed update your token, please try again, in few moments!',
-                    ];
-            return $this->SetOpenSwooleResponse(false, $statusCode, $output, 'Failed update');
-        }
-
-        // Auto logout
-        Session::destroy();
-
-        $statusCode = 201;
-        $output = [
-                    'auth' => 'Token successfully updated, please re-login to use new token!',
-                ];
-
-        return $this->SetOpenSwooleResponse(true, $statusCode, $output);
+        return $this->SetOpenSwooleResponse(true, $statusCode, $output, $message, $headers);
     }
 
     /**
@@ -249,11 +176,11 @@ class AuthController extends ServerApiController
      */
     public function logout($request, array $data)
     {
-        // Validate header X-Client-Token
-        $this->validateClientToken($request, $response);
+        // // Validate header X-Client-Token
+        // $this->validateClientToken($request, $response);
 
-        // Validate JWT
-        $this->validateJwt($request, $response);
+        // // Validate JWT
+        // $this->validateJwt($request, $response);
 
         // $requestData = [
         //     'attributes' => $data['attributes'],

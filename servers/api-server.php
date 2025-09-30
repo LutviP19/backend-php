@@ -106,11 +106,11 @@ class MiddlewareSetup implements MiddlewareInterface
                 $json = [
                             'status' => false,
                             'statusCode' => $statusCode,
-                            'message' => 'Missing token header!',
+                            'message' => 'Missing api token header!',
                         ];
             }
 
-            return new Response(\json_encode($json), $statusCode, '', ['Content-Type' => 'application/json']);
+            return new Response(\json_encode($json), $statusCode, 'Missing credentials', ['Content-Type' => 'application/json']);
         }
 
         // Validate Api Token
@@ -123,6 +123,50 @@ class MiddlewareSetup implements MiddlewareInterface
                     ];
 
             return new Response(\json_encode($json), $statusCode, '', ['Content-Type' => 'application/json']);
+        }
+
+        // Validate Token Client
+        if (stripos($request->getUri()->getPath(), '/api') === 0) {
+            // echo "URI: ". $request->getUri()->getPath();
+
+            $status = true;
+            if ( ! isset($headers['X-Client-Token'])) {
+                $status = false; $statusCode = 403;
+                $json = [
+                            'status' => false,
+                            'statusCode' => $statusCode,
+                            'message' => 'Missing client token header!',
+                        ];
+            } else {
+                if(\App\Core\Support\Session::has('uid')) {
+            
+                    $clientId = \App\Core\Support\Session::get('uid'); // Get from session
+                    $validateClient = new \App\Core\Security\Middleware\ValidateClient($clientId);
+                    $validate = $validateClient->matchToken($clientHeaderToken);
+        
+                    if (! $validate || is_null($validate)) {
+                        $status = false; $statusCode = 401; $message = 'Invalid client token!';
+                        $json = [
+                            'status' => false,
+                            'statusCode' => $statusCode,
+                            'message' => $message,
+                            'errors' => [ 'auth' => 'Invalid token!' ]
+                        ];
+                    }
+                } else {
+                    $status = false; $statusCode = 401; $message = 'Please login!';
+                    $json = [
+                        'status' => false,
+                        'statusCode' => $statusCode,
+                        'message' => $message,
+                        'errors' => [ 'auth' => 'Session expired!' ]
+                    ];
+                }
+            }
+
+            if(false === $status)
+            return new Response(\json_encode($json), $statusCode, 'Missing credentials', ['Content-Type' => 'application/json']);
+            
         }
 
         $response = $handler->handle($request);

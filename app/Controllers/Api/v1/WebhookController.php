@@ -78,8 +78,7 @@ class WebhookController extends ApiController
 
             if ($errors) {
                 $callback = function () { return false; };
-
-                \App\Core\Support\Log::debug(gettype($callback), 'WebhookController.index.gettype($callback)');
+                // \App\Core\Support\Log::debug(gettype($callback), 'WebhookController.index.gettype($callback)');
 
                 die($response->json(
                     $this->getOutput(false, 203, [
@@ -94,7 +93,7 @@ class WebhookController extends ApiController
                 'email' => 'trim|sanitize_string|sanitize_email',
                 'password'  => 'trim|sanitize_string',
             ]);
-            \App\Core\Support\Log::debug($reqData, 'WebhookController.index.$filtered');
+            // \App\Core\Support\Log::debug($reqData, 'WebhookController.index.$filtered');
 
             // Sanitize Input
             $reqData = $filter->sanitize($reqData, ['email', 'password', 'credentials']);

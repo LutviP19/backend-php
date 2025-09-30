@@ -15,6 +15,7 @@ class UserController extends ServerApiController
     public function __construct()
     {
         parent::__construct();
+        
     }
 
     /**
@@ -27,9 +28,9 @@ class UserController extends ServerApiController
      */
     public function indexAction($request, array $data)
     {
-        // Validate header X-Client-Token
-        $validate = $this->useMiddleware();
-        if($validate) return $validate;
+        // Validate header X-Client-Token + JWT
+        $validateOutput = $this->useMiddleware();
+        if($validateOutput) return $validateOutput;
         
         $requestData = [
             'attributes' => $data['attributes'],
@@ -63,11 +64,9 @@ class UserController extends ServerApiController
      */
     public function logout($request, array $data)
     {
-        // // Validate header X-Client-Token
-        // $this->validateClientToken();
-
-        // // Validate JWT
-        // $this->validateJwt($request, $response);
+        // Validate header X-Client-Token + JWT
+        $validateOutput = $this->useMiddleware();
+        if($validateOutput) return $validateOutput;
 
         // $requestData = [
         //     'attributes' => $data['attributes'],
@@ -101,6 +100,10 @@ class UserController extends ServerApiController
      */
     public function updateToken($request, array $data)
     {
+        // Validate header X-Client-Token + JWT
+        $validateOutput = $this->useMiddleware();
+        if($validateOutput) return $validateOutput;
+
         // $requestData = [
         //     'attributes' => $data['attributes'],
         //     'jsonData' => $data['jsonData'],
@@ -121,7 +124,6 @@ class UserController extends ServerApiController
 
                 $statusCode = 203;
                 $callback = false;
-
             } else {
 
                 // Filter Input
@@ -152,6 +154,7 @@ class UserController extends ServerApiController
                 return $this->SetOpenSwooleResponse(false, $statusCode, $errors, 'Validation errors.');
             }
         } catch (Exception $exception) {
+            
             $statusCode = 429;
             return $this->SetOpenSwooleResponse(false, $statusCode, $exception->getMessage(), 'Validation errors.');
         }
@@ -162,9 +165,8 @@ class UserController extends ServerApiController
 
         if (false === $validateClient->updateToken()) {
             $statusCode = 203;
-            $output = [
-                        'auth' => 'Failed update your token, please try again, in few moments!',
-                    ];
+            $output = [ 'auth' => 'Failed update your token, please try again in few moments!'];
+
             return $this->SetOpenSwooleResponse(false, $statusCode, $output, 'Failed update');
         }
 
@@ -172,9 +174,7 @@ class UserController extends ServerApiController
         Session::destroy();
 
         $statusCode = 201;
-        $output = [
-                    'auth' => 'Token successfully updated, please re-login to use new token!',
-                ];
+        $output = [ 'auth' => 'Token successfully updated, please re-login to use new token!' ];
 
         return $this->SetOpenSwooleResponse(true, $statusCode, $output);
     }

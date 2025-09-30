@@ -17,6 +17,10 @@ class ClientController extends ServerApiController
 
     public function indexAction($request, array $data)
     {
+        // Validate header X-Client-Token + JWT
+        $validateOutput = $this->useMiddleware();
+        if($validateOutput) return $validateOutput;
+        
         $requestData = [
             'attributes' => $data['attributes'],
             'jsonData' => $data['jsonData'],
@@ -31,10 +35,10 @@ class ClientController extends ServerApiController
         $message = '';
         $headers = [];
 
-        // $statusCode = 200;
-        $output = [
-                    'account' => Session::all()
-                ];
+        
+
+        $statusCode = 200;
+        $output = [ 'account' => Session::all() ];
 
         return $this->SetOpenSwooleResponse($status, $statusCode, $output, $message, $headers);
     }

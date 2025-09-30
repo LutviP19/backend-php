@@ -24,19 +24,18 @@ class ServerApiController extends BaseController
         $this->filter = new \App\Core\Validation\Filter();
         $this->headers = getallheaders();
 
-        \App\Core\Support\Log::debug($_SERVER, 'ServerApiController.__construct.$_SERVER');
-        \App\Core\Support\Log::debug($this->headers, 'ServerApiController.__construct.$this->headers');
+        // \App\Core\Support\Log::debug($_SERVER, 'ServerApiController.__construct.$_SERVER');
+        // \App\Core\Support\Log::debug($this->headers, 'ServerApiController.__construct.$this->headers');
 
         if (session_status() != PHP_SESSION_ACTIVE) {
             session_start();
         }
+
+        // Clean Errors MessageBag
         Session::unset('errors');
 
-        // Validate with session data
-        // if (Session::has('uid') && Session::has('secret') && Session::has('jwtId')) {
-            // JWT
-            $this->jwtToken = $this->initJwtToken();
-        // }
+        // Start JWT
+        $this->jwtToken = $this->initJwtToken();
     }
 
     protected function SetOpenSwooleResponse(bool $status, int $statusCode, array $output, string $message = '', array $headers = []): OpenSwooleResponse

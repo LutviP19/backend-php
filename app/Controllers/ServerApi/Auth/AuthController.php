@@ -35,8 +35,7 @@ class AuthController extends ServerApiController
      */
     public function login($request, array $data)
     {
-        // \App\Core\Support\Log::debug($request->getUri()->getPath(), 'AuthController.login.$request-getUri-getPath');
-
+        
         $requestData = [
             'attributes' => $data['attributes'],
             'jsonData' => $data['jsonData'],
@@ -52,7 +51,6 @@ class AuthController extends ServerApiController
         try {
 
             // Validate Input
-            // \App\Core\Support\Session::unset('errors');
             $validator = new Validator();
             $validator->validate($jsonData, [
                 'email' => 'required|email',
@@ -154,7 +152,7 @@ class AuthController extends ServerApiController
         $statusCode = 201;
         $headers = ['Set-Cookie' => "{$sessionName}={$sessionId}; Max-Age={$sessionExp}; Path=/; SameSite=Lax;"];
         $output = [
-                    'api_token' => encryptData(config('app.token')),
+                    // 'api_token' => encryptData(config('app.token')),
                     'client_token' => Session::get('client_token'),
                     'jwt_token' => $tokenJwt,
                     // 'sessid' => $sessionId,

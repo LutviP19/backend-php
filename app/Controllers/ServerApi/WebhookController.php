@@ -40,7 +40,6 @@ class WebhookController extends ServerApiController
         $filter = new \App\Core\Validation\Filter();
 
         // Validate Input
-        \App\Core\Support\Session::unset('errors');
         $validator = new Validator();
         $validator->validate($jsonData, [
             'email' => 'required|email',

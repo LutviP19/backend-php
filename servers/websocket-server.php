@@ -15,13 +15,16 @@ use OpenSwoole\WebSocket\Server;
 use OpenSwoole\Http\Request;
 use OpenSwoole\WebSocket\Frame;
 
-$server = new Server("0.0.0.0", 9502);
+$serverip = "0.0.0.0";
+$serverport = 9502;
+
+$server = new Server($serverip, $serverport);
 
 // $server->set([
 // ]);
 
 $server->on("Start", function (Server $server) {
-    echo "OpenSwoole WebSocket Server is started at http://127.0.0.1:9502\n";
+    echo "OpenSwoole WebSocket Server is started at http://" . $serverip . ":" . $serverport . "\n";
 });
 
 $server->on('Open', function (Server $server, OpenSwoole\Http\Request $request) {

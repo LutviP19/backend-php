@@ -137,34 +137,12 @@ function initializeServerConstant($request): void
 {
     global $serverip, $serverport;
 
+    // \App\Core\Support\Log::debug(gettype($request), 'Bootstrap.initializeServerConstant.$request.gettype');
+    // \App\Core\Support\Log::debug($request, 'Bootstrap.initializeServerConstant.$request');
+
     $_SERVER = [];
     $uri = $request->server["request_uri"] ?? $request["request_uri"];
     $requestip = $request->server["remote_addr"] ?? $request["remote_addr"];
-
-    $_SERVER['DOCUMENT_ROOT'] = realpath(__DIR__ . '/../public/');
-    $_SERVER['SERVER_NAME'] = $serverip;
-    $_SERVER['SERVER_PORT'] = $serverport;
-    $_SERVER['SERVER_SOFTWARE'] = "Backend PHP";
-    $_SERVER['SERVER_PROTOCOL'] = $request->server['server_protocol'] ?? $request['server_protocol'];
-    $_SERVER['HTTP_HOST'] = $serverip.":".$serverport;
-    $_SERVER['HTTP_ACCEPT'] = $request->header['accept'] ?? $request['accept'];
-    $_SERVER['HTTP_USER_AGENT'] = $request->header['user-agent'] ?? null;
-    $_SERVER['HTTP_ACCEPT_ENCODING'] = $request->header['accept-encoding'] ?? null;
-    $_SERVER['QUERY_STRING'] = isset($request->server['query_string']) ? $request->server['query_string'] : null;
-    $_SERVER['PHP_SELF'] = isset($request->server['php_self']) ? $request->server['php_self'] : null;
-    $_SERVER['SCRIPT_NAME'] = isset($request->server['script_name']) ? $request->server['script_name'] : null;
-    $_SERVER['SCRIPT_FILENAME'] = isset($request->server['script_filename']) ? $request->server['script_filename'] : null;
-    $_SERVER['REMOTE_ADDR'] = $requestip ?? clientIP();
-    $_SERVER['REMOTE_PORT'] = $request->server['remote_port'] ?? $request['remote_port'];
-    $_SERVER['REQUEST_URI'] = $uri ?? "/";
-    $_SERVER['REQUEST_METHOD'] = $request->server["request_method"] ?? $request["request_method"];
-    $_SERVER['REQUEST_TIME'] = $request->server['request_time'] ?? $request['request_time'];
-    $_SERVER['REQUEST_TIME_FLOAT'] = $request->server['request_time_float'] ?? $request['request_time_float'];
-    $_SERVER['QUERY_STRING'] = $request->server['query_string'] ?? $request['query_string'];
-
-    foreach ($request->server as $key => $value) {
-        $_SERVER[strtoupper($key)] = $value;
-    }
 
     $_REQUEST = [];
     $_GET = $request->get ?? [];
@@ -174,7 +152,13 @@ function initializeServerConstant($request): void
 
     $_REQUEST = array_merge($_GET, $_POST);
 
-    $headers = array_merge((new \Swoole\Http\Request)->header ?? [], getallheaders() ?? [], $request ?? []);
+    $reqData = is_array($request) ? $request : [];
+    $servers = array_merge($reqData, (new \Swoole\Http\Request)->server ?? [], $request->server ?? []);
+    foreach ($servers as $key => $value) {
+        $_SERVER[strtoupper($key)] = $value;
+    }
+
+    $headers = array_merge((new \Swoole\Http\Request)->header ?? [], getallheaders() ?? [], $reqData);
     foreach ($headers as $key => $value) {
         $_SERVER['HTTP_' . strtoupper(str_replace('-', '_', $key))] = $value;
     }

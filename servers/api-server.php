@@ -22,6 +22,21 @@ use OpenSwoole\HTTP\Server;
 use OpenSwoole\Http\Request as OpenSwooleRequest;
 use OpenSwoole\Http\Response as OpenSwooleResponse;
 
+$table = new Swoole\Table(1024);
+$table->column('name', Swoole\Table::TYPE_STRING, 64);
+$table->column('id', Swoole\Table::TYPE_INT, 4);       //1,2,4,8
+$table->column('num', Swoole\Table::TYPE_FLOAT);
+$table->create();
+
+$table1 = new Swoole\Table(1024);
+$table1->column('name', Swoole\Table::TYPE_STRING, 64);
+$table1->column('id', Swoole\Table::TYPE_INT, 4);       //1,2,4,8
+$table1->column('num', Swoole\Table::TYPE_FLOAT);
+$table1->create();
+
+$serverip = "0.0.0.0";
+$serverport = 8080;
+
 $server = new Server($serverip, $serverport);
 // Server settings
 $server->set([
@@ -29,6 +44,12 @@ $server->set([
     "pid_file" => __DIR__ . "/apisrv-swoole.pid",
     // 'document_root' => __DIR__ .'../public',
     'document_root' => realpath(__DIR__ . '/../public/'),
+
+    // Worker
+    'worker_num' => 4,
+    'task_worker_num' => 10,
+    //'max_request' => 10000,
+    //'max_request_grace' => 0,
 
     // // Setup SSL files
     // 'ssl_cert_file' => $ssl_dir . '/ssl.crt',
@@ -62,6 +83,18 @@ $server->set([
     // 'http2_max_header_list_size' => 4095,
 ]);
 
+$process = new Swoole\Process(function ($process) use ($server) {
+    while (true) {
+        $msg = $process->read();
+
+        foreach ($server->connections as $conn) {
+            $server->send($conn, $msg);
+        }
+    }
+});
+
+$server->addProcess($process);
+
 // Start Server
 $server->on("Start", function (Server $server) {
     global $serverip, $serverport;
@@ -69,11 +102,18 @@ $server->on("Start", function (Server $server) {
     echo "Swoole api server is started at http://" . $serverip . ":" . $serverport . "\n";
 });
 
+$server->on('Task', function (Swoole\Server $server, $task_id, $reactorId, $data) {
+    echo "Task Worker Process received data";
+    echo "#{$server->worker_id}\tonTask: [PID={$server->worker_pid}]: task_id=$task_id, data_len=" . strlen($data) . "." . PHP_EOL;
+    $server->finish($data);
+});
 
 class MiddlewareSetup implements MiddlewareInterface
 {
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
+        global $server;
+
         $serverParams = $request->getServerParams() ?? [];
         initializeServerConstant(array_merge($serverParams, $request->getHeaders() ?? []));
 
@@ -81,10 +121,31 @@ class MiddlewareSetup implements MiddlewareInterface
         // \App\Core\Support\Log::debug($_SERVER, 'ApiServer.MiddlewareSetup.process.$serverP');
         // \App\Core\Support\Log::debug(getallheaders(), 'ApiServer.MiddlewareSetup.process.getallheaders()');
 
+        // Check Status Server
+        $localIps = ['::1', '0.0.0.0', '127.0.0.1', 'localhost', 'host.docker.internal'];
+        if(in_array(clientIP(), $localIps) 
+            && stripos($request->getUri()->getPath(), '/health') === 0) {
+
+            return new Response('Server running.', 200, '', ['Content-Type' => 'text/plain']);
+        }
+
+        // Metric Server Stats
+        if(in_array(clientIP(), $localIps) 
+            && stripos($request->getUri()->getPath(), '/metric') === 0) {
+
+            // echo 'URI-Metric: '.$request->getUri()->getPath() . PHP_EOL;
+            // memory leak example
+            // global $c;
+            // $c[] = new A();
+            // Notice: add ACL rules and don't expose the metrics to the internet
+            return new Response($server->stats(\OPENSWOOLE_STATS_OPENMETRICS), 200, '', ['Content-Type' => 'text/plain']);
+        }
+
         // EnsureIpIsValid
         if (!in_array(clientIP(), Config::get('trusted_ips'))) {
             return new Response('Service Unavailable', 503, '', ['Content-Type' => 'text/plain']);
         }
+
 
         // Validate Header
         $headers = getallheaders();
@@ -126,7 +187,7 @@ class MiddlewareSetup implements MiddlewareInterface
 
         // Check Token Client Header
         if (stripos($request->getUri()->getPath(), '/user') === 0 || stripos($request->getUri()->getPath(), '/api') === 0) {
-            echo "URI: ". $request->getUri()->getPath() . PHP_EOL;
+            // echo "URI-Api: ". $request->getUri()->getPath() . PHP_EOL;
 
             $status = true;
             if (! isset($headers['X-Client-Token'])) {

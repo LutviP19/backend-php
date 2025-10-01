@@ -10,7 +10,6 @@ error_reporting(~E_NOTICE & ~E_DEPRECATED);
 
 require_once __DIR__ . '/bootstrap.php';
 
-use Upscale\Swoole\Session\SessionDecorator;
 use OpenSwoole\Http\Request as OpenSwooleRequest;
 use OpenSwoole\Http\Response as OpenSwooleResponse;
 use OpenSwoole\Core\Psr\Middleware\StackHandler;
@@ -44,6 +43,12 @@ $server->set([
     // 'document_root' => __DIR__ .'../public',
     'document_root' => realpath(__DIR__ . '/../public/'),
 
+    // Workers
+    'worker_num' => 4,
+    'task_worker_num' => 10,
+    //'max_request' => 10000,
+    //'max_request_grace' => 0,
+
     // // Setup SSL files
     // 'ssl_cert_file' => $ssl_dir . '/ssl.crt',
     // 'ssl_key_file' => $ssl_dir . '/ssl.key',
@@ -76,18 +81,18 @@ $server->set([
     // 'http2_max_header_list_size' => 4095,
 ]);
 
-// $process = new OpenSwoole\Process(function ($process) use ($server) {
-//     while (true) {
-//         $msg = $process->read();
-//         var_dump($msg);
+$process = new OpenSwoole\Process(function ($process) use ($server) {
+    while (true) {
+        $msg = $process->read();
+        var_dump($msg);
 
-//         foreach ($server->connections as $conn) {
-//             $server->send($conn, $msg);
-//         }
-//     }
-// });
+        foreach ($server->connections as $conn) {
+            $server->send($conn, $msg);
+        }
+    }
+});
 
-// $server->addProcess($process);
+$server->addProcess($process);
 
 
 class CustomServerRequest extends \OpenSwoole\Core\Psr\ServerRequest
@@ -96,45 +101,6 @@ class CustomServerRequest extends \OpenSwoole\Core\Psr\ServerRequest
 
 class ExitException extends Exception
 {
-}
-
-
-class DefaultResponseMiddleware implements MiddlewareInterface
-{
-    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
-    {
-        return (new PsrResponse('aaaa'))->withHeader('x-a', '1234');
-    }
-}
-
-class MiddlewareA implements MiddlewareInterface
-{
-    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
-    {
-        $requestBody = $request->getBody();
-        var_dump('A1');
-        $response = $handler->handle($request);
-        var_dump('A2');
-        return $response;
-    }
-}
-
-class MiddlewareB implements MiddlewareInterface
-{
-    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
-    {
-        $requestBody = $request->getBody();
-        var_dump('MiddlewareB 1');
-        // \App\Core\Support\Log::debug($request, 'Swoole.MiddlewareB.request');
-        // \App\Core\Support\Log::debug($requestBody, 'Swoole.MiddlewareB.requestBody');
-
-        $response = $handler->handle($request);
-        var_dump('MiddlewareB 2');
-        // \App\Core\Support\Log::debug($response, 'Swoole.MiddlewareB.response');
-        // \App\Core\Support\Log::debug($response->getStatusCode(), 'Swoole.MiddlewareB.responsegetStatusCode');
-
-        return $response;
-    }
 }
 
 // Start Server
@@ -194,7 +160,7 @@ $server->on('request', new SessionDecorator(function (OpenSwooleRequest $request
                 $response->end();
                 // saveSession();
 
-                session_write_close(); // Ensure session data is saved
+                // session_write_close(); // Ensure session data is saved
                 throw new ExitException();
             } catch (ExitException $e) {
                 // ... handle gracefully ...
@@ -211,21 +177,19 @@ $server->on('request', new SessionDecorator(function (OpenSwooleRequest $request
     }
 }));
 
-// // Use Middleware
-// $stack = (new StackHandler())
-//     ->add(new DefaultResponseMiddleware())
-//     ->add(new MiddlewareA())
-//     ->add(new MiddlewareB());
-
-// $server->setHandler($stack);
+$server->on('Task', function (Swoole\Server $server, $task_id, $reactorId, $data) {
+    echo "Task Worker Process received data";
+    echo "#{$server->worker_id}\tonTask: [PID={$server->worker_pid}]: task_id=$task_id, data_len=" . strlen($data) . "." . PHP_EOL;
+    $server->finish($data);
+});
 
 $server->start();
-
 
 // Simulated asynchronous function to fetch data from a database
 function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse $response, $returned = 'response')
 {
-
+    global $server;
+    
     // Check response Writable status
     if ($response->isWritable()) {
         echo "FD:{$request->fd}, Writable!\n";
@@ -236,6 +200,7 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
 
     // Init Server constants
     initializeServerConstant($request);
+    // \App\Core\Support\Log::debug($_SERVER, 'HttpServer.fetchDataAsynchronously.$_SERVER');
 
     // Get header metadata
     $headers = getallheaders();
@@ -438,6 +403,19 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
                     echo "{$filePath}, URI Not rendered!";
                 }
                 break;
+            case '/metrics':
+                $response->header("Content-Type", "text/plain");
+
+                $localIps = ['::1', '0.0.0.0', '127.0.0.1', 'localhost', 'host.docker.internal'];
+                if(in_array(clientIP(), $localIps))
+                    $content = $server->stats(\OPENSWOOLE_STATS_OPENMETRICS);
+                else {
+                    $content = "404 Not Found";
+                    $response->status(404);
+                }
+                    
+                $response->write($server->stats(\OPENSWOOLE_STATS_OPENMETRICS));
+                break;
             default:
                 // Handle any other unmatched requests with a 404 Not Found
                 $content = "404 Not Found";
@@ -518,7 +496,7 @@ function startSession($response)
 
     // $sessionData = $redis->get("session:$sessionId");
 
-    \App\Core\Support\Log::debug("http-server Current Session ID: " . $sessionId, 'http-server.startSession.sessionId');
+    // \App\Core\Support\Log::debug("http-server Current Session ID: " . $sessionId, 'http-server.startSession.sessionId');
     // \App\Core\Support\Log::debug($sessionData, 'startSession.sessionData');
     // \App\Core\Support\Log::debug($_COOKIE, 'startSession.$_COOKIE');
 

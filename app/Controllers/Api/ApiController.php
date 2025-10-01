@@ -18,26 +18,35 @@ use App\Core\Support\Session;
 class ApiController extends BaseController
 {
     protected $jwtToken;
+    protected $filter;
+    protected $headers;
 
     public function __construct()
     {
         parent::__construct();
 
+        $this->filter = new \App\Core\Validation\Filter();
+        $this->headers = getallheaders();
+
+        // Clean Errors MessageBag
         Session::unset('errors');
 
         // \App\Core\Support\Log::debug($_SERVER['SERVER_PORT'], 'ApiController.SERVER_PORT');
-        if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // OpenSwoole Server
-            // Accepted type is JSON
-            if (false === $this->request()->isJsonRequest()) {
-                die(
-                    $this->response()->json(
-                        $this->getOutput(false, 403, [
-                            'Invalid format!',
-                        ], 'Only accepted JSON.'),
-                        406
-                    )
-                );
-            }
+        // \App\Core\Support\Log::debug($_SERVER['HTTP_ACCEPT'], 'ApiController.HTTP_ACCEPT');
+        // \App\Core\Support\Log::debug($this->request()->isJsonRequest(), 'ApiController.$request');
+        
+        if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // ignore OpenSwoole Server
+            // // Accepted type is JSON
+            // if (false === $this->request()->isJsonRequest()) {
+            //     die(
+            //         $this->response()->json(
+            //             $this->getOutput(false, 403, [
+            //                 'Invalid format!',
+            //             ], 'Only accepted JSON.'),
+            //             406
+            //         )
+            //     );
+            // }
 
             // Middlewares
             (new \App\Core\Security\Middleware\EnsureIpIsValid())
@@ -76,7 +85,7 @@ class ApiController extends BaseController
         if (isset($header['X-Api-Token']) === false ||
             matchEncryptedData($this->getPass(), $header['X-Api-Token']) === false) {
 
-            die(
+            return stopHere(
                 $response->json(
                     $this->getOutput(false, 403, [
                         'token' => 'Invalid api token!',
@@ -95,17 +104,16 @@ class ApiController extends BaseController
      *
      * @return void
      */
-    public function validateClientToken(Request $request, Response $response)
+    public function validateClientToken($header, Response $response)
     {
-        $header = $request->headers();
+        // $header = $request->headers();
 
         $clientId = Session::get('uid'); // Get from session
         $validateClient = new \App\Core\Security\Middleware\ValidateClient($clientId);
         // $clientToken = $validateClient->getToken();
 
         if (empty($clientId)) {
-
-            die(
+            return stopHere(
                 $response->json(
                     $this->getOutput(false, 401, [
                         'auth' => 'Session expired!',
@@ -115,10 +123,10 @@ class ApiController extends BaseController
             );
         }
 
-        if (isset($header['X-Client-Token']) === false ||
+        if (! isset($header['X-Client-Token']) === false ||
             $validateClient->matchToken($header['X-Client-Token']) === false) {
 
-            die(
+            return stopHere(
                 $response->json(
                     $this->getOutput(false, 403, [
                         'client_token' => 'Invalid client token!',
@@ -129,7 +137,7 @@ class ApiController extends BaseController
         }
     }
 
-    public function validateJwt(Request $request, Response $response)
+    public function validateJwt(Response $response)
     {
         $user = Session::all();
         $tokenJwt = Session::get('tokenJwt');
@@ -140,7 +148,7 @@ class ApiController extends BaseController
             $bearerToken !== $tokenJwt ||
             false === $this->jwtToken->validateToken($bearerToken)) {
 
-            die(
+            return stopHere(
                 $response->json(
                     $this->getOutput(false, 401, [
                         'jwt' => 'Invalid jwt!',

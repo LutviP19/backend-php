@@ -36,9 +36,53 @@ function config($key)
 }
 
 /**
+ * sort request function
+ *
+ * @return \App\Core\Http\Request()
+ */
+function request()
+{
+    return new \App\Core\Http\Request();
+}
+
+/**
+ * sort response function
+ *
+ * @return \App\Core\Http\Response()
+ */
+function response()
+{
+    return new \App\Core\Http\Response();
+}
+
+/**
+ * stopHere function, stop to response with conditional SERVER_PORT
+ *
+ * @param  json_response $response
+ *
+ * @return void
+ */
+function stopHere($response) {
+    if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // ignore OpenSwoole Server
+        die($response);
+    }
+
+    return $response;
+
+    // return stopHere(
+    //     $response->json(
+    //        $this->getOutput(true, 200, [
+    //             'status' => 'ok'
+    //        ]),
+    //         200
+    //     )
+    // );
+}
+
+/**
  * default database path for sqlite
  *
- * @param  [string] $key
+ * @param  string $key
  *
  * @return string
  */

@@ -22,30 +22,29 @@ $dotenv->load();
 
 date_default_timezone_set(env('APP_TIMEZONE', 'Asia/Jakarta'));
 
+if ($_SERVER['SERVER_PORT'] !== 9501) { // Ignore OpenSwoole Server
 
-if (session_status() == PHP_SESSION_NONE) {
-    //Starting the session will be the first we do.
-    ini_set('session.save_handler', env('SESSION_DRIVER', 'file'));
-    if (env('SESSION_DRIVER') === "redis") {
-        ini_set('session.save_path', "tcp://" . env('REDIS_HOST') . ":" . env('REDIS_PORT') . "?auth" . env('REDIS_PASSWORD'));
-        ini_set('session.gc_maxlifetime', (env('SESSION_LIFETIME', 120) * 60)); // Set default to 2 hours
-    } else {
-        ini_set('session.save_path', __DIR__ . '/../../storage/framework/sessions');
+    if (session_status() == PHP_SESSION_NONE) {
+        //Starting the session will be the first we do.
+        ini_set('session.save_handler', env('SESSION_DRIVER', 'file'));
+        if (env('SESSION_DRIVER') === "redis") {
+            ini_set('session.save_path', "tcp://" . env('REDIS_HOST') . ":" . env('REDIS_PORT') . "?auth" . env('REDIS_PASSWORD'));
+            ini_set('session.gc_maxlifetime', (env('SESSION_LIFETIME', 120) * 60)); // Set default to 2 hours
+        } else {
+            ini_set('session.save_path', __DIR__ . '/../../storage/framework/sessions');
+        }
+
+        session_name('BACKENDPHPSESSID'); // Set a custom session name
+
+        session_start();
     }
-
-    session_name('BACKENDPHPSESSID'); // Set a custom session name
-
-    session_start();
-}
-
-if ($_SERVER['SERVER_PORT'] === 9501) { // OpenSwoole Server
 
     // if(isset($_COOKIE['BACKENDPHPSESSID'])){
     //     session_id($_COOKIE['BACKENDPHPSESSID']);
     //     // var_dump($_COOKIE);
     // }
 
-    // \App\Core\Support\Log::debug($_COOKIE, 'init.$_SERVER');
+    \App\Core\Support\Log::debug($_SERVER, 'init.$_SERVER');
     // \App\Core\Support\Log::debug(session_id(), 'init.session_id()');
 }
 

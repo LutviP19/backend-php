@@ -22,7 +22,7 @@ class EnsureIpIsValid
     {
         // dd(clientIP());
         if (!in_array(clientIP(), Config::get('trusted_ips'))) {
-            die($response->json([], 500));
+            return stopHere($response->json([], 500));
         }
 
         return $response;

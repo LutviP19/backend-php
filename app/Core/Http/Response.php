@@ -112,8 +112,11 @@ class Response
      */
     public function json($data = [], $code = 200)
     {
-        $this->header("Content-Type", "application/json; charset=utf-8", $code);
-        echo json_encode($data, JSON_UNESCAPED_SLASHES);
+        if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // OpenSwoole Server
+            $this->header("Content-Type", "application/json; charset=utf-8", $code);
+        }
+
+        print json_encode($data, JSON_UNESCAPED_SLASHES);
     }
 
     /**

@@ -133,13 +133,13 @@ class RateLimiter
 
         } catch (RateLimitReachedException $exception) {
 
-            die(
+            return stopHere(
                 $response->json(
                     [
-                    'status' => false,
-                    'statusCode' => 500,
-                    'message' => 'Too much tries, Please try after: '.$exception->getWaitForInSeconds().' seconds.',
-                ],
+                        'status' => false,
+                        'statusCode' => 500,
+                        'message' => 'Too much tries, Please try after: '.$exception->getWaitForInSeconds().' seconds.',
+                    ],
                     500
                 )
             );

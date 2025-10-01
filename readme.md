@@ -49,6 +49,12 @@ mailpit :
 docker compose up docker-compose/mailpit/docker-compose.yml
 ```
 
+dashboard :
+
+```bash
+docker compose up docker-compose/dashboard/docker-compose.yml
+```
+
 - Run server.
 
 ```bash
@@ -59,6 +65,12 @@ php -S localhost:8000 -t public/
 
 ```bash
 php servers/http-server.php
+```
+
+- Api Server (Open Swoole).
+
+```bash
+php servers/api-server.php
 ```
 
 # Console App
@@ -80,6 +92,33 @@ php servers/http-server.php
 ```bash
      php bin/console app:setup
 ```
+
+# Console Tools
+
+- Create Self Signed Development Certificates
+
+```bash
+     bin/mkcert
+```
+
+- Benchmarking OpenSwoole server performance
+
+```bash
+     bin/benchmark
+```
+
+- Running Pest unit test on this framework
+
+```bash
+     bin/pest
+```
+
+- Third party binary files to Support this framework performance (coming soon)
+
+```bash
+     bin/ffi/*
+```
+
 
 # Logs
 

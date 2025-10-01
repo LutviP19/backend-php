@@ -252,8 +252,12 @@ class Request
      */
     public static function isJsonRequest()
     {
-        return (strtolower($_SERVER['HTTP_ACCEPT'][0] ?? $_SERVER['HTTP_ACCEPT']) == 'application/json')
-        ? true : false;
+        // \App\Core\Support\Log::debug($_SERVER['HTTP_ACCEPT'] == 'application/json', 'isJsonRequest.HTTP_ACCEPT');
+
+        if(isset($_SERVER['HTTP_ACCEPT'][0]) && \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port')))
+            return $_SERVER['HTTP_ACCEPT'][0] == 'application/json' ? true : false;
+        else
+            return $_SERVER['HTTP_ACCEPT'] == 'application/json' ? true : false;
     }
 
     /**

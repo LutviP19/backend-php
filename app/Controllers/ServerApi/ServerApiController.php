@@ -27,10 +27,6 @@ class ServerApiController extends BaseController
         // \App\Core\Support\Log::debug($_SERVER, 'ServerApiController.__construct.$_SERVER');
         // \App\Core\Support\Log::debug($this->headers, 'ServerApiController.__construct.$this->headers');
 
-        if (session_status() != PHP_SESSION_ACTIVE) {
-            session_start();
-        }
-
         // Clean Errors MessageBag
         Session::unset('errors');
 

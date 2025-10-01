@@ -20,7 +20,7 @@
 
 - Docker Grafana Dashboard
 
-
+- Ignoring Boot and scrapper
 - Health checks [Auto recovery]
 - Tools monitoring [Prometheus, ELK Stack, Jaeger]
 

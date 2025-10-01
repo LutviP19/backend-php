@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace App\Core\Http;
 
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
+// if (session_status() == PHP_SESSION_NONE  && $_SERVER["REMOTE_ADDR"] != 'host.docker.internal') {
+//     session_start();
+// }
 
 use App\Core\Security\Middleware\JwtToken;
 use App\Core\Support\Config;
@@ -22,6 +22,9 @@ class BaseController
 {
     public function __construct()
     {
+        // if (session_status() != PHP_SESSION_ACTIVE && $_SERVER["REMOTE_ADDR"] != 'host.docker.internal') {
+        //     session_start();
+        // }
     }
 
     /**

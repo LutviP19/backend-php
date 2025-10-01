@@ -120,10 +120,10 @@ class UserController extends ServerApiController
             ]);
             $errors = \App\Core\Support\Session::get('errors');
 
+            $callback = false;
             if ($errors) {
 
                 $statusCode = 203;
-                $callback = false;
             } else {
 
                 // Filter Input
@@ -135,24 +135,34 @@ class UserController extends ServerApiController
                 // Sanitize Input
                 $payload = $this->filter->sanitize($jsonData, ['email', 'password']);
 
-                $statusCode = 401;
+                $statusCode = 422;
                 $errors = ['auth' => 'Invalid credentials,',];
 
-                $payload = $request->all();
-                $email = readJson('email', $payload);
-                $password = readJson('password', $payload);
+                $email = readJson('email', $payload, $payload['email']);
+                $password = readJson('password', $payload, $payload['password']);
 
-                $user = User::getUserByEmail($email);
-                $callback = $this->checkCredentials($user, $password);
+                // Match email with auth session
+                $validEmail = false;
+                if (!empty($email)) {
+                    $validEmail = (bool)(Session::get('email') === $email);
+                }
+
+                if ($validEmail) {
+                    $statusCode = 401;
+
+                    $user = User::getUserByEmail($email);
+                    $callback = $this->checkCredentials($user, $password);
+                }
             }
 
             // // Middleware
             // (new \App\Core\Security\Middleware\RateLimiter('uptoken_request'))
             //     ->setupForm(Session::get('uid'), $callback, 5, 10, 1200);
 
-            if (false == $callback || empty($user)) {
+            if (false === $validEmail || false == $callback || empty($user)) {
                 return $this->SetOpenSwooleResponse(false, $statusCode, $errors, 'Validation errors.');
             }
+            
         } catch (Exception $exception) {
             
             $statusCode = 429;
@@ -171,6 +181,7 @@ class UserController extends ServerApiController
         }
 
         // Auto logout
+        $validateClient->delToken();
         Session::destroy();
 
         $statusCode = 201;

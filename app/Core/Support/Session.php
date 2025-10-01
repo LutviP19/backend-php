@@ -82,6 +82,9 @@ class Session
     public static function destroy()
     {
         session_unset();
+        $_SESSION = [];
+        
+        if (session_status() == PHP_SESSION_ACTIVE)
         session_destroy();
     }
 

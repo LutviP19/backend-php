@@ -28,9 +28,7 @@ return [
     ],
 
     'trusted_ips' => [
-        '',
-        '::1',
-        '127.0.0.1',
+        '', '::1', '0.0.0.0', '127.0.0.1', 'localhost', 'host.docker.internal', // local networks
     ],
 
     'valid_headers' => [

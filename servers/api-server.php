@@ -6,7 +6,7 @@ declare(strict_types=1);
 // ini_set('log_errors', 0);
 // // ini_set('display_errors', 0);
 // // ini_set('display_startup_errors', 0);
-error_reporting(~E_NOTICE & ~E_DEPRECATED & ~E_WARNING);
+// error_reporting(~E_NOTICE & ~E_DEPRECATED & ~E_WARNING);
 
 require_once __DIR__ . '/bootstrap.php';
 
@@ -145,7 +145,6 @@ class MiddlewareSetup implements MiddlewareInterface
         if (!in_array(clientIP(), Config::get('trusted_ips'))) {
             return new Response('Service Unavailable', 503, '', ['Content-Type' => 'text/plain']);
         }
-
 
         // Validate Header
         $headers = getallheaders();

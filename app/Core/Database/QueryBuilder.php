@@ -391,7 +391,16 @@ class QueryBuilder
     {
         try {
             $query = $this->getPDO()->prepare($this->getSQL());
-            return $query->execute($this->getParams()) ? $query : false;
+
+            // \App\Core\Support\Log::debug($query, 'QueryBuilder.query');
+            // \App\Core\Support\Log::debug($this->getSQL(), 'QueryBuilder.query.getSQL');
+
+            if($query->execute($this->getParams())) {
+                $this->params = [];
+                return $query;
+            }
+
+            return false;
 
         } catch (PDOException $e) {
             throw $e;
@@ -582,6 +591,8 @@ class QueryBuilder
     protected function setParams($params = [])
     {
         $this->params = array_merge($this->params, $params);
+
+        // \App\Core\Support\Log::debug($this->params, 'QueryBuilder.setParams');
 
         return $this;
     }

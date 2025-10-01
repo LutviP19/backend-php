@@ -62,6 +62,7 @@ class AuthController extends ServerApiController
             if ($errors) {
                 $statusCode = 203;
                 $callback = false;
+                $message = 'Validation errors.';
             } else {
 
                 // Filter Input
@@ -76,9 +77,10 @@ class AuthController extends ServerApiController
                 // Default status
                 $statusCode = 401;
                 $errors = ['auth' => 'Invalid credentials.'];
+                $message = 'Credentials errors.';
 
-                $email = readJson('email', $payload);
-                $password = readJson('password', $payload);
+                $email = readJson('email', $payload, $payload['email']);
+                $password = readJson('password', $payload, $payload['password']);
 
                 $user = User::getUserByEmail($email);
                 $callback = $this->checkCredentials($user, $password);
@@ -90,29 +92,14 @@ class AuthController extends ServerApiController
 
             if (false == $callback || empty($user)) {
 
-                return $this->SetOpenSwooleResponse(false, $statusCode, $errors, 'Validation errors.');
+                return $this->SetOpenSwooleResponse(false, $statusCode, $errors, $message);
             }
         } catch (Exception $exception) {
 
             $statusCode = 429;
-            return $this->SetOpenSwooleResponse(false, $statusCode, $exception->getMessage(), 'Validation errors.');
+            return $this->SetOpenSwooleResponse(false, $statusCode, ['exception', $exception->getMessage()], 'Exception');
         }
-
-        // Set cookie
-        $sessionName = session_name();
-        $sessionId = session_create_id('bp-');
-        $sessionExp = (env('SESSION_LIFETIME', 120) * 60);
-        $cookie = session_get_cookie_params();
-        setcookie(
-            $sessionName,
-            $sessionId,
-            $sessionExp,
-            $cookie['path'],
-            $cookie['domain'],
-            $cookie['secure'],
-            $cookie['httponly']
-        );
-
+        
         // Generate credentials
         foreach ($user as $key => $value) {
             if ($key === 'ulid') {
@@ -150,13 +137,18 @@ class AuthController extends ServerApiController
         Session::set('tokenJwt', $tokenJwt);
 
         $statusCode = 201;
+
+        // Set cookie
+        $sessionName = session_name();
+        $sessionId = session_create_id('bp-');
+        $sessionExp = (env('SESSION_LIFETIME', 120) * 60);
         $headers = ['Set-Cookie' => "{$sessionName}={$sessionId}; Max-Age={$sessionExp}; Path=/; SameSite=Lax;"];
         $output = [
                     // 'api_token' => encryptData(config('app.token')),
                     'client_token' => Session::get('client_token'),
                     'jwt_token' => $tokenJwt,
-                    // 'sessid' => $sessionId,
-                    // 'account' => Session::all()
+                    'sessid' => $sessionId,
+                    'account' => Session::all()
                 ];
 
         return $this->SetOpenSwooleResponse(true, $statusCode, $output, $message, $headers);

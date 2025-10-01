@@ -47,92 +47,6 @@ $serverip = "127.0.0.1";
 $serverport = 8080;
 $sessID = '';
 
-// Modified from Upscale\Swoole\Session\SessionDecorator;
-// Unstable with OpenSwoole Core
-class SessionDecorator
-{
-    /**
-     * @var callable
-     */
-    protected $middleware;
-
-    /**
-     * @var callable
-     */
-    protected $idGenerator;
-
-    protected bool $useCookies;
-
-    protected bool $useOnlyCookies;
-
-    /**
-     * Inject dependencies
-     *
-     * @param callable $middleware function (\OpenSwoole\Http\Request $request, \OpenSwoole\Http\Response)
-     * @param callable $idGenerator
-     * @param bool|null $useCookies
-     * @param bool|null $useOnlyCookies
-     */
-    public function __construct(
-        callable $middleware,
-        $idGenerator = 'session_create_id',
-        ?bool $useCookies = null,
-        ?bool $useOnlyCookies = null
-    ) {
-        $this->middleware = $middleware;
-        $this->idGenerator = $idGenerator;
-        $this->useCookies = is_null($useCookies) ? (bool)ini_get('session.use_cookies') : $useCookies;
-        $this->useOnlyCookies = is_null($useOnlyCookies) ? (bool)ini_get('session.use_only_cookies') : $useOnlyCookies;
-    }
-
-    /**
-     * Delegate execution to the underlying middleware wrapping it into the session start/stop calls
-     */
-    public function __invoke(\OpenSwoole\Http\Request $request, \OpenSwoole\Http\Response $response)
-    {
-        $sessionName = session_name();
-        if ($this->useCookies && isset($request->cookie[$sessionName])) {
-            $sessionId = $request->cookie[$sessionName];
-        } else if (!$this->useOnlyCookies && isset($request->get[$sessionName])) {
-            $sessionId = $request->get[$sessionName];
-        } else {
-            $sessionId = call_user_func($this->idGenerator);
-        }
-
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_id($sessionId);
-        }
-        
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
-        if ($this->useCookies) {
-            $cookie = session_get_cookie_params();
-            $response->cookie(
-                $sessionName,
-                $sessionId,
-                $cookie['lifetime'] ? time() + $cookie['lifetime'] : 0,
-                $cookie['path'],
-                $cookie['domain'],
-                $cookie['secure'],
-                $cookie['httponly']
-            );
-        }
-
-        try {
-            call_user_func($this->middleware, $request, $response);
-        } finally {
-            session_write_close();
-            if (session_status() !== PHP_SESSION_ACTIVE) {
-                session_id('');
-            }
-            $_SESSION = [];
-            unset($_SESSION);
-        }
-    }
-}
-
 function initializeServerConstant($request): void
 {
     global $serverip, $serverport;
@@ -152,13 +66,20 @@ function initializeServerConstant($request): void
 
     $_REQUEST = array_merge($_GET, $_POST);
 
-    $reqData = is_array($request) ? $request : [];
+    $_SERVER['SERVER_NAME'] = $serverip;
+    $_SERVER['DOCUMENT_ROOT'] = realpath(__DIR__ . '/../public/');
+    $_SERVER['SERVER_SOFTWARE'] = "Backend PHP";
+    $_SERVER['PHP_SELF'] = isset($request->server['php_self']) ? $request->server['php_self'] : 'index';
+    $_SERVER['SCRIPT_NAME'] = isset($request->server['script_name']) ? $request->server['script_name'] : 'php';
+    $_SERVER['SCRIPT_FILENAME'] = isset($request->server['script_filename']) ? $request->server['script_filename'] : 'index.php';
+
+    $reqData = is_array($request) ? $request : ($request->server ?? []);
     $servers = array_merge($reqData, (new \Swoole\Http\Request)->server ?? [], $request->server ?? []);
     foreach ($servers as $key => $value) {
         $_SERVER[strtoupper($key)] = $value;
     }
 
-    $headers = array_merge((new \Swoole\Http\Request)->header ?? [], getallheaders() ?? [], $reqData);
+    $headers = array_merge((new \Swoole\Http\Request)->header ?? [], $request->header ?? [], getallheaders() ?? [], $reqData);
     foreach ($headers as $key => $value) {
         $_SERVER['HTTP_' . strtoupper(str_replace('-', '_', $key))] = $value;
     }

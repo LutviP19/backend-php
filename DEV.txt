@@ -13,14 +13,19 @@
 - Message Bus [Symfony Message]
 - GraphQL
 - No SQL [MongoDB]
+- Ignoring Boot and scrapper
 - HTTP 2.0 Support
-- PHP FFI performance [Compiled lib from: Python, Golang, Rust]
+- PHP FFI performance, to do routine task [Compiled lib from: C++, Python, Golang, Rust, etc]
 - PHP Unit Testing [Pest] 
 - Server Swithching [Network Route, Erlang]
 
-- Docker Grafana Dashboard
+- Docker Grafana Dashboard [Prometheus] (done)
 
-- Ignoring Boot and scrapper
-- Health checks [Auto recovery]
-- Tools monitoring [Prometheus, ELK Stack, Jaeger]
+- Implemented PHP 8 JIT
+- Health checks [Auto recovery: Traefik]
+- Tools monitoring [ELK Stack, Jaeger]
 
+STATUS :
+- Api Server : Stable 
+- Web Server : Compabillity checks
+- WebSocket Server : Still template, will todo as sync channeling (AI supported)

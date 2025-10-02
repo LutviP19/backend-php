@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-// Disabled Log Errors
-ini_set('log_errors', 0);
-// ini_set('display_errors', 0);
-// ini_set('display_startup_errors', 0);
-error_reporting(~E_NOTICE & ~E_DEPRECATED);
+// // Disabled Log Errors
+// ini_set('log_errors', 0);
+// // ini_set('display_errors', 0);
+// // ini_set('display_startup_errors', 0);
+// error_reporting(~E_NOTICE & ~E_DEPRECATED);
 
 require_once __DIR__ . '/bootstrap.php';
 
@@ -25,6 +25,7 @@ $serverport = 9501;
 $max_request = 10000;
 $ssl_dir = __DIR__ . "/../storage/ssl";
 $requestServer = new OpenSwooleRequest();
+$openSwooleResponse = new OpenSwooleResponse();
 
 $server = new Server($serverip, $serverport);
 
@@ -45,8 +46,8 @@ $server->set([
     'document_root' => realpath(__DIR__ . '/../public/'),
 
     // Workers
-    'worker_num' => 4,
-    'task_worker_num' => 10,
+    'worker_num' => 2,
+    'task_worker_num' => 3,
     //'max_request' => 10000,
     //'max_request_grace' => 0,
 
@@ -388,16 +389,32 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
             case '/auth/login':
             case '/auth/uptoken':
             case '/auth/logout':
+                // include $filePath;
             case '/webhook':
                 ob_start();
                 include $filePath;
-                $content = ob_get_clean();
+                $content = ob_get_contents();
+                ob_clean();
+                // \App\Core\Support\Log::debug(gettype($content), 'HttpServer.fetchDataAsynchronously.type.$content');
+                // \App\Core\Support\Log::debug($content, 'HttpServer.fetchDataAsynchronously.json.$content');
+                
+
+                $contents = explode('@|@', $content);
+                // \App\Core\Support\Log::debug($contents, 'HttpServer.fetchDataAsynchronously.$contents');
+                // \App\Core\Support\Log::debug(gettype($contents), 'HttpServer.fetchDataAsynchronously.gettype.$contents');
+                // \App\Core\Support\Log::debug($contents[0], 'HttpServer.fetchDataAsynchronously.gettype.$contents[0]');
+
+
                 $response->header("Content-Type", "application/json");
 
                 $setHeaders[] = "Content-Type, application/json";
 
-                if ($response->isWritable()) {
-                    $response->end($content);
+                if ($response->isWritable() && count($contents)) {
+                    $convertArr = json_decode($contents[0], true);
+
+                    $response->status($convertArr['code']);
+                    $response->end(json_encode($convertArr['data'], JSON_UNESCAPED_SLASHES));
+                    throw new ExitException();
                 } else {
                     echo "{$filePath}, URI Not rendered!";
                 }

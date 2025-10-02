@@ -44,7 +44,7 @@ if ($_SERVER['SERVER_PORT'] !== 9501) { // Ignore OpenSwoole Server
     //     // var_dump($_COOKIE);
     // }
 
-    \App\Core\Support\Log::debug($_SERVER, 'init.$_SERVER');
+    // \App\Core\Support\Log::debug($_SERVER, 'init.$_SERVER');
     // \App\Core\Support\Log::debug(session_id(), 'init.session_id()');
 }
 

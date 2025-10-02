@@ -104,13 +104,13 @@ php servers/api-server.php
 - Benchmarking OpenSwoole server performance
 
 ```bash
-     bin/benchmark
+     php bin/benchmark
 ```
 
 - Running Pest unit test on this framework
 
 ```bash
-     bin/pest
+     php bin/pest
 ```
 
 - Third party binary files to Support this framework performance (coming soon)

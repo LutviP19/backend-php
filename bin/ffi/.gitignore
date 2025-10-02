@@ -3,4 +3,6 @@
 *.backup
 *.sample
 *.old
+*.cache
+*.tmp
 !.gitignore

@@ -146,20 +146,11 @@ class Request
     public function setPayload()
     {
         $content = self::getBody();
-        // \App\Core\Support\Log::debug($content, 'Request.getPayload.content.'.time());
+        \App\Core\Support\Log::debug($content, 'Request.getPayload.content.'.time());
 
-        if (! empty($content)) {
-            try {
-                $content = json_decode($content, true, 512, \JSON_BIGINT_AS_STRING | \JSON_THROW_ON_ERROR);
+        if (! empty($content) && checkValidJSON($content)) {
 
-            } catch (JsonException $e) {
-                throw new JsonException('Could not decode request body.', $e->getCode(), $e);
-            }
-
-            if (! is_array($content)) {
-                throw new JsonException(sprintf('JSON content was expected to decode to an array, "%s" returned.', gettype($content)));
-            }
-
+            $content = json_decode($content, true, 512, \JSON_BIGINT_AS_STRING | \JSON_THROW_ON_ERROR);
             // \App\Core\Support\Log::debug($content, 'Request.getPayload.content.'.time());
             foreach ($content as $key => $value) {
                 if (is_array($value)) {

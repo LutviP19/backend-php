@@ -112,11 +112,21 @@ class Response
      */
     public function json($data = [], $code = 200)
     {
-        if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // OpenSwoole Server
-            $this->header("Content-Type", "application/json; charset=utf-8", $code);
-        }
+        if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // Ignore OpenSwoole Server
 
-        print json_encode($data, JSON_UNESCAPED_SLASHES);
+            $this->header("Content-Type", "application/json; charset=utf-8", $code);
+
+            print json_encode($data, JSON_UNESCAPED_SLASHES);
+        }
+        else {
+
+            // print json_encode($data, JSON_UNESCAPED_SLASHES);
+            return [
+                'code'=> $code,
+                'data' => $data
+            ];
+        }
+        
     }
 
     /**

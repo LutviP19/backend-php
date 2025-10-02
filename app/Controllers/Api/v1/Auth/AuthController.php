@@ -26,6 +26,8 @@ class AuthController extends ApiController
     public function __construct()
     {
         parent::__construct();
+
+        $this->rateLimit = false;
     }
 
     /**
@@ -38,40 +40,9 @@ class AuthController extends ApiController
      */
     public function login(Request $request, Response $response)
     {
-        global $requestServer;
-
-        if ( \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // on OpenSwoole Server
-
-            $headers = $requestServer->header;
-            $jsonData = \is_string($requestServer->rawContent()) ? \json_decode($requestServer->rawContent(), true) : [];
-        }
-        
-
-        
-        // \App\Core\Support\Log::debug($jsonData, 'WebAuth.login.GET.$jsonData');
-
-        // \App\Core\Support\Log::debug($_SERVER, 'login.$_SERVER');
-        // \App\Core\Support\Log::debug($request::isJsonRequest(), 'login.isJsonRequest');
-        // \App\Core\Support\Log::debug($request, 'WebAuth.login.$request');
-        // \App\Core\Support\Log::debug($request->all(), 'WebAuth.login.GET.$$request->all()');
-        // \App\Core\Support\Log::debug(gettype($requestServer->rawContent()), 'WebAuth.login.GET.$requestServer.gettype');
-        // \App\Core\Support\Log::debug($requestServer->rawContent(), 'WebAuth.login.GET.$requestServer');
-
-        // \App\Core\Support\Log::debug($requestServer->header, 'WebAuth.login.GET.$requestServer->header');
-
-        // return stopHere(
-        //     $response->json(
-        //        $this->getOutput(true, 200, [
-        //             'status' => 'ok'
-        //        ]),
-        //         200
-        //     )
-        // );
-
         try {
-            $jsonData = $jsonData ?: $request->all();
             $validator = new Validator();
-            $validator->validate($jsonData, [
+            $validator->validate($this->jsonData, [
                 'email' => 'required|email',
                 'password'  => 'required|min:8|max:100',
             ]);
@@ -85,7 +56,7 @@ class AuthController extends ApiController
             } else {
 
                 // Filter Input
-                $jsonData = $this->filter->filter($jsonData, [
+                $jsonData = $this->filter->filter($this->jsonData, [
                     'email' => 'trim|sanitize_string',
                     'password'  => 'trim|sanitize_string',
                 ]);
@@ -105,29 +76,24 @@ class AuthController extends ApiController
                 // \App\Core\Support\Log::debug($callback, 'WebAuth.login.$callback');
             }
 
-            // // Middleware
-            // (new \App\Core\Security\Middleware\RateLimiter('login_request'))
-            //     ->setupForm(clientIP(), $callback, 5, 10, 1200);
+            // Middleware
+            if($this->rateLimit) {
+                (new \App\Core\Security\Middleware\RateLimiter('login_request'))
+                ->setupForm(clientIP(), $callback, 5, 10, 1200);
+            }
+            
 
             if (false == $callback || empty($user)) {
                 return stopHere(
-                    $response->json(
-                        $this->getOutput(false, $status, [
-                            $errors
-                       ]),
-                        $status
-                    )
-                );
+                    $this->getOutput(false, $status, [
+                        $errors
+                   ]), $status);
             }
         } catch (Exception $exception) {
             return stopHere(
-                $response->json(
-                    $this->getOutput(false, 429, [
-                      $exception->getMessage(),
-                   ]),
-                    429
-                )
-            );
+                $this->getOutput(false, 429, [
+                  $exception->getMessage(),
+               ]), 429);
         }
 
         // Generate credentials
@@ -151,13 +117,10 @@ class AuthController extends ApiController
 
         if (false === $validateClient->matchToken($clientTokenGen)) {
             return stopHere(
-                $response->json(
                     $this->getOutput(false, 401, [
                       'auth' => 'Client not found!',
-                   ], 'Invalid Client!'),
-                    401
-                )
-            );
+                   
+                    ], 'Invalid Client!'), 401);
         }
 
         // initJwtToken
@@ -171,11 +134,12 @@ class AuthController extends ApiController
         $tokenJwt =  $this->jwtToken->createToken($userId, $info, $subject);
         Session::set('tokenJwt', $tokenJwt);
 
-        return $response->json($this->getOutput(true, 201, [
-                    'token' => $tokenJwt,
-                    'sessid' => session_id(),
-                    'account' => Session::all()
-                ]), 201);
+        return stopHere(
+            $this->getOutput(true, 201, [
+                'token' => $tokenJwt,
+                'sessid' => session_id(),
+                'account' => Session::all()
+            ]), 201);
     }
 
     /**
@@ -188,28 +152,32 @@ class AuthController extends ApiController
      */
     public function updateToken(Request $request, Response $response)
     {
-        global $requestServer;
+        // global $requestServer;
 
-        $headers = $request->headers() ?: $requestServer->header;
+        // $headers = $request->headers() ?: $this->requestServer->header;
 
-        if ( ! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // on OpenSwoole Server
+        // if ( \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // on OpenSwoole Server
     
-            // Validate header X-Client-Token
-            $this->validateClientToken($headers, $response);
+        //     $jsonData = \is_string($this->requestServer->rawContent()) ? \json_decode($this->requestServer->rawContent(), true) : [];
+        // } 
+        // else {
+            
+            // // Validate header X-Client-Token
+            // \App\Core\Support\Log::debug($this->headers, 'WebAuth.updateToken.$headers');
+            // $this->validateClientToken();
 
-            // Validate JWT
-            $this->validateJwt($response);
-        } else {
+            // // Validate JWT
+            // $this->validateJwt();
+        // }
 
-            $jsonData = \is_string($requestServer->rawContent()) ? \json_decode($requestServer->rawContent(), true) : [];
-        }
+
+        $this->useMiddleware();
         
-
         try {
 
-            $jsonData = $jsonData ?: $request->all();
+            // $jsonData = $jsonData ?: $request->all();
             $validator = new Validator();
-            $validator->validate($jsonData, [
+            $validator->validate($this->jsonData, [
                 'email' => 'required|email',
                 'password'  => 'required|min:8|max:100',
             ]);
@@ -223,7 +191,7 @@ class AuthController extends ApiController
             } else {
 
                 // Filter Input
-                $jsonData = $this->filter->filter($jsonData, [
+                $jsonData = $this->filter->filter($this->jsonData, [
                     'email' => 'trim|sanitize_string',
                     'password'  => 'trim|sanitize_string',
                 ]);
@@ -242,29 +210,23 @@ class AuthController extends ApiController
                 $callback = $this->checkCredentials($user, $password);
             }
 
-            // // Middleware
-            // (new \App\Core\Security\Middleware\RateLimiter('uptoken_request'))
-            //     ->setupForm(clientIP(), $callback, 5, 10, 1200);
+            // Middleware
+            if ($this->rateLimit) {
+                (new \App\Core\Security\Middleware\RateLimiter('uptoken_request'))
+                    ->setupForm(clientIP(), $callback, 5, 10, 1200);
+            }
 
             if (false == $callback || empty($user)) {
                 return stopHere(
-                    $response->json(
-                        $this->getOutput(false, $status, [
-                            $errors
-                       ]),
-                        $status
-                    )
-                );
+                    $this->getOutput(false, $status, [
+                        $errors
+                   ]), $status);
             }
         } catch (Exception $exception) {
             return stopHere(
-                $response->json(
-                    $this->getOutput(false, 429, [
-                      $exception->getMessage(),
-                   ]),
-                    429
-                )
-            );
+                $this->getOutput(false, 429, [
+                  $exception->getMessage(),
+               ]), 429);
         }
 
         // Update Client Token
@@ -274,9 +236,10 @@ class AuthController extends ApiController
 
         Session::destroy();
 
-        return $response->json($this->getOutput(true, 201, [
-            'auth' => 'Token successfully updated, please re-login to use new token!',
-        ]), 201);
+        return stopHere(
+                $this->getOutput(true, 201, [
+                'auth' => 'Token successfully updated, please re-login to use new token!',
+            ]), 201);
     }
 
     /**
@@ -289,11 +252,20 @@ class AuthController extends ApiController
      */
     public function logout(Request $request, Response $response)
     {
-        // Validate header X-Client-Token
-        $this->validateClientToken($request, $response);
+        // $headers = $request->headers() ?: $this->requestServer->header;
 
-        // Validate JWT
-        $this->validateJwt($request, $response);
+        // if ( \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // on OpenSwoole Server
+    
+        //     $jsonData = \is_string($this->requestServer->rawContent()) ? \json_decode($this->requestServer->rawContent(), true) : [];
+        // } 
+
+        // // Validate header X-Client-Token
+        // $this->validateClientToken();
+
+        // // Validate JWT
+        // $this->validateJwt();
+
+        $this->useMiddleware();
 
         // clear cache token
         $userId = Session::get('uid');

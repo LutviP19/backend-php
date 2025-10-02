@@ -13,31 +13,25 @@ class ValidateSession
 {
     /**
      * Handle an incoming request.
+     *@author Lutvi <lutvip19@gmail.com>
      *
-     * @param  (\App\Core\Http\Request): (\App\Core\Http\Response)
-     *
-     * @return \App\Core\Http\Response
+     * @return void
      */
-    public function handle(Request $request, Response $response): Response
+    public function handle()
     {
         $authenticatedKey = ['uid', 'email', 'client_token', 'current_team_id'];
         $status = array_keys_exists($authenticatedKey, Session::all());
 
-        // echo "Custom Session ID: " . session_id();
-        // dd($status);
-
         // Invalid session data
         if ($status === false) {
-            die($response->json(
+            return stopHere(
                 [
-                        'status' => false,
-                        'statusCode' => 401,
-                        'message' => 'invalid credentials!',
-                    ],
-                401
-            ));
+                    'status' => false,
+                    'statusCode' => 401,
+                    'message' => 'Please login!',
+                    'errors' => ['auth' => 'Session expired!', 'ip' => clientIP()]
+                ],
+                401);
         }
-
-        return $response;
     }
 }

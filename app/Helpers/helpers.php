@@ -62,21 +62,57 @@ function response()
  *
  * @return void
  */
-function stopHere($response) {
+function stopHere($response, $status = 200) {
+    
     if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // ignore OpenSwoole Server
-        die($response);
+        die(response()->json($response, $status));
     }
 
-    return $response;
+    $responseX = [];
+    $responseArr = response()->json($response, $status);
+    // \App\Core\Support\Log::debug($responseArr, 'Helper.stopHere.$responseArr');
+    while (true) {
+        if(isset($responseArr['code']) && ! in_array($responseArr['code'], [200, 201]))
+        $responseX[] = response()->json($response, $status);
+        break;
+    }
 
-    // return stopHere(
-    //     $response->json(
-    //        $this->getOutput(true, 200, [
-    //             'status' => 'ok'
-    //        ]),
-    //         200
-    //     )
-    // );
+
+    if(count($responseX))
+        print json_encode($responseX[0]).'@|@';
+    else 
+        print json_encode($responseArr);
+
+    return;
+
+    // // (new \OpenSwoole\Core\Psr\Response($json, $status))->end($json);
+
+    // // $openSwooleResponse = new \OpenSwoole\Http\Response();
+    // global $openSwooleResponse;
+    // $openSwooleResponse->status($status);
+    // $openSwooleResponse->write($json);
+
+}
+
+/**
+ * checkValidJSON function, to Check valid JSON format
+ *
+ * @param  string $rawBody
+ *
+ * @return bool
+ */
+function checkValidJSON($rawBody) : bool
+{
+    if ($rawBody === '') {
+        return false;
+    }
+
+    $validBody = json_decode(trim($rawBody), true);
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        return false;
+    }
+
+    return true;
 }
 
 /**

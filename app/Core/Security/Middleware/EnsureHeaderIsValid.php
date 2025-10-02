@@ -18,35 +18,43 @@ class EnsureHeaderIsValid
      *
      * @return \App\Core\Http\Response
      */
-    public function handle(Request $request, Response $response)
+    public function handle($headers)
     {
-        $headers = $request->headers();
-
-        $status = array_keys_exists(Config::get('valid_headers'), $headers);
-
-        // Specific Header
-        if (!isset($headers['X-Api-Token'])) {
-            return stopHere($response->json(
-                    [
-                        'status' => false,
-                        'statusCode' => 403,
-                        'message' => 'missing token header!',
-                    ],
-                    403
-                ));
-        }
-
         // Invalid header
-        if ($status === false) {
-            return stopHere($response->json(
+        if (empty($headers)) {
+            return stopHere(
                     [
                         'status' => false,
                         'statusCode' => 500,
                         'message' => 'invalid header!',
                     ],
-                    500
-                ));
+                    500);
         }
-        
+
+        $status = array_keys_exists(Config::get('valid_headers'), $headers);
+
+        // Specific Header
+        if (!isset($headers['X-Api-Token'])) {
+            return stopHere(
+                [
+                    'status' => false,
+                    'statusCode' => 403,
+                    'message' => 'missing token header!',
+                ], 
+                403);
+        }
+
+        // Invalid header
+        if ($status === false) {
+            return stopHere(
+                    [
+                        'status' => false,
+                        'statusCode' => 500,
+                        'message' => 'invalid header!',
+                    ],
+                    500);
+        }
+
+        return;        
     }
 }

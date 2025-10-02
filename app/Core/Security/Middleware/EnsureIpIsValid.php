@@ -13,18 +13,17 @@ class EnsureIpIsValid
 {
     /**
      * Handle an incoming request.
+     *@author Lutvi <lutvip19@gmail.com>
      *
-     * @param  (\App\Core\Http\Request): (\App\Core\Http\Response)
-     *
-     * @return \App\Core\Http\Response
+     * @return void
      */
-    public function handle(Request $request, Response $response): Response
+    public function handle()
     {
         // dd(clientIP());
-        if (!in_array(clientIP(), Config::get('trusted_ips'))) {
-            return stopHere($response->json([], 500));
+        if (! in_array(clientIP(), Config::get('trusted_ips'))) {
+            return stopHere([], 500);
         }
 
-        return $response;
+        return;
     }
 }

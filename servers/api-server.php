@@ -46,9 +46,9 @@ $server->set([
     'document_root' => realpath(__DIR__ . '/../public/'),
 
     // Worker
-    'worker_num' => 4,
-    'task_worker_num' => 10,
-    //'max_request' => 10000,
+    'worker_num' => 2,
+    'task_worker_num' => 5,
+    // 'max_request' => 10000,
     //'max_request_grace' => 0,
 
     // // Setup SSL files

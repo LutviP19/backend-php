@@ -40,6 +40,12 @@ class AuthController extends ApiController
      */
     public function login(Request $request, Response $response)
     {
+        // global $sessionId, $sessionName;
+
+        // $sessionName = session_name();
+        // $sessionId = session_create_id('bp-');
+        // $sessionId = \session_id();
+
         try {
             $validator = new Validator();
             $validator->validate($this->jsonData, [
@@ -84,19 +90,22 @@ class AuthController extends ApiController
             
 
             if (false == $callback || empty($user)) {
-                return stopHere(
+                return endResponse(
                     $this->getOutput(false, $status, [
                         $errors
                    ]), $status);
             }
         } catch (Exception $exception) {
-            return stopHere(
+            return endResponse(
                 $this->getOutput(false, 429, [
                   $exception->getMessage(),
                ]), 429);
         }
 
         // Generate credentials
+        global $sessionId;
+        // $sessionId = session_create_id($user->ulid.'-');
+
         foreach ($user as $key => $value) {
             if ($key === 'ulid') {
                 $key = 'uid';
@@ -116,7 +125,7 @@ class AuthController extends ApiController
         Session::set('client_token', $clientTokenGen);
 
         if (false === $validateClient->matchToken($clientTokenGen)) {
-            return stopHere(
+            return endResponse(
                     $this->getOutput(false, 401, [
                       'auth' => 'Client not found!',
                    
@@ -134,12 +143,19 @@ class AuthController extends ApiController
         $tokenJwt =  $this->jwtToken->createToken($userId, $info, $subject);
         Session::set('tokenJwt', $tokenJwt);
 
-        return stopHere(
+        
+        $this->sessionId = $sessionId;
+        $sessionExp = (env('SESSION_LIFETIME', 120) * 60);
+        // $headers = ['Set-Cookie' => "{$sessionName}={$sessionId}; Max-Age={$sessionExp}; Path=/; SameSite=Lax;"];
+        $headers = ['Set-Cookie' => "{$this->sessionName}={$this->sessionId}; Max-Age={$sessionExp}; Path=/;"];
+
+        // \App\Core\Support\Log::debug($headers, 'AuthController.login.$headers');
+        
+        return endResponse(
             $this->getOutput(true, 201, [
                 'token' => $tokenJwt,
-                'sessid' => session_id(),
                 'account' => Session::all()
-            ]), 201);
+            ]), 201, $headers);
     }
 
     /**
@@ -217,13 +233,13 @@ class AuthController extends ApiController
             }
 
             if (false == $callback || empty($user)) {
-                return stopHere(
+                return endResponse(
                     $this->getOutput(false, $status, [
                         $errors
                    ]), $status);
             }
         } catch (Exception $exception) {
-            return stopHere(
+            return endResponse(
                 $this->getOutput(false, 429, [
                   $exception->getMessage(),
                ]), 429);
@@ -236,7 +252,7 @@ class AuthController extends ApiController
 
         Session::destroy();
 
-        return stopHere(
+        return endResponse(
                 $this->getOutput(true, 201, [
                 'auth' => 'Token successfully updated, please re-login to use new token!',
             ]), 201);

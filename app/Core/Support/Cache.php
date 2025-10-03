@@ -6,20 +6,23 @@ namespace App\Core\Support;
  * Cache class
  * @author Lutvi <lutvip19@gmail.com>
  */
-class Cache 
+class Cache
 {
     protected $driver;
     protected $redis;
-    protected $path_cache = __DIR__ . '/../../../storage/framework/cache/';    
-    protected $prefix = "bp_cache";
+    protected $path_cache = __DIR__ . '/../../../storage/framework/cache/';
+    protected $prefix;
 
-    public function __construct($driver = null) {
+    public function __construct($driver = null, $db = null, $prefix = null)
+    {
         $this->driver = $driver ?: env('CACHE_STORE', 'file');
-        $this->$redis = new \Predis\Client([
+        $this->redis = new \Predis\Client([
             'host' => Config::get('redis.cache.host'),
             'port' => Config::get('redis.cache.port'),
-            'database' => Config::get('redis.cache.database')
+            'database' => $db ?: Config::get('redis.cache.database')
         ]);
+
+        $this->prefix = $prefix ?: "bp_cache";
     }
 
     /**
@@ -30,35 +33,57 @@ class Cache
      *
      * @return void
      */
-    public function saveData($id, $data) {
+    public function saveData($id, $data)
+    {
         $data = serialize($data);
+
         if ($this->driver == 'database' || $this->driver == 'redis') {
             $this->redis->mset([$this->prefix.':'.$this->_formatId($id).':' => $data]);
         }
+
         if ($this->driver == 'file') {
-           \file_put_contents($this->path_cache.$this->prefix.'_'.$this->_formatId($id).'.cache', $data);
+            \file_put_contents($this->path_cache.$this->prefix.'_'.$this->_formatId($id).'.cache', $data);
         }
     }
 
     /**
      * getData cache function
      *
-     * @param  [type] $id
+     * @param  string $id
      *
      * @return void
      */
-    public function getData($id) {
+    public function getData($id)
+    {
         if ($this->driver == 'database' || $this->driver == 'redis') {
-            $data = $this->redis->get($this->prefix.':'.$this->_formatId($id));
+            $path = $this->prefix.':'.$this->_formatId($id);
+
+            \App\Core\Support\Log::debug($path, 'Cache.getData.$path');
+
+            $data = $this->redis->mget($path);
+            \App\Core\Support\Log::debug($data, 'Cache.getData.$data');
+
+            if (is_null($data) || ! isset($data[0])) {
+                $data = $this->redis->get($path);
+            }
+
+            $data = $data[0];
         }
+
         if ($this->driver == 'file') {
+            $path = realpath($this->path_cache.$this->prefix.'_'.$this->_formatId($id).'.cache');
+            if (! \file_exists($path)) {
+                saveData($id, $data);
+            }
+
             $data = \file_get_contents($this->path_cache.$this->prefix.'_'.$this->_formatId($id).'.cache');
         }
 
         return unserialize($data);
     }
 
-    public function deleteData($id) {
+    public function deleteData($id)
+    {
         if ($this->driver == 'database' || $this->driver == 'redis') {
             $this->redis->del($this->prefix.':'.$this->_formatId($id));
         }
@@ -67,17 +92,20 @@ class Cache
         }
     }
 
-    public function clearData() {
-        if ($this->driver == 'database' || $this->driver == 'redis') {
+    public function clearData($all = false)
+    {
+        if ($this->driver == 'database' || $this->driver == 'redis' || $all) {
             clearRedisDataByPrefix($this->prefix);
         }
-        if ($this->driver == 'file') {
+
+        if ($this->driver == 'file' || $all) {
             clearCacheFileByPrefix($this->path_cache, $this->prefix.'*');
         }
     }
 
-    private function _formatId($id) {
+    private function _formatId($id)
+    {
         return \str_replace([' ', '.', '/', '-'], '_', $id);
     }
-            
+
 }

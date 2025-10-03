@@ -20,19 +20,23 @@ class ApiController extends BaseController
     protected $jwtToken;
     protected $filter;
     protected $requestServer;
+    protected $sessionId;
+    protected $sessionName;
     protected $headers;
     protected $jsonData;
     protected bool $rateLimit;
 
     public function __construct()
     {
-        global $requestServer;
+        global $requestServer, $sessionId, $sessionName;
 
         parent::__construct();
 
         $this->rateLimit = false;
         $this->filter = new \App\Core\Validation\Filter();
         $this->requestServer = $requestServer;
+        $this->sessionId = $sessionId;
+        $this->sessionName = $sessionName ?? \session_name();
 
         
         if ( \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // on OpenSwoole Server
@@ -64,30 +68,39 @@ class ApiController extends BaseController
         $validate = $this->checkValidJSON($rawBody);
         if ($validate) return $validate;
 
+
+// Get cache session data
+if (isset($_COOKIE[session_name()])) {
+
+    $contentsStr = getRedisContent($_COOKIE[session_name()], 'PHPREDIS_SESSION', '0');
+
+    \App\Core\Support\Log::debug($contentsStr, 'ApiController.__construct.getRedisContent($contentsStr)');
+    if(! empty($contentsStr)) {
+        // \session_commit();
+
+        $contents = unserialize($contentsStr);
+    }
+        
+
+    \App\Core\Support\Log::debug($contents, 'ApiController.__construct.getRedisContent($contents)');
+}
+
         // Clean Errors MessageBag
         Session::unset('errors');
 
-        // \App\Core\Support\Log::debug($_SERVER, 'ApiController._SERVER');
-        // \App\Core\Support\Log::debug($this->headers, 'ApiController.$this->headers');
-        // \App\Core\Support\Log::debug($_SERVER['HTTP_ACCEPT'], 'ApiController.HTTP_ACCEPT');
-        // \App\Core\Support\Log::debug($this->request()->isJsonRequest(), 'ApiController.$request');
-        
-        // if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // ignore OpenSwoole Server
-            
 
-            // Middlewares
-            (new \App\Core\Security\Middleware\EnsureIpIsValid())->handle();
-            (new \App\Core\Security\Middleware\EnsureHeaderIsValid())->handle($this->headers);
+        // Middlewares
+        (new \App\Core\Security\Middleware\EnsureIpIsValid())->handle();
+        (new \App\Core\Security\Middleware\EnsureHeaderIsValid())->handle($this->headers);
 
-            // Validate token
-            $this->validateApiToken();
+        // Validate token
+        $this->validateApiToken();
 
-            // Validate with session data
-            if (Session::has('uid') && Session::has('secret') && Session::has('jwtId')) {
-                // JWT
-                $this->jwtToken = $this->initJwtToken();
-            }
-        // }
+        // Validate with session data
+        if (Session::has('uid') && Session::has('secret') && Session::has('jwtId')) {
+            // JWT
+            $this->jwtToken = $this->initJwtToken();
+        }
     }
 
     public function useMiddleware($guest = false)
@@ -120,7 +133,7 @@ class ApiController extends BaseController
         $this->headers['Content-Type'] !== 'application/json' ||
         $_SERVER['HTTP_ACCEPT'] !== 'application/json') {
 
-            return stopHere(
+            return endResponse(
                 $this->getOutput(false, 406, [
                     'Invalid Content Type!',
                 ], 'Only accepted JSON.'),
@@ -133,10 +146,9 @@ class ApiController extends BaseController
 
     public function checkValidJSON($rawBody) 
     {
-        
         if ($rawBody === '') {
 
-            return stopHere(
+            return endResponse(
                 $this->getOutput(false, 406, [
                     'Invalid data!'
                 ], 'Invalid Data.'),
@@ -147,7 +159,7 @@ class ApiController extends BaseController
     
         if (json_last_error() !== JSON_ERROR_NONE) {
         
-            return stopHere(
+            return endResponse(
                 $this->getOutput(false, 406, [
                     'Invalid Json format!'
                 ], 'Invalid JSON.'),
@@ -173,7 +185,7 @@ class ApiController extends BaseController
         if (isset($this->headers['X-Api-Token']) === false ||
             matchEncryptedData($this->getPass(), $this->headers['X-Api-Token']) === false) {
 
-            return stopHere(
+            return endResponse(
                 $this->getOutput(false, 403, [
                     'token' => 'Invalid api token!',
                 ], 'Invalid api token!'),
@@ -200,9 +212,9 @@ class ApiController extends BaseController
 
         \App\Core\Support\Log::debug($clientId, 'ApiController.validateClientToken.clientId');
         if (empty($clientId)) {
-            return stopHere(
+            return endResponse(
                 $this->getOutput(false, 401, [
-                    'auth' => 'Session expired!',
+                    'auth' => 'Session expired!'
                 ], 'Please login!'), 
                 401
             );
@@ -210,7 +222,7 @@ class ApiController extends BaseController
 
         // \App\Core\Support\Log::debug(isset($header['X-Client-Token']), 'ApiController.validateClientToken.X-Client-Token');        
         if(! isset($this->headers['X-Client-Token'])) {
-            return stopHere(
+            return endResponse(
                 $this->getOutput(false, 403, [
                         'client_token' => 'Missing client token!',
                     ], 'Missing client token header!'),
@@ -220,7 +232,7 @@ class ApiController extends BaseController
         
         if(! $validateClient->matchToken($this->headers['X-Client-Token'])) {
 
-            return stopHere(
+            return endResponse(
                 $this->getOutput(false, 403, [
                         'client_token' => 'Invalid client token!',
                     ], 'Invalid client token!'),
@@ -240,7 +252,7 @@ class ApiController extends BaseController
             $bearerToken !== $tokenJwt ||
             false === $this->jwtToken->validateToken($bearerToken)) {
 
-            return stopHere(
+            return endResponse(
                 $this->getOutput(false, 401, [
                     'jwt' => 'Invalid jwt!',
                 ], 'Please login!'), 

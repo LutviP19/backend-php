@@ -21,7 +21,7 @@ class EnsureIpIsValid
     {
         // dd(clientIP());
         if (! in_array(clientIP(), Config::get('trusted_ips'))) {
-            return stopHere([], 500);
+            return endResponse([], 500);
         }
 
         return;

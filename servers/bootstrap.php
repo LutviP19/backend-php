@@ -15,9 +15,9 @@ $dotenv = Dotenv\Dotenv::createUnsafeImmutable(__DIR__.'/..');
 $dotenv->load();
 
 //register configuration to the app.
-\App\Core\Support\App::register('config', require __DIR__ . '/../config/app.php');
+\App\Core\Support\App::register('config', require realpath(__DIR__ . '/../config/app.php'));
 
-date_default_timezone_set(env('APP_TIMEZONE', 'Asia/Jakarta'));
+date_default_timezone_set(env('APP_TIMEZONE', 'UTC'));
 
 //Starting the session will be the first we do.
 ini_set('session.save_handler', env('SESSION_DRIVER', 'file'));
@@ -25,27 +25,23 @@ if (env('SESSION_DRIVER') === "redis") {
     ini_set('session.save_path', "tcp://" . env('REDIS_HOST') . ":" . env('REDIS_PORT') . "?auth" . env('REDIS_PASSWORD'));
     ini_set('session.gc_maxlifetime', (env('SESSION_LIFETIME', 120) * 60)); // Set default to 2 hours
 } else {
-    ini_set('session.save_path', __DIR__ . '/../storage/framework/sessions');
+    ini_set('session.save_path', realpath(__DIR__ . '/../storage/framework/sessions'));
 }
 
-session_name('BACKENDPHPSESSID'); // Set a custom session name
-
+// Set a custom session name
+session_name('BACKENDPHPSESSID');
 
 // Make sure use_strict_mode is enabled.
 // use_strict_mode is mandatory for security reasons.
 ini_set('session.use_strict_mode', 1);
 
-// if (session_status() == PHP_SESSION_NONE) {
-//     custom_session_start();
-// }
-
-// $sessID = custom_session_regenerate_id();
 // Write useful codes
 /* ----------------------------- Default settings END -------------------------------- */
 
 $serverip = "127.0.0.1";
 $serverport = 8080;
-$sessID = '';
+$sessionName = '';
+$sessionId = '';
 
 function initializeServerConstant($request): void
 {
@@ -58,7 +54,7 @@ function initializeServerConstant($request): void
     $uri = $request->server["request_uri"] ?? $request["request_uri"];
     $requestip = $request->server["remote_addr"] ?? $request["remote_addr"];
 
-    $_REQUEST = [];
+    $_REQUEST = [];    
     $_GET = $request->get ?? [];
     $_POST = $request->post ?? [];
     $_FILES = $request->files ?? [];

@@ -56,42 +56,49 @@ function response()
 }
 
 /**
- * stopHere function, stop to response with conditional SERVER_PORT
+ * endResponse function, stop to response with conditional SERVER_PORT
  *
  * @param  json_response $response
  *
  * @return void
  */
-function stopHere($response, $status = 200) {
-    
+function endResponse($response, $status = 200, $headers = [])
+{
+
     if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // ignore OpenSwoole Server
         die(response()->json($response, $status));
     }
 
+    global $sessionId;
+    if(empty($sessionId) || empty(session_id()))
+        $sessionId = $_COOKIE[session_name()] ?: session_create_id('bpw-');
+
+    $response = array_merge($response, ['sessionId' => session_id() ?: $sessionId]);
+
     $responseX = [];
     $responseArr = response()->json($response, $status);
-    // \App\Core\Support\Log::debug($responseArr, 'Helper.stopHere.$responseArr');
+    // \App\Core\Support\Log::debug($responseArr, 'Helper.endResponse.$responseArr');
+
+    // \App\Core\Support\Log::debug(count($headers), 'Helper.endResponse.count($headers)');
+    if (count($headers)) {
+        $responseArr['headers'] = $headers;
+    }
+
+    // \App\Core\Support\Log::debug($responseArr, 'Helper.endResponse.$responseArr');
     while (true) {
-        if(isset($responseArr['code']) && ! in_array($responseArr['code'], [200, 201]))
-        $responseX[] = response()->json($response, $status);
+        if (isset($responseArr['code']) && ! in_array($responseArr['code'], [200, 201])) {
+            $responseX[] = array_merge(response()->json($response, $status), $headers);
+        }
         break;
     }
 
-
-    if(count($responseX))
+    if (count($responseX)) {
         print json_encode($responseX[0]).'@|@';
-    else 
+    } else {
         print json_encode($responseArr);
+    }
 
     return;
-
-    // // (new \OpenSwoole\Core\Psr\Response($json, $status))->end($json);
-
-    // // $openSwooleResponse = new \OpenSwoole\Http\Response();
-    // global $openSwooleResponse;
-    // $openSwooleResponse->status($status);
-    // $openSwooleResponse->write($json);
-
 }
 
 /**
@@ -101,7 +108,7 @@ function stopHere($response, $status = 200) {
  *
  * @return bool
  */
-function checkValidJSON($rawBody) : bool
+function checkValidJSON($rawBody): bool
 {
     if ($rawBody === '') {
         return false;
@@ -161,18 +168,40 @@ function assets($uri = '')
     return "//{$_SERVER['HTTP_HOST']}/{$uri}";
 }
 
-function cacheContent($method, $id, $content = null) {
-    if($method === 'set') {
-        (new \App\Core\Support\Cache)->saveData($id, $content);
+function getRedisContent($id, $prefix = '', $db = null)
+{
+    $redis = new \Predis\Client([
+        'host' => Config::get('redis.cache.host'),
+        'port' => Config::get('redis.cache.port'),
+        'database' => $db ?? Config::get('redis.cache.database')
+    ]);
+
+    $path = $prefix.':'.$id;
+    \App\Core\Support\Log::debug($path, 'Helper.getRedisContent.$path');
+
+    $data = $redis->get($path);
+    \App\Core\Support\Log::debug($data, 'Helper.getRedisContent.$data');
+
+    if ($data === false)
+        return null;
+    
+    return $data;
+}
+
+function cacheContent($method, $id, $content = null)
+{
+    if ($method === 'set') {
+        (new \App\Core\Support\Cache())->saveData($id, $content);
     }
     if ($method === 'get') {
-        return (new \App\Core\Support\Cache)->getData($id);
+        return (new \App\Core\Support\Cache())->getData($id);
     }
 
     return $content;
 }
 
-function clearRedisDataByPrefix($prefix = null) {
+function clearRedisDataByPrefix($prefix = null)
+{
     // Connect to Redis
     $redis = new \Predis\Client([
         'host' => Config::get('redis.cache.host'),
@@ -209,15 +238,15 @@ function clearRedisDataByPrefix($prefix = null) {
 
 function clearCacheFileByPrefix($directory = null, $pattern = null)
 {
-    $directory = $directory ?: __DIR__ . '/../../storage/framework/cache/'; // Specify the directory where files are located
+    $directory = $directory ?: realpath(__DIR__ . '/../../storage/framework/cache/'); // Specify the directory where files are located
     $pattern = $pattern ?: '*.cache'; // Default: Delete all files ending with .cache
-    
+
     // Combine directory and pattern to form the full pattern for glob()
     $fullPattern = $directory . $pattern;
-    
+
     // Use glob() to find files matching the pattern
     $filesToDelete = glob($fullPattern);
-    
+
     // Check if any files were found
     if ($filesToDelete !== false && !empty($filesToDelete)) {
         foreach ($filesToDelete as $file) {

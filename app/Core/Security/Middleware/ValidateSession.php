@@ -24,7 +24,7 @@ class ValidateSession
 
         // Invalid session data
         if ($status === false) {
-            return stopHere(
+            return endResponse(
                 [
                     'status' => false,
                     'statusCode' => 401,

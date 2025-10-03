@@ -46,6 +46,14 @@ if ($_SERVER['SERVER_PORT'] !== 9501) { // Ignore OpenSwoole Server
 
     // \App\Core\Support\Log::debug($_SERVER, 'init.$_SERVER');
     // \App\Core\Support\Log::debug(session_id(), 'init.session_id()');
+} else {
+
+    // if ((session_status()) == PHP_SESSION_NONE  && $_SERVER["REMOTE_ADDR"] != 'host.docker.internal') {
+    //     // You might call session_start() here if needed
+    //     session_start();
+    //     // session_regenerate_id(true);
+    // }
+
 }
 
 

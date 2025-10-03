@@ -133,7 +133,7 @@ class RateLimiter
 
         } catch (RateLimitReachedException $exception) {
 
-            return stopHere(
+            return endResponse(
                     [
                         'status' => false,
                         'statusCode' => 500,

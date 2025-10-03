@@ -10,6 +10,15 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/bootstrap.php';
 
+// Set a custom session name
+ini_set('session.use_strict_mode', 0);
+session_name('WEBBACKENDPHPSESSID');
+ini_set('session.use_strict_mode', 1);
+
+$sessionName = session_name();
+$sessionId = session_id();
+
+
 use OpenSwoole\Http\Request as OpenSwooleRequest;
 use OpenSwoole\Http\Response as OpenSwooleResponse;
 use OpenSwoole\Core\Psr\Middleware\StackHandler;
@@ -23,9 +32,10 @@ use Psr\Http\Server\RequestHandlerInterface;
 $serverip = "127.0.0.1";
 $serverport = 9501;
 $max_request = 10000;
-$ssl_dir = __DIR__ . "/../storage/ssl";
+$ssl_dir = realpath(__DIR__ . "/../storage/ssl");
 $requestServer = new OpenSwooleRequest();
 $openSwooleResponse = new OpenSwooleResponse();
+
 
 $server = new Server($serverip, $serverport);
 
@@ -41,7 +51,7 @@ $redis = new \Predis\Client([
 // Server settings
 $server->set([
     // Process ID
-    "pid_file" => __DIR__ . "/swoole.pid",
+    "pid_file" => realpath(__DIR__ . "/swoole.pid"),
     // 'document_root' => __DIR__ .'../public',
     'document_root' => realpath(__DIR__ . '/../public/'),
 
@@ -56,7 +66,7 @@ $server->set([
     // 'ssl_key_file' => $ssl_dir . '/ssl.key',
 
     // Logging
-    "log_file" => __DIR__ . "/../storage/logs/swoole.log",
+    "log_file" => realpath(__DIR__ . "/../storage/logs/swoole.log"),
     "log_rotation" => SWOOLE_LOG_ROTATION_DAILY,
     "log_date_format" => "%d-%m-%Y %H:%M:%S",
     "log_date_with_microseconds" => false,
@@ -113,18 +123,41 @@ $server->on("Start", function (Server $server) {
 });
 
 $server->on("Connect", function (Server $server, int $fd) {
+    global $sessionId, $sessionName;
+
     $clientInfo = $server->getClientInfo($fd);
+    // var_dump($clientInfo);
+
+    if ((session_status()) == PHP_SESSION_NONE) { //  && $clientInfo['remote_addr'] != 'host.docker.internal'
+        // You might call session_start() here if needed
+        session_start();
+
+        session_regenerate_id(true);
+        // $sessionId = session_create_id('bpw-');
+        // setcookie(session_name(), $sessionId, (env('SESSION_LIFETIME', 120) * 60), '/');
+    }
 
     if ($clientInfo) {
         echo "Client connected: " . $clientInfo['remote_ip'] . "\n";
         echo "Http sessStatus: " . session_status() . "\n";
+        // echo "Http sessionId: " . $sessionId . "\n";
     }
 });
 
 $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse $response) use ($server) {
+    global $sessionId, $sessionName;
+
     try {
         // Log the incoming request method
         echo "Received a '{$request->server['request_method']}:'{$request->server['request_uri']} request\n";
+
+        // if ((session_status()) == PHP_SESSION_ACTIVE  && $_SERVER["REMOTE_ADDR"] != 'host.docker.internal') {
+        if ((session_status()) == PHP_SESSION_ACTIVE  && $request->server['remote_addr'] != 'host.docker.internal') {
+            $sessionName = session_name();
+
+            echo "Http sessionName: " . $sessionName . "\n";
+            echo "Http sessionId: " . $sessionId . "\n";
+        }
 
         // Handle an OPTIONS request with an empty response
         if ($request->server['request_method'] === 'OPTIONS') {
@@ -143,6 +176,8 @@ $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse 
 
         // Simulate some asynchronous operation (e.g., fetching data from a database)
         go(function () use ($request, $response, $returned) {
+            global $sessionId, $sessionName;
+
             try {
                 // Return void
                 while (true) {
@@ -182,22 +217,46 @@ $server->start();
 // Simulated asynchronous function to fetch data from a database
 function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse $response, $returned = 'response')
 {
-    global $server, $requestServer;
+    global $server, $requestServer, $sessionId, $sessionName;
+
+    // Init Server constants
+    initializeServerConstant($request);
+    $_SESSSION = [];
 
     $requestServer = $request;
     
+    $sessionId = session_id() ?: $_COOKIE[session_name()];
     // Check response Writable status
     if ($response->isWritable()) {
         echo "FD:{$request->fd}, Writable!\n";
+        echo "Curr sessionName: " . $sessionName . "\n";
+        echo "Curr sessionId: " . $sessionId . "\n";
     } else {
         $response = $response::create($request->fd);
         echo "New-FD:{$request->fd}, Created!\n";
     }
 
-    // Init Server constants
-    initializeServerConstant($request);
+    
+
     // \App\Core\Support\Log::debug($request, 'HttpServer.fetchDataAsynchronously.$request');
     // \App\Core\Support\Log::debug($_SERVER, 'HttpServer.fetchDataAsynchronously.$_SERVER');
+    \App\Core\Support\Log::debug($_SESSION, 'HttpServer.fetchDataAsynchronously.$_SESSION');
+    \App\Core\Support\Log::debug($_COOKIE, 'HttpServer.fetchDataAsynchronously.$_COOKIE');
+
+    // // @todo get session data from Redis
+    // // Try get session data from Redis
+    // if(empty($_SESSION) && isset($_COOKIE[session_name()])) {
+    //     // $idCache = 'PHPREDIS_SESSION:'.$_COOKIE[session_name()];
+    //     // $contents = getCacheContent($_COOKIE[session_name()], 'PHPREDIS_SESSION', '0');
+
+    //     $text = 'uid|s:26:"01JP9MA549R9NNVNGHTHJFTNXJ";name|s:5:"Admin";email|s:17:"admin@example.com";password|s:60:"$2y$10$DNGjs3OU3BIvoqCDsxjiCO.VQJe45BO0bUo55LwnMV2ueJ0d6i0WK";client_token|s:88:"MWE0YzYxZjQ0M2NkYTc1NDVlZmY2NmY0ZDQxNDY0MjdlODIzMWZlNGY0NzM0M2U5YzZmOGFlZGY2NTA4MDcyOA==";current_team_id|i:1;profile_photo_path|N;first_name|N;last_name|N;default_url|N;gnr|s:44:"YUBYZFd3Z2hARW5mYjVHS1V1SmdyOEhld3poZUdHNDE=";secret|s:312:"eyJpdiI6IlFUTEkvcDFna2VYTERIT3RoWWR2K1E9PSIsInZhbHVlIjoiTlM0QlRHNGtyOG13WENBcnppbTlZOGQzM0VOVGNsZ09XYS8yb25HeUVNWDJlejdjb1hHNktVNHZXSXAxeDNRR2R6NjkyYnVBWWw0TkdMejBpc21PV3dIemg3WlFaVWttbVZDQnR3OFpDbWM9IiwibWFjIjoiMTc3NzU4ODUzNzRkMzA0MDZiNDNlNDNlZWYxZDIxNzU2YjZiN2EyMmI0YjRjYjcwNDU4OTczZjdkOWQzOGM1MCIsInRhZyI6IiJ9";jwtId|s:26:"01K6K1C3Y3EPZNNDVRHEMZ223C";tokenJwt|s:459:"eyJjdHkiOiJKV1QiLCJpbmZvIjoiQXBpIGp3dC0wMUpQOU1BNTQ5UjlOTlZOR0hUSEpGVE5YSiIsImFsZyI6IkhTMjU2IiwidHlwIjoiSldUIn0.eyJpc3MiOiIxMjcuMC4wLjEiLCJzdWIiOiJBY2Nlc3MgQVBJIGZvciB1c2VyOjAxSlA5TUE1NDlSOU5OVk5HSFRISkZUTlhKIiwiYXVkIjoiaHR0cDpcL1wvbG9jYWxob3N0OjgwMDAiLCJleHAiOjE3NTk0MzE2ODcsIm5iZiI6MTc1OTQyNDQ4NywiaWF0IjoxNzU5NDI4MDg3LCJqdGkiOiIwMUs2SzFDM1kzRVBaTk5EVlJIRU1aMjIzQyIsInVpZCI6IjAxSlA5TUE1NDlSOU5OVk5HSFRISkZUTlhKIn0.uoUW8lfYIMyZeMd3mCPnZTZVoR5LVOlwo3M1oUq3TnM";_previous_uri|s:10:"auth/login";';
+
+    //     $contents = unserialize($text);
+
+    //     \App\Core\Support\Log::debug($contents, 'HttpServer.fetchDataAsynchronously.getCacheContent.$_SESSION');
+    //     $_SESSION = $contents;
+    // }
+    
 
     // Get header metadata
     $headers = getallheaders();
@@ -210,7 +269,7 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
     }
 
 
-    $baseDir = __DIR__ .'/../public';
+    $baseDir = realpath(__DIR__ .'/../public');
 
     $fd = $request->fd;
     $uri = $_SERVER['REQUEST_URI'];
@@ -381,15 +440,14 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
                 $setHeaders[] = "Content-Length, ".strlen(gzencode($content));
 
                 if ($response->isWritable()) {
-                    $response->write(gzencode($content));
+                    $response->end(gzencode($content));
                 } else {
-                    echo "{$filePath}, URI Not rendered!";
+                    echo "{$filePath}, URI Not rendered! \n";
                 }
                 break;
             case '/auth/login':
             case '/auth/uptoken':
             case '/auth/logout':
-                // include $filePath;
             case '/webhook':
                 ob_start();
                 include $filePath;
@@ -400,8 +458,8 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
                 
 
                 $contents = explode('@|@', $content);
-                // \App\Core\Support\Log::debug($contents, 'HttpServer.fetchDataAsynchronously.$contents');
                 // \App\Core\Support\Log::debug(gettype($contents), 'HttpServer.fetchDataAsynchronously.gettype.$contents');
+                // \App\Core\Support\Log::debug($contents, 'HttpServer.fetchDataAsynchronously.$contents');
                 // \App\Core\Support\Log::debug($contents[0], 'HttpServer.fetchDataAsynchronously.gettype.$contents[0]');
 
 
@@ -412,11 +470,43 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
                 if ($response->isWritable() && count($contents)) {
                     $convertArr = json_decode($contents[0], true);
 
+                    // Set response headers
+                    // \App\Core\Support\Log::debug($convertArr, 'HttpServer.fetchDataAsynchronously.$convertArr');
+                    if (isset($convertArr["headers"]) && count($convertArr["headers"])) {
+
+                        // \App\Core\Support\Log::debug($convertArr["headers"], 'HttpServer.fetchDataAsynchronously.$convertArr["headers"]');
+                        foreach ($convertArr["headers"] as $header => $value) {
+                            $response->header($header, $value);
+
+                            if(is_array($header)) {
+                                foreach ($header as $key => $val) 
+                                    $response->header($key, $val);
+                            }
+                        }
+                    }
+
+                    // Find key sessionId
+                    $sessionIdx = readJson('data.sessionId', $convertArr);
+
+                    \App\Core\Support\Log::debug($sessionIdx, 'HttpServer.fetchDataAsynchronously.$sessionIdx');
+                    if(! empty($sessionIdx)) {
+                        $sessionExp = (env('SESSION_LIFETIME', 120) * 60);
+                        $response->header('Set-Cookie', "{$sessionName}={$sessionIdx}; Max-Age={$sessionExp}; Path=/;");
+
+                        // session_id($sessionIdx);
+                        $sessionId = $sessionIdx;
+                    }
+
+                    // Hidden session ID on non debug mode
+                    if(false === config('app.debug') && isset($convertArr['data']['sessionId'])) {
+                        unset($convertArr['data']['sessionId']);
+                    }
+
                     $response->status($convertArr['code']);
                     $response->end(json_encode($convertArr['data'], JSON_UNESCAPED_SLASHES));
-                    throw new ExitException();
+                    // throw new ExitException();
                 } else {
-                    echo "{$filePath}, URI Not rendered!";
+                    echo "{$filePath}, URI Not rendered! \n";
                 }
                 break;
             case '/metrics':
@@ -437,7 +527,7 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
                 $content = "404 Not Found";
                 $response->status(404);
                 $response->header("Content-Type", "text/plain");
-                $response->write($content);
+                $response->end($content);
                 break;
         }
     }

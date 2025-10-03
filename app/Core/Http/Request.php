@@ -146,7 +146,7 @@ class Request
     public function setPayload()
     {
         $content = self::getBody();
-        \App\Core\Support\Log::debug($content, 'Request.getPayload.content.'.time());
+        // \App\Core\Support\Log::debug($content, 'Request.getPayload.content.'.time());
 
         if (! empty($content) && checkValidJSON($content)) {
 

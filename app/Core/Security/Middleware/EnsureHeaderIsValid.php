@@ -22,7 +22,7 @@ class EnsureHeaderIsValid
     {
         // Invalid header
         if (empty($headers)) {
-            return stopHere(
+            return endResponse(
                     [
                         'status' => false,
                         'statusCode' => 500,
@@ -35,7 +35,7 @@ class EnsureHeaderIsValid
 
         // Specific Header
         if (!isset($headers['X-Api-Token'])) {
-            return stopHere(
+            return endResponse(
                 [
                     'status' => false,
                     'statusCode' => 403,
@@ -46,7 +46,7 @@ class EnsureHeaderIsValid
 
         // Invalid header
         if ($status === false) {
-            return stopHere(
+            return endResponse(
                     [
                         'status' => false,
                         'statusCode' => 500,

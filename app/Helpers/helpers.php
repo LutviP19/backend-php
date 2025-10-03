@@ -99,6 +99,8 @@ function endResponse($response, $status = 200, $headers = [])
         print json_encode($responseArr);
     }
 
+    session_write_close();
+
     return;
 }
 
@@ -167,26 +169,6 @@ function assets($uri = '')
     }
 
     return "//{$_SERVER['HTTP_HOST']}/{$uri}";
-}
-
-function getRedisContent($id, $prefix = '', $db = null)
-{
-    $redis = new \Predis\Client([
-        'host' => Config::get('redis.cache.host'),
-        'port' => Config::get('redis.cache.port'),
-        'database' => $db ?? Config::get('redis.cache.database')
-    ]);
-
-    $path = $prefix.':'.$id;
-    \App\Core\Support\Log::debug($path, 'Helper.getRedisContent.$path');
-
-    $data = $redis->get($path);
-    \App\Core\Support\Log::debug($data, 'Helper.getRedisContent.$data');
-
-    if ($data === false)
-        return null;
-    
-    return $data;
 }
 
 function cacheContent($method, $id, $content = null)

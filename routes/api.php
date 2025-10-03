@@ -9,8 +9,8 @@
  */
 
 //========== API - v1
-$router->get('/webhook', 'Api\v1\WebhookController@index');
-$router->post('/webhook', 'Api\v1\WebhookController@index');
+$router->get('/api/v1/webhook', 'Api\v1\WebhookController@index');
+$router->post('/api/v1/webhook', 'Api\v1\WebhookController@index');
 
-$router->get('/client/profile', 'Api\v1\ClientController@profile');
+$router->get('/api/v1/client/profile', 'Api\v1\ClientController@profile');
 //========== END API - v1

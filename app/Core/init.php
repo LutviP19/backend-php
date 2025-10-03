@@ -96,4 +96,7 @@ if (Request::isJsonRequest() && is_string($output)) {
  * and that way we can save the current uri and use it in
  * the next request as the previous uri.
  */
-Session::setPreviousUri(Request::uri());
+if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { 
+    
+    Session::setPreviousUri(Request::uri());
+}

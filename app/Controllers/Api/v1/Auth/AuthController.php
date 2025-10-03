@@ -42,9 +42,9 @@ class AuthController extends ApiController
     {
         // global $sessionId, $sessionName;
 
-        // $sessionName = session_name();
-        // $sessionId = session_create_id('bp-');
+        // // $sessionName = session_name();
         // $sessionId = \session_id();
+        // $this->sessionId = $sessionId;
 
         try {
             $validator = new Validator();
@@ -102,9 +102,9 @@ class AuthController extends ApiController
                ]), 429);
         }
 
-        // Generate credentials
-        global $sessionId;
-        // $sessionId = session_create_id($user->ulid.'-');
+        // // Generate credentials
+        // \session_create_id($user->ulid.'-');
+        // $this->sessionId = session_id();
 
         foreach ($user as $key => $value) {
             if ($key === 'ulid') {
@@ -143,8 +143,6 @@ class AuthController extends ApiController
         $tokenJwt =  $this->jwtToken->createToken($userId, $info, $subject);
         Session::set('tokenJwt', $tokenJwt);
 
-        
-        $this->sessionId = $sessionId;
         $sessionExp = (env('SESSION_LIFETIME', 120) * 60);
         // $headers = ['Set-Cookie' => "{$sessionName}={$sessionId}; Max-Age={$sessionExp}; Path=/; SameSite=Lax;"];
         $headers = ['Set-Cookie' => "{$this->sessionName}={$this->sessionId}; Max-Age={$sessionExp}; Path=/;"];
@@ -154,6 +152,7 @@ class AuthController extends ApiController
         return endResponse(
             $this->getOutput(true, 201, [
                 'token' => $tokenJwt,
+                'sessid' => $this->sessionId,
                 'account' => Session::all()
             ]), 201, $headers);
     }
@@ -168,30 +167,9 @@ class AuthController extends ApiController
      */
     public function updateToken(Request $request, Response $response)
     {
-        // global $requestServer;
-
-        // $headers = $request->headers() ?: $this->requestServer->header;
-
-        // if ( \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // on OpenSwoole Server
-    
-        //     $jsonData = \is_string($this->requestServer->rawContent()) ? \json_decode($this->requestServer->rawContent(), true) : [];
-        // } 
-        // else {
-            
-            // // Validate header X-Client-Token
-            // \App\Core\Support\Log::debug($this->headers, 'WebAuth.updateToken.$headers');
-            // $this->validateClientToken();
-
-            // // Validate JWT
-            // $this->validateJwt();
-        // }
-
-
         $this->useMiddleware();
         
         try {
-
-            // $jsonData = $jsonData ?: $request->all();
             $validator = new Validator();
             $validator->validate($this->jsonData, [
                 'email' => 'required|email',
@@ -218,7 +196,6 @@ class AuthController extends ApiController
                 $status = 401;
                 $errors = ['auth' => 'Invalid credentials'];
 
-                $payload = $request->all();
                 $email = readJson('email', $payload);
                 $password = readJson('password', $payload);
 

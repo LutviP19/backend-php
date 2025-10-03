@@ -69,21 +69,6 @@ class ApiController extends BaseController
         if ($validate) return $validate;
 
 
-// // @todo Get cache session data
-// if (isset($_COOKIE[session_name()])) {
-
-//     $contentsStr = getRedisContent($_COOKIE[session_name()], 'PHPREDIS_SESSION', '0');
-
-//     \App\Core\Support\Log::debug($contentsStr, 'ApiController.__construct.getRedisContent($contentsStr)');
-//     if(! empty($contentsStr)) {
-//         // \session_commit();
-
-//         // $contents = unserialize($contentsStr);
-//         \App\Core\Support\Log::debug($contents, 'ApiController.__construct.getRedisContent($contents)');
-//     }
-    
-// }
-
         // Clean Errors MessageBag
         Session::unset('errors');
 
@@ -209,7 +194,7 @@ class ApiController extends BaseController
         $validateClient = new \App\Core\Security\Middleware\ValidateClient($clientId);
         // $clientToken = $validateClient->getToken();
 
-        \App\Core\Support\Log::debug($clientId, 'ApiController.validateClientToken.clientId');
+        // \App\Core\Support\Log::debug($clientId, 'ApiController.validateClientToken.clientId');
         if (empty($clientId)) {
             return endResponse(
                 $this->getOutput(false, 401, [

@@ -82,28 +82,7 @@ class WebhookController extends ApiController
             'password'  => 'required|min:8|max:100',
         ]);
         $errors = \App\Core\Support\Session::get('errors');
-        // \App\Core\Support\Log::debug($errors, 'WebhookController.index.errors');
-
-
-        // $text = 'uid|s:26:"01JP9MA549R9NNVNGHTHJFTNXJ";name|s:5:"Admin";email|s:17:"admin@example.com";password|s:60:"$2y$10$DNGjs3OU3BIvoqCDsxjiCO.VQJe45BO0bUo55LwnMV2ueJ0d6i0WK";client_token|s:88:"MWE0YzYxZjQ0M2NkYTc1NDVlZmY2NmY0ZDQxNDY0MjdlODIzMWZlNGY0NzM0M2U5YzZmOGFlZGY2NTA4MDcyOA==";current_team_id|i:1;profile_photo_path|N;first_name|N;last_name|N;default_url|N;gnr|s:44:"YUBYZFd3Z2hARW5mYjVHS1V1SmdyOEhld3poZUdHNDE=";secret|s:312:"eyJpdiI6IlFUTEkvcDFna2VYTERIT3RoWWR2K1E9PSIsInZhbHVlIjoiTlM0QlRHNGtyOG13WENBcnppbTlZOGQzM0VOVGNsZ09XYS8yb25HeUVNWDJlejdjb1hHNktVNHZXSXAxeDNRR2R6NjkyYnVBWWw0TkdMejBpc21PV3dIemg3WlFaVWttbVZDQnR3OFpDbWM9IiwibWFjIjoiMTc3NzU4ODUzNzRkMzA0MDZiNDNlNDNlZWYxZDIxNzU2YjZiN2EyMmI0YjRjYjcwNDU4OTczZjdkOWQzOGM1MCIsInRhZyI6IiJ9";jwtId|s:26:"01K6K1C3Y3EPZNNDVRHEMZ223C";tokenJwt|s:459:"eyJjdHkiOiJKV1QiLCJpbmZvIjoiQXBpIGp3dC0wMUpQOU1BNTQ5UjlOTlZOR0hUSEpGVE5YSiIsImFsZyI6IkhTMjU2IiwidHlwIjoiSldUIn0.eyJpc3MiOiIxMjcuMC4wLjEiLCJzdWIiOiJBY2Nlc3MgQVBJIGZvciB1c2VyOjAxSlA5TUE1NDlSOU5OVk5HSFRISkZUTlhKIiwiYXVkIjoiaHR0cDpcL1wvbG9jYWxob3N0OjgwMDAiLCJleHAiOjE3NTk0MzE2ODcsIm5iZiI6MTc1OTQyNDQ4NywiaWF0IjoxNzU5NDI4MDg3LCJqdGkiOiIwMUs2SzFDM1kzRVBaTk5EVlJIRU1aMjIzQyIsInVpZCI6IjAxSlA5TUE1NDlSOU5OVk5HSFRISkZUTlhKIn0.uoUW8lfYIMyZeMd3mCPnZTZVoR5LVOlwo3M1oUq3TnM";_previous_uri|s:10:"auth/login";';
-        
-        // $unz = unserialize($text, ['allowed_classes' => false, 'delemiter' => '|']);
-        // \App\Core\Support\Log::debug($unz, 'WebhookController.index.unserialize($text)');
-
-
-        // // Get cache session data
-        // $contentsStr = getRedisContent($_COOKIE[session_name()], 'PHPREDIS_SESSION', '0');
-        
-        // \App\Core\Support\Log::debug($contentsStr, 'WebhookController.index.cache($contentsStr)');
-        // if(! empty($contentsStr)) {
-        //     \session_commit();
-
-        //     $contents = unserialize($contentsStr);
-        // }
-            
-
-        \App\Core\Support\Log::debug($contents, 'WebhookController.index.cache($contents)');
-
+        // \App\Core\Support\Log::debug($errors, 'WebhookController.index.errors');        
 
         if ($errors) {
             $callback = false;

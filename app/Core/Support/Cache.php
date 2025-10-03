@@ -38,7 +38,7 @@ class Cache
         $data = serialize($data);
 
         if ($this->driver == 'database' || $this->driver == 'redis') {
-            $this->redis->mset([$this->prefix.':'.$this->_formatId($id).':' => $data]);
+            $this->redis->mset([$this->prefix.':'.$this->_formatId($id) => $data]);
         }
 
         if ($this->driver == 'file') {
@@ -55,19 +55,21 @@ class Cache
      */
     public function getData($id)
     {
+        $data = '';
         if ($this->driver == 'database' || $this->driver == 'redis') {
             $path = $this->prefix.':'.$this->_formatId($id);
 
-            \App\Core\Support\Log::debug($path, 'Cache.getData.$path');
+            // \App\Core\Support\Log::debug($path, 'Cache.getData.$path');
 
             $data = $this->redis->mget($path);
-            \App\Core\Support\Log::debug($data, 'Cache.getData.$data');
+            // \App\Core\Support\Log::debug($data, 'Cache.getData.$data');
 
             if (is_null($data) || ! isset($data[0])) {
                 $data = $this->redis->get($path);
             }
 
-            $data = $data[0];
+            if(! is_null($data) && count($data))
+                $data = $data[0];
         }
 
         if ($this->driver == 'file') {

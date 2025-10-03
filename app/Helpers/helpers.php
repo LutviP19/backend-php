@@ -65,10 +65,11 @@ function response()
 function endResponse($response, $status = 200, $headers = [])
 {
 
-    if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // ignore OpenSwoole Server
+    if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // non OpenSwoole Server
         die(response()->json($response, $status));
     }
 
+    // get sessionId, then merged it to response
     global $sessionId;
     if(empty($sessionId) || empty(session_id()))
         $sessionId = $_COOKIE[session_name()] ?: session_create_id('bpw-');

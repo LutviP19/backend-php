@@ -69,21 +69,20 @@ class ApiController extends BaseController
         if ($validate) return $validate;
 
 
-// Get cache session data
-if (isset($_COOKIE[session_name()])) {
+// // @todo Get cache session data
+// if (isset($_COOKIE[session_name()])) {
 
-    $contentsStr = getRedisContent($_COOKIE[session_name()], 'PHPREDIS_SESSION', '0');
+//     $contentsStr = getRedisContent($_COOKIE[session_name()], 'PHPREDIS_SESSION', '0');
 
-    \App\Core\Support\Log::debug($contentsStr, 'ApiController.__construct.getRedisContent($contentsStr)');
-    if(! empty($contentsStr)) {
-        // \session_commit();
+//     \App\Core\Support\Log::debug($contentsStr, 'ApiController.__construct.getRedisContent($contentsStr)');
+//     if(! empty($contentsStr)) {
+//         // \session_commit();
 
-        $contents = unserialize($contentsStr);
-    }
-        
-
-    \App\Core\Support\Log::debug($contents, 'ApiController.__construct.getRedisContent($contents)');
-}
+//         // $contents = unserialize($contentsStr);
+//         \App\Core\Support\Log::debug($contents, 'ApiController.__construct.getRedisContent($contents)');
+//     }
+    
+// }
 
         // Clean Errors MessageBag
         Session::unset('errors');

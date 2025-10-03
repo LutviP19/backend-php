@@ -237,25 +237,28 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
     }
 
     
-
     // \App\Core\Support\Log::debug($request, 'HttpServer.fetchDataAsynchronously.$request');
     // \App\Core\Support\Log::debug($_SERVER, 'HttpServer.fetchDataAsynchronously.$_SERVER');
     \App\Core\Support\Log::debug($_SESSION, 'HttpServer.fetchDataAsynchronously.$_SESSION');
     \App\Core\Support\Log::debug($_COOKIE, 'HttpServer.fetchDataAsynchronously.$_COOKIE');
 
-    // // @todo get session data from Redis
-    // // Try get session data from Redis
-    // if(empty($_SESSION) && isset($_COOKIE[session_name()])) {
-    //     // $idCache = 'PHPREDIS_SESSION:'.$_COOKIE[session_name()];
-    //     // $contents = getCacheContent($_COOKIE[session_name()], 'PHPREDIS_SESSION', '0');
+    // @todo get session data from Redis
+    // Try get session data from Redis
+    if(empty($_SESSION) && isset($_COOKIE[session_name()])) {
+        $contentsStr = getRedisContent($_COOKIE[session_name()], 'PHPREDIS_SESSION', '0');
 
-    //     $text = 'uid|s:26:"01JP9MA549R9NNVNGHTHJFTNXJ";name|s:5:"Admin";email|s:17:"admin@example.com";password|s:60:"$2y$10$DNGjs3OU3BIvoqCDsxjiCO.VQJe45BO0bUo55LwnMV2ueJ0d6i0WK";client_token|s:88:"MWE0YzYxZjQ0M2NkYTc1NDVlZmY2NmY0ZDQxNDY0MjdlODIzMWZlNGY0NzM0M2U5YzZmOGFlZGY2NTA4MDcyOA==";current_team_id|i:1;profile_photo_path|N;first_name|N;last_name|N;default_url|N;gnr|s:44:"YUBYZFd3Z2hARW5mYjVHS1V1SmdyOEhld3poZUdHNDE=";secret|s:312:"eyJpdiI6IlFUTEkvcDFna2VYTERIT3RoWWR2K1E9PSIsInZhbHVlIjoiTlM0QlRHNGtyOG13WENBcnppbTlZOGQzM0VOVGNsZ09XYS8yb25HeUVNWDJlejdjb1hHNktVNHZXSXAxeDNRR2R6NjkyYnVBWWw0TkdMejBpc21PV3dIemg3WlFaVWttbVZDQnR3OFpDbWM9IiwibWFjIjoiMTc3NzU4ODUzNzRkMzA0MDZiNDNlNDNlZWYxZDIxNzU2YjZiN2EyMmI0YjRjYjcwNDU4OTczZjdkOWQzOGM1MCIsInRhZyI6IiJ9";jwtId|s:26:"01K6K1C3Y3EPZNNDVRHEMZ223C";tokenJwt|s:459:"eyJjdHkiOiJKV1QiLCJpbmZvIjoiQXBpIGp3dC0wMUpQOU1BNTQ5UjlOTlZOR0hUSEpGVE5YSiIsImFsZyI6IkhTMjU2IiwidHlwIjoiSldUIn0.eyJpc3MiOiIxMjcuMC4wLjEiLCJzdWIiOiJBY2Nlc3MgQVBJIGZvciB1c2VyOjAxSlA5TUE1NDlSOU5OVk5HSFRISkZUTlhKIiwiYXVkIjoiaHR0cDpcL1wvbG9jYWxob3N0OjgwMDAiLCJleHAiOjE3NTk0MzE2ODcsIm5iZiI6MTc1OTQyNDQ4NywiaWF0IjoxNzU5NDI4MDg3LCJqdGkiOiIwMUs2SzFDM1kzRVBaTk5EVlJIRU1aMjIzQyIsInVpZCI6IjAxSlA5TUE1NDlSOU5OVk5HSFRISkZUTlhKIn0.uoUW8lfYIMyZeMd3mCPnZTZVoR5LVOlwo3M1oUq3TnM";_previous_uri|s:10:"auth/login";';
+        \App\Core\Support\Log::debug($contentsStr, 'ApiController.__construct.getRedisContent($contentsStr)');
+        if(! empty($contentsStr)) {
 
-    //     $contents = unserialize($text);
+            // // $contents = unserialize($contentsStr);
+            // \App\Core\Support\Log::debug($contents, 'ApiController.__construct.getRedisContent($contents)');
 
-    //     \App\Core\Support\Log::debug($contents, 'HttpServer.fetchDataAsynchronously.getCacheContent.$_SESSION');
-    //     $_SESSION = $contents;
-    // }
+            // $_SESSION = $contents;
+            // // \session_commit();
+        }
+
+        // \App\Core\Support\Log::debug($_SESSION, 'HttpServer.fetchDataAsynchronously.getCacheContent.$_SESSION');
+    }
     
 
     // Get header metadata

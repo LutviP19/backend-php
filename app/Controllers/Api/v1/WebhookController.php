@@ -91,15 +91,15 @@ class WebhookController extends ApiController
         // \App\Core\Support\Log::debug($unz, 'WebhookController.index.unserialize($text)');
 
 
-        // Get cache session data
-        $contentsStr = getRedisContent($_COOKIE[session_name()], 'PHPREDIS_SESSION', '0');
+        // // Get cache session data
+        // $contentsStr = getRedisContent($_COOKIE[session_name()], 'PHPREDIS_SESSION', '0');
         
-        \App\Core\Support\Log::debug($contentsStr, 'WebhookController.index.cache($contentsStr)');
-        if(! empty($contentsStr)) {
-            \session_commit();
+        // \App\Core\Support\Log::debug($contentsStr, 'WebhookController.index.cache($contentsStr)');
+        // if(! empty($contentsStr)) {
+        //     \session_commit();
 
-            $contents = unserialize($contentsStr);
-        }
+        //     $contents = unserialize($contentsStr);
+        // }
             
 
         \App\Core\Support\Log::debug($contents, 'WebhookController.index.cache($contents)');

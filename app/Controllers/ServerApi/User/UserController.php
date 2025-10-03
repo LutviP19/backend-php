@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controllers\ServerApi\User;
@@ -15,7 +16,7 @@ class UserController extends ServerApiController
     public function __construct()
     {
         parent::__construct();
-        
+
     }
 
     /**
@@ -30,8 +31,10 @@ class UserController extends ServerApiController
     {
         // Validate header X-Client-Token + JWT
         $validateOutput = $this->useMiddleware();
-        if($validateOutput) return $validateOutput;
-        
+        if ($validateOutput) {
+            return $validateOutput;
+        }
+
         $requestData = [
             'attributes' => $data['attributes'],
             'jsonData' => $data['jsonData'],
@@ -55,18 +58,20 @@ class UserController extends ServerApiController
     }
 
     /**
-     * logout function
+     * logoutAction function
      *
      * @param  Request  $request
      * @param  Response $response
      *
      * @return $response->json
      */
-    public function logout($request, array $data)
+    public function logoutAction($request, array $data)
     {
         // Validate header X-Client-Token + JWT
         $validateOutput = $this->useMiddleware();
-        if($validateOutput) return $validateOutput;
+        if ($validateOutput) {
+            return $validateOutput;
+        }
 
         // $requestData = [
         //     'attributes' => $data['attributes'],
@@ -91,18 +96,20 @@ class UserController extends ServerApiController
     }
 
     /**
-     * updateToken function
+     * updateTokenAction function, update client_token
      *
      * @param  Request  $request
      * @param  Response $data
      *
      * @return $response->json
      */
-    public function updateToken($request, array $data)
+    public function updateTokenAction($request, array $data)
     {
         // Validate header X-Client-Token + JWT
         $validateOutput = $this->useMiddleware();
-        if($validateOutput) return $validateOutput;
+        if ($validateOutput) {
+            return $validateOutput;
+        }
 
         // $requestData = [
         //     'attributes' => $data['attributes'],
@@ -162,9 +169,9 @@ class UserController extends ServerApiController
             if (false === $validEmail || false == $callback || empty($user)) {
                 return $this->SetOpenSwooleResponse(false, $statusCode, $errors, 'Validation errors.');
             }
-            
+
         } catch (Exception $exception) {
-            
+
             $statusCode = 429;
             return $this->SetOpenSwooleResponse(false, $statusCode, $exception->getMessage(), 'Validation errors.');
         }

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 // This is a RouteCollector for Api Server, separated file to dispact FastRoute dispacher
@@ -29,7 +30,7 @@ return \FastRoute\simpleDispatcher(function (RouteCollector $r) {
     $r->addGroup('/auth', function (RouteCollector $r) {
 
         $r->addRoute(['POST'], '/login', function ($request) {
-            return  (new \App\Controllers\ServerApi\Auth\AuthController())->login($request, getRequestData($request));
+            return  (new \App\Controllers\ServerApi\Auth\AuthController())->loginAction($request, getRequestData($request));
         });
     });
 
@@ -41,11 +42,11 @@ return \FastRoute\simpleDispatcher(function (RouteCollector $r) {
         });
 
         $r->addRoute(['POST'], '/uptoken', function ($request) {
-            return  (new \App\Controllers\ServerApi\User\UserController())->updateToken($request, getRequestData($request));
+            return  (new \App\Controllers\ServerApi\User\UserController())->updateTokenAction($request, getRequestData($request));
         });
 
         $r->addRoute(['GET','POST'], '/logout', function ($request) {
-            return  (new \App\Controllers\ServerApi\User\UserController())->logout($request, getRequestData($request));
+            return  (new \App\Controllers\ServerApi\User\UserController())->logoutAction($request, getRequestData($request));
         });
     });
 

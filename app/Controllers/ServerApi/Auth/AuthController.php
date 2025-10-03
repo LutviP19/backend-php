@@ -26,16 +26,16 @@ class AuthController extends ServerApiController
     }
 
     /**
-     * login function
+     * loginAction function
      *
      * @param  Request  $request
      * @param  Response $response
      *
      * @return response
      */
-    public function login($request, array $data)
+    public function loginAction($request, array $data)
     {
-        
+
         $requestData = [
             'attributes' => $data['attributes'],
             'jsonData' => $data['jsonData'],
@@ -99,7 +99,7 @@ class AuthController extends ServerApiController
             $statusCode = 429;
             return $this->SetOpenSwooleResponse(false, $statusCode, ['exception', $exception->getMessage()], 'Exception');
         }
-        
+
         // Generate credentials
         foreach ($user as $key => $value) {
             if ($key === 'ulid') {

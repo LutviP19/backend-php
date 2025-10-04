@@ -17,6 +17,7 @@ class ValidateClient
 {
     protected $clientId;
     protected $columnId;
+    protected $minutes_to_expire;
     protected $hash;
     protected $redis;
 
@@ -24,6 +25,7 @@ class ValidateClient
     {
         $this->clientId = $clientId;
         $this->columnId = $columnId;
+        $this->minutes_to_expire = (env('SESSION_LIFETIME', 120) * 60);
         $this->hash = new Hash();
 
         $this->redis = new \Predis\Client([
@@ -59,7 +61,9 @@ class ValidateClient
            $user->client_token != '') {
 
             // cache to redis
-            $this->redis->mset(['client_token:'.$this->clientId => base64_encode($user->client_token)]);
+            $key = 'client_token:'.$this->clientId;
+            $this->redis->mset([$key => base64_encode($user->client_token)]);
+            $this->redis->expire($key, $this->minutes_to_expire);
 
             return $user->client_token;
         }
@@ -92,8 +96,10 @@ class ValidateClient
     {
         $token = User::updateClientToken($this->columnId, $this->clientId);
 
-        if (! is_null($token)) { // cache to redis
-            $this->redis->mset(['client_token:'.$this->clientId => base64_encode($token)]);
+        if (! is_null($token)) { // delete cache from redis
+            $key = 'client_token:'.$this->clientId;
+            $this->redis->mset([$key => base64_encode($token)]);
+            $this->redis->expire($key, $this->minutes_to_expire);
         } else {
             return false;
         }

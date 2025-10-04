@@ -15,11 +15,11 @@ class Cache
 
     public function __construct($driver = null, $db = null, $prefix = null)
     {
-        $this->driver = $driver ?: env('CACHE_STORE', 'file');
+        $this->driver = $driver ?? env('CACHE_STORE', 'file');
         $this->redis = new \Predis\Client([
             'host' => Config::get('redis.cache.host'),
             'port' => Config::get('redis.cache.port'),
-            'database' => $db ?: Config::get('redis.cache.database')
+            'database' => $db ?? Config::get('redis.cache.database')
         ]);
 
         $this->prefix = $prefix ?: "bp_cache";

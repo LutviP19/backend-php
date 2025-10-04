@@ -69,12 +69,23 @@ function endResponse($response, $status = 200, $headers = [])
         die(response()->json($response, $status));
     }
 
+    $cookieSessID = isset($_COOKIE[session_name()]) ? $_COOKIE[session_name()] : false;
     // get sessionId, then merged it to response
-    global $sessionId;
-    if(empty($sessionId) || empty(session_id()))
-        $sessionId = $_COOKIE[session_name()] ?: session_create_id('bpw-');
+    $sessionId = $cookieSessID ?: session_id();
+    
+    // 
+    if (isset($_SESSION['uid'])) {
+        $sessionId = $_SESSION['uid'] . '-' . $sessionId;
+    }
 
-    $response = array_merge($response, ['sessionId' => session_id() ?: $sessionId]);
+    if($cookieSessID) {
+        $getSessionId = explode("-", $_COOKIE[session_name()]);
+        if(count($getSessionId) == 2) {
+            $sessionId = $_COOKIE[session_name()];
+        }
+    }
+
+    $response = array_merge($response, ['sessionId' => $sessionId]);
 
     $responseX = [];
     $responseArr = response()->json($response, $status);
@@ -171,16 +182,63 @@ function assets($uri = '')
     return "//{$_SERVER['HTTP_HOST']}/{$uri}";
 }
 
-function cacheContent($method, $id, $content = null)
+function cacheContent($method, $id, $prefix = null, $content = null)
 {
     if ($method === 'set') {
-        (new \App\Core\Support\Cache())->saveData($id, $content);
+        (new \App\Core\Support\Cache(null, null, $prefix))->saveData($id, $content);
     }
     if ($method === 'get') {
-        return (new \App\Core\Support\Cache())->getData($id);
+        return (new \App\Core\Support\Cache(null, null, $prefix))->getData($id);
     }
 
     return $content;
+}
+
+function delCache($id, $prefix = null)
+{
+    (new \App\Core\Support\Cache(null, null, $prefix))->deleteData($id);
+}
+
+function getDataFromRedis($id, $prefix = null)
+{
+    if(empty($id))
+        return;
+
+    // Connect to Redis
+    $redis = new \Predis\Client([
+        'host' => Config::get('redis.cache.host'),
+        'port' => Config::get('redis.cache.port'),
+        'database' => Config::get('redis.cache.database')
+    ]);
+
+    $prefix = $prefix ?? 'bp_data';
+
+    $data = $redis->get($prefix.':'.$id);
+
+    if (! is_null($data) && isset($data[0]))
+        return unserialize(base64_decode($data[0]));
+
+    return [];
+}
+
+function delDataFromRedis($id, $prefix = null)
+{
+    if(empty($id))
+        return;
+
+    // Connect to Redis
+    $redis = new \Predis\Client([
+        'host' => Config::get('redis.cache.host'),
+        'port' => Config::get('redis.cache.port'),
+        'database' => Config::get('redis.cache.database')
+    ]);
+
+    $prefix = $prefix ?? 'bp_data';
+
+    $data = $redis->get($prefix.':'.$id);
+
+    if (! is_null($data) && isset($data[0]))
+        $redis->del($prefix.':'.$id);
 }
 
 function clearRedisDataByPrefix($prefix = null)

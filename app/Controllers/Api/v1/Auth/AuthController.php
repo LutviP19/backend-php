@@ -40,12 +40,6 @@ class AuthController extends ApiController
      */
     public function login(Request $request, Response $response)
     {
-        // global $sessionId, $sessionName;
-
-        // // $sessionName = session_name();
-        // $sessionId = \session_id();
-        // $this->sessionId = $sessionId;
-
         try {
             $validator = new Validator();
             $validator->validate($this->jsonData, [
@@ -148,6 +142,11 @@ class AuthController extends ApiController
         $headers = ['Set-Cookie' => "{$this->sessionName}={$this->sessionId}; Max-Age={$sessionExp}; Path=/;"];
 
         // \App\Core\Support\Log::debug($headers, 'AuthController.login.$headers');
+
+        // Cache session data by uid
+        if (\in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) {
+            cacheContent('set', $_SESSION['uid'] .'-'. $this->sessionId, 'bp_session', $_SESSION);
+        }
         
         return endResponse(
             $this->getOutput(true, 201, [
@@ -245,19 +244,6 @@ class AuthController extends ApiController
      */
     public function logout(Request $request, Response $response)
     {
-        // $headers = $request->headers() ?: $this->requestServer->header;
-
-        // if ( \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // on OpenSwoole Server
-    
-        //     $jsonData = \is_string($this->requestServer->rawContent()) ? \json_decode($this->requestServer->rawContent(), true) : [];
-        // } 
-
-        // // Validate header X-Client-Token
-        // $this->validateClientToken();
-
-        // // Validate JWT
-        // $this->validateJwt();
-
         $this->useMiddleware();
 
         // clear cache token

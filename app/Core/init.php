@@ -39,21 +39,12 @@ if ($_SERVER['SERVER_PORT'] !== 9501) { // Ignore OpenSwoole Server
         session_start();
     }
 
-    // if(isset($_COOKIE['BACKENDPHPSESSID'])){
-    //     session_id($_COOKIE['BACKENDPHPSESSID']);
-    //     // var_dump($_COOKIE);
-    // }
-
-    // \App\Core\Support\Log::debug($_SERVER, 'init.$_SERVER');
-    // \App\Core\Support\Log::debug(session_id(), 'init.session_id()');
 } else {
 
-    // if ((session_status()) == PHP_SESSION_NONE  && $_SERVER["REMOTE_ADDR"] != 'host.docker.internal') {
-    //     // You might call session_start() here if needed
-    //     session_start();
-    //     // session_regenerate_id(true);
-    // }
-
+    // Set session from cache
+    if (isset($_SESSION['uid'])) {
+        $_SESSION = array_merge($_SESSION, cacheContent('get', $_SESSION['uid'] .'-'. $_COOKIE[session_name()]) ?: []);
+    }
 }
 
 
@@ -97,6 +88,5 @@ if (Request::isJsonRequest() && is_string($output)) {
  * the next request as the previous uri.
  */
 if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { 
-    
     Session::setPreviousUri(Request::uri());
 }

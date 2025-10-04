@@ -33,12 +33,15 @@ class Cache
      *
      * @return void
      */
-    public function saveData($id, $data)
+    public function saveData($id, $data, $minutes_to_expire = 120)
     {
-        $data = serialize($data);
+        $data = base64_encode(serialize($data));
 
         if ($this->driver == 'database' || $this->driver == 'redis') {
-            $this->redis->mset([$this->prefix.':'.$this->_formatId($id) => $data]);
+            $key = $this->prefix.':'.$this->_formatId($id);
+
+            $this->redis->mset([$key => $data]);
+            $this->redis->expire($key, ($minutes_to_expire * 60));
         }
 
         if ($this->driver == 'file') {
@@ -61,7 +64,7 @@ class Cache
 
             // \App\Core\Support\Log::debug($path, 'Cache.getData.$path');
 
-            $data = $this->redis->mget($path);
+            $data = $this->redis->mget([$path]);
             // \App\Core\Support\Log::debug($data, 'Cache.getData.$data');
 
             if (is_null($data) || ! isset($data[0])) {
@@ -81,7 +84,7 @@ class Cache
             $data = \file_get_contents($this->path_cache.$this->prefix.'_'.$this->_formatId($id).'.cache');
         }
 
-        return unserialize($data);
+        return unserialize(base64_decode($data));
     }
 
     public function deleteData($id)

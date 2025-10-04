@@ -80,22 +80,26 @@ class Log
         $logs = self::__formatedString($logs);
 
         if ($type === 'info') {
-            $logger->info(!empty($modul) ? "[$modul]:" . $logs : $logs);
+            $logger->info(!empty($modul) ? "[$modul]" . $logs : $logs);
         } elseif ($type === 'error') {
-            $logger->error(!empty($modul) ? "[$modul]:" . $logs : $logs);
+            $logger->error(!empty($modul) ? "[$modul]" . $logs : $logs);
         } else {
-            $logger->debug(!empty($modul) ? "[$modul]:" . $logs : $logs);
+            $logger->debug(!empty($modul) ? "[$modul]" . $logs : $logs);
         }
     }
 
     private static function __formatedString($logs)
     {
+        $type = gettype($logs);
+        
         if (is_array($logs) || is_object($logs)) {
             $logs = json_encode($logs, JSON_UNESCAPED_SLASHES);
         }
         if(\is_bool($logs)) {
             return $logs ?"true":"false";
         }
+
+        $logs = "[{$type}]:" . $logs;
 
         return $logs;
     }

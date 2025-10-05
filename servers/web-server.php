@@ -339,6 +339,7 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
         $fileName = isset($fileInfo['basename']) ? $fileInfo['basename'] : '';
 
         switch ($extension) {
+            case 'htnl':
             case 'php':
                 ob_start();
                 include $filePath;
@@ -385,7 +386,7 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
                 // $setHeaders[] = "Content-Type, application/javascript";
                 // $setHeaders[] = "Content-Length, ".strlen($content);
 
-                $response->write($content);
+                $response->end($content);
                 break;
             case 'jpg':
             case 'jpeg':
@@ -485,6 +486,7 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
             case '/home':
             case '/contact':
             case '/about':
+            case '/dashboard':
             case '/extra':
                 ob_start();
                 include $filePath;

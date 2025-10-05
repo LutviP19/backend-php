@@ -55,6 +55,16 @@ class PagesController extends Controller
      *
      * @return void
      */
+    public function dashboard()
+    {
+        $this->view('dashboard');
+    }
+
+    /**
+     * Show the home page.
+     *
+     * @return void
+     */
     public function extra()
     {
         // $get =  Request::get('get');

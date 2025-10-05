@@ -145,6 +145,9 @@ class AuthController extends ApiController
 
         // Cache session data by uid
         if (\in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) {
+
+            // Clean old keys
+            delCache($_SESSION['uid'].'*', 'bp_session');
             cacheContent('set', $_SESSION['uid'] .'-'. $this->sessionId, 'bp_session', $_SESSION);
         }
         

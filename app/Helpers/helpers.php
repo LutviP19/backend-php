@@ -75,15 +75,25 @@ function endResponse($response, $status = 200, $headers = [])
     
     // 
     if (isset($_SESSION['uid'])) {
-        $sessionId = $_SESSION['uid'] . '-' . $sessionId;
-    }
+        delCache($_SESSION['uid'].'*', 'bp_session');
+        $sessionId = $_SESSION['uid'] . '-' . session_id();
+    } else {
+        if($cookieSessID) {
 
-    if($cookieSessID) {
-        $getSessionId = explode("-", $_COOKIE[session_name()]);
-        if(count($getSessionId) == 2) {
-            $sessionId = $_COOKIE[session_name()];
+            $getSessionId = explode("-", $_COOKIE[session_name()]);
+            if(count($getSessionId) == 2) {
+
+                if (isset($_SESSION['uid']) && $getSessionId[0] !== $_SESSION['uid']) {
+                    delCache($_SESSION['uid'].'*', 'bp_session');
+                    $sessionId = $_SESSION['uid'] . '-' . session_id();
+                } else {
+                    $sessionId = $_COOKIE[session_name()];
+                }
+            }
         }
     }
+
+    cacheContent('set', $sessionId, 'bp_session', $_SESSION);
 
     $response = array_merge($response, ['sessionId' => $sessionId]);
 

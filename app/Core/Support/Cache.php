@@ -90,7 +90,11 @@ class Cache
     public function deleteData($id)
     {
         if ($this->driver == 'database' || $this->driver == 'redis') {
-            $this->redis->del($this->prefix.':'.$this->_formatId($id));
+            $prefix = $this->prefix.':'.$this->_formatId($id);
+
+            $keysToDelete = $this->redis->keys($prefix);
+            if (!empty($keysToDelete))
+                $this->redis->del($keysToDelete);
         }
         if ($this->driver == 'file') {
             \unlink($this->path_cache.$this->prefix.'_'.$this->_formatId($id).'.cache');

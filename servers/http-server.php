@@ -37,6 +37,7 @@ $ssl_dir = realpath(__DIR__ . "/../storage/ssl");
 $requestServer = new OpenSwooleRequest();
 $openSwooleResponse = new OpenSwooleResponse();
 $clientInfo = '';
+$ignoredUri = ['/metrics', '/health', '/favicon.ico'];
 
 $server = new Server($serverip, $serverport);
 
@@ -52,13 +53,13 @@ $redis = new \Predis\Client([
 // Server settings
 $server->set([
     // Process ID
-    "pid_file" => realpath(__DIR__ . "/swoole.pid"),
+    "pid_file" => realpath(__DIR__ . "/web-swoole.pid"),
     // 'document_root' => __DIR__ .'../public',
     'document_root' => realpath(__DIR__ . '/../public/'),
 
     // Workers
     'worker_num' => 2,
-    'task_worker_num' => 3,
+    'task_worker_num' => 5,
     //'max_request' => 10000,
     //'max_request_grace' => 0,
 
@@ -94,18 +95,18 @@ $server->set([
     // 'http2_max_header_list_size' => 4095,
 ]);
 
-$process = new OpenSwoole\Process(function ($process) use ($server) {
-    while (true) {
-        $msg = $process->read();
-        var_dump($msg);
+// $process = new OpenSwoole\Process(function ($process) use ($server) {
+//     while (true) {
+//         $msg = $process->read();
+//         var_dump($msg);
 
-        foreach ($server->connections as $conn) {
-            $server->send($conn, $msg);
-        }
-    }
-});
+//         foreach ($server->connections as $conn) {
+//             $server->send($conn, $msg);
+//         }
+//     }
+// });
 
-$server->addProcess($process);
+// $server->addProcess($process);
 
 
 class CustomServerRequest extends \OpenSwoole\Core\Psr\ServerRequest
@@ -126,34 +127,41 @@ $server->on("Start", function (Server $server) {
 $server->on("Connect", function (Server $server, int $fd) {
     global $clientInfo, $sessionId, $sessionName;
 
+    echo "{$fd} Connect, worker:" . $server->worker_id . PHP_EOL;
+
     $clientInfo = $server->getClientInfo($fd);
     // var_dump($clientInfo);
 
-    if ((session_status()) == PHP_SESSION_ACTIVE) { //  && $clientInfo['remote_addr'] != 'host.docker.internal'
+    // \App\Core\Support\Log::debug($server, 'HttpServer.Connect.$server');
+    if ((session_status()) == PHP_SESSION_NONE) {
         // You might call session_start() here if needed
-        // session_start();
+        session_start();
 
-        session_regenerate_id(true);
+        // session_regenerate_id(true);
         // session_create_id('web-');
         // setcookie(session_name(), $sessionId, (env('SESSION_LIFETIME', 120) * 60), '/');
     }
 
     if ($clientInfo) {
         echo "Client connected: " . $clientInfo['remote_ip'] . "\n";
+        echo "Client connected port: " . $clientInfo['remote_port'] . "\n";
         echo "Http sessStatus: " . session_status() . "\n";
         // echo "Http sessionId: " . $sessionId . "\n";
     }
 });
 
 $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse $response) use ($server) {
-    global $server, $clientInfo, $sessionId, $sessionName;
+    global $server, $clientInfo, $ignoredUri, $sessionId, $sessionName;
+
+    $uri = $request->server['request_uri'];
+
 
     // var_dump($clientInfo);
     try {
         // Log the incoming request method
         echo "Received a '{$request->server['request_method']}:'{$request->server['request_uri']} request\n";
 
-        if ((session_status()) == PHP_SESSION_ACTIVE  && $request->server['remote_addr'] != 'host.docker.internal') {
+        if ((session_status()) == PHP_SESSION_ACTIVE) {
             $sessionName = session_name();
 
             echo "Http sessionName: " . $sessionName . "\n";
@@ -189,24 +197,23 @@ $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse 
         // Init Server constants
         initializeServerConstant($request);
 
-        // Try get session data from Redis
-        $_SESSION = cacheContent('get', $_COOKIE[$sessionName], 'bp_session') ?: [];
+        if (isset($_COOKIE[$sessionName])) {
+            // Try get session data from Redis
+            $_SESSION = cacheContent('get', $_COOKIE[$sessionName], 'bp_session') ?: [];
 
-        // \App\Core\Support\Log::debug($sessionData, 'HttpServer.fetchDataAsynchronously.first.$sessionData');
-        // \App\Core\Support\Log::debug($_SESSION, 'HttpServer.fetchDataAsynchronously.first.$_SESSION');
-        // \App\Core\Support\Log::debug(\App\Core\Support\Session::all(), 'HttpServer.fetchDataAsynchronously.first.Session::all()');
-
-        if(isset($_COOKIE[$sessionName])) {
+            // \App\Core\Support\Log::debug($sessionData, 'HttpServer.fetchDataAsynchronously.first.$sessionData');
+            // \App\Core\Support\Log::debug($_SESSION, 'HttpServer.fetchDataAsynchronously.first.$_SESSION');
+            // \App\Core\Support\Log::debug(\App\Core\Support\Session::all(), 'HttpServer.fetchDataAsynchronously.first.Session::all()');
 
             // \App\Core\Support\Log::debug( $_COOKIE[$sessionName], 'HttpServer.request.$_COOKIE[$sessionName]');
             $getSessionId = explode("-", $_COOKIE[$sessionName]);
-            if(count($getSessionId) == 2) {
+            if (count($getSessionId) == 2) {
                 $sessionId = $_COOKIE[$sessionName];
             } else {
                 $sessionId = session_id();
             }
         }
-            
+
 
         // returned of fetchDataAsynchronously
         $returned = ['response', 'content', 'tmp', 'void'];
@@ -215,25 +222,25 @@ $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse 
         // \App\Core\Support\Log::debug($server->stats() 'Swoole.request.$server->stats()');
 
         // Simulate some asynchronous operation (e.g., fetching data from a database)
-        go(function () use ($request, $response, $returned, $clientInfo, $sessionId, $sessionName) {
+        go(function () use ($server, $request, $response, $returned, $clientInfo, $sessionId, $sessionName, $uri, $ignoredUri) {
 
-            // Return void
-            while (true) {
+                // Return void
+                while (true) {
 
-                // \App\Core\Support\Log::debug($_SESSION, 'HttpServer.request.$_SESSION-A');
-                $response = fetchDataAsynchronously($request, $response, 'response', $_SESSION);
+                    // \App\Core\Support\Log::debug($_SESSION, 'HttpServer.request.$_SESSION-A');
+                    $response = fetchDataAsynchronously($request, $response, 'response', $_SESSION);
 
-                break;
-            }
+                    break;
+                }
 
             if ($response->isWritable())
-                $response->end();
+                    $response->end();
 
             // \App\Core\Support\Log::debug($_SESSION, 'HttpServer.request.$_SESSION-B');
 
             die(0);
         });
-        
+
     } catch (Throwable $e) {
 
         // Handle exceptions and errors
@@ -255,13 +262,23 @@ $server->start();
 // Simulated asynchronous function to fetch data from a database
 function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse $response, $returned = 'response', &$sessionData)
 {
-    global $server, $requestServer, $sessionId, $sessionName;
+    global $server, $clientInfo, $ignoredUri, $requestServer, $sessionId, $sessionName;
+
+    // requestServer
     $requestServer = $request;
 
-    // Try get session data from Redis
-    $_SESSION['app'] = 'web';
-    // $_SESSION = array_merge($_SESSION, $sessionData, cacheContent('get', $_COOKIE[$sessionName], 'bp_session') ?: []);
-    $_SESSION = array_merge($_SESSION, $sessionData);
+    // Get header metadata
+    $headers = getallheaders();
+
+    $uri = $request->request_uri ?? $_SERVER['REQUEST_URI'];
+
+    if (! in_array($uri, $ignoredUri)) {
+        // Try get session data from Redis
+        $_SESSION['app'] = 'web';
+        // $_SESSION = array_merge($_SESSION, $sessionData, cacheContent('get', $_COOKIE[$sessionName], 'bp_session') ?: []);
+        $_SESSION = array_merge($_SESSION, $sessionData);
+    }
+
 
     // \App\Core\Support\Log::debug($sessionData, 'HttpServer.fetchDataAsynchronously.first.$sessionData');
     // \App\Core\Support\Log::debug($_SESSION, 'HttpServer.fetchDataAsynchronously.first.$_SESSION');
@@ -282,8 +299,7 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
     // \App\Core\Support\Log::debug($_SESSION, 'HttpServer.fetchDataAsynchronously.$_SESSION');
     // \App\Core\Support\Log::debug($_COOKIE, 'HttpServer.fetchDataAsynchronously.$_COOKIE');
 
-    // Get header metadata
-    $headers = getallheaders();
+
 
     if (isset($request->header['user-agent'])) {
         $userAgent = $request->header['user-agent'];
@@ -295,7 +311,6 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
 
     $baseDir = realpath(__DIR__ .'/../public');
     $fd = $request->fd;
-    $uri = $request->request_uri ?? $_SERVER['REQUEST_URI'];
 
     $filePath = $baseDir . $uri;
     if (is_dir($filePath)) {
@@ -482,13 +497,13 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
                 // Parsing content to ressponse
                 // \App\Core\Support\Log::debug(gettype($content), 'HttpServer.fetchDataAsynchronously.type.$content');
                 // \App\Core\Support\Log::debug($content, 'HttpServer.fetchDataAsynchronously.json.$content');
-                
+
                 // Get first index
                 $contents = explode('@|@', $content);
                 // \App\Core\Support\Log::debug(gettype($contents), 'HttpServer.fetchDataAsynchronously.gettype.$contents');
                 // \App\Core\Support\Log::debug($contents, 'HttpServer.fetchDataAsynchronously.$contents');
                 // \App\Core\Support\Log::debug($contents[0], 'HttpServer.fetchDataAsynchronously.gettype.$contents[0]');
-                
+
                 if ($response->isWritable() && count($contents)) {
                     $convertArr = json_decode($contents[0], true);
 
@@ -500,9 +515,10 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
                         foreach ($convertArr["headers"] as $header => $value) {
                             $response->header($header, $value);
 
-                            if(is_array($header)) {
-                                foreach ($header as $key => $val) 
+                            if (is_array($header)) {
+                                foreach ($header as $key => $val) {
                                     $response->header($key, $val);
+                                }
                             }
                         }
                     }
@@ -512,7 +528,7 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
 
                     // \App\Core\Support\Log::debug($sessionIdx, 'HttpServer.fetchDataAsynchronously.Routing.$sessionIdx');
                     // \App\Core\Support\Log::debug($_SESSION, 'HttpServer.fetchDataAsynchronously.Routing.$_SESSION');
-                    if(! empty($sessionIdx)) {
+                    if (! empty($sessionIdx)) {
                         $sessionExp = (env('SESSION_LIFETIME', 120) * 60);
 
                         $response->header('Set-Cookie', "{$sessionName}={$sessionIdx}; Max-Age={$sessionExp}; Path=/;");
@@ -521,7 +537,7 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
                     }
 
                     // Hidden session ID on non debug mode
-                    if(false === config('app.debug') && isset($convertArr['data']['sessionId'])) {
+                    if (false === config('app.debug') && isset($convertArr['data']['sessionId'])) {
                         unset($convertArr['data']['sessionId']);
                     }
 
@@ -531,7 +547,7 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
                 } else {
                     echo "{$filePath}, URI Not rendered! \n";
                 }
-                
+
                 break;
             default:
                 // Handle any other unmatched requests with a 404 Not Found
@@ -542,20 +558,21 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
                 break;
         }
     }
-    
-    
+
+
     // \App\Core\Support\Log::debug(session_id(), 'HttpServer.fetchDataAsynchronously.end.session_id()');
     // \App\Core\Support\Log::debug($sessionId, 'HttpServer.fetchDataAsynchronously.end.$sessionId');
     // \App\Core\Support\Log::debug($_SESSION, 'HttpServer.fetchDataAsynchronously.end.$_SESSION');
     // // \App\Core\Support\Log::debug(\App\Core\Support\Session::all(), 'HttpServer.fetchDataAsynchronously.Session::all()');
 
-    if(isset($_COOKIE[$sessionName]) && count($_SESSION) > 1) {        
+    if (isset($_COOKIE[$sessionName]) && count($_SESSION) > 1) {
         cacheContent('set', $_COOKIE[$sessionName], 'bp_session', $_SESSION);
 
         // Delete old session_id()
         $getSessionId = explode("-", $_COOKIE[$sessionName]);
-        if(count($getSessionId) == 2)
+        if (count($getSessionId) == 2) {
             delCache($getSessionId[1], 'bp_session');
+        }
     }
 
     if ($returned === 'tmp') {

@@ -22,7 +22,8 @@ $dotenv->load();
 
 date_default_timezone_set(env('APP_TIMEZONE', 'Asia/Jakarta'));
 
-if ($_SERVER['SERVER_PORT'] !== 9501) { // Ignore OpenSwoole Server
+// if ($_SERVER['SERVER_PORT'] !== 9501) { // Ignore OpenSwoole Server
+if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // Ignore OpenSwoole Server
 
     if (session_status() == PHP_SESSION_NONE) {
         //Starting the session will be the first we do.

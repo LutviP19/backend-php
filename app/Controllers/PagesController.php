@@ -25,7 +25,7 @@ class PagesController extends Controller
     {
         $users = (new User())->all();
         // Session::set('users', generateUlid());
-        $server = $_SERVER['SERVER_PORT'] !== 9501 ? "PHP FPM" : "OpenSwoole";
+        $server = \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port')) ? "OpenSwoole" : "PHP FPM";
 
         $this->view('home', ['users' => $users, 'server' => $server]);
     }

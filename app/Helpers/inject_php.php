@@ -35,14 +35,14 @@ function custom_session_start() {
 }
 
 // Backend PHP custom session regenerate id function
-function custom_session_regenerate_id() {
+function custom_session_regenerate_id($prefix = 'bp-') {
     // Call session_create_id() while session is active to 
     // make sure collision free.
     if (session_status() != PHP_SESSION_ACTIVE) {
         session_start();
     }
     // WARNING: Never use confidential strings for prefix!
-    $newid = session_create_id('bp-');
+    $newid = session_create_id($prefix);
     // Set deleted timestamp. Session data must not be deleted immediately for reasons.
     $_SESSION['deleted_time'] = time();
     // Finish session

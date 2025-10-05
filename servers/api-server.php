@@ -10,7 +10,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/bootstrap.php';
 
-use App\Core\Support\Config;
+// use App\Core\Support\Config;
 use FastRoute\RouteCollector;
 use OpenSwoole\Core\Psr\Middleware\StackHandler;
 use OpenSwoole\Core\Psr\Response;
@@ -122,15 +122,15 @@ class MiddlewareSetup implements MiddlewareInterface
         // \App\Core\Support\Log::debug(getallheaders(), 'ApiServer.MiddlewareSetup.process.getallheaders()');
 
         // Check Status Server
-        $localIps = ['::1', '0.0.0.0', '127.0.0.1', 'localhost', 'host.docker.internal'];
-        if(in_array(clientIP(), $localIps) 
+        $localIps = config('local_ips');
+        if (in_array(clientIP(), $localIps)
             && stripos($request->getUri()->getPath(), '/health') === 0) {
 
             return new Response('Server running.', 200, '', ['Content-Type' => 'text/plain']);
         }
 
         // Metric Server Stats
-        if(in_array(clientIP(), $localIps) 
+        if (in_array(clientIP(), $localIps)
             && stripos($request->getUri()->getPath(), '/metric') === 0) {
 
             // echo 'URI-Metric: '.$request->getUri()->getPath() . PHP_EOL;
@@ -142,13 +142,13 @@ class MiddlewareSetup implements MiddlewareInterface
         }
 
         // EnsureIpIsValid
-        if (!in_array(clientIP(), Config::get('trusted_ips'))) {
+        if (!in_array(clientIP(), config('trusted_ips'))) {
             return new Response('Service Unavailable', 503, '', ['Content-Type' => 'text/plain']);
         }
 
         // Validate Header
         $headers = getallheaders();
-        $valid_headers = array_keys_exists(Config::get('valid_headers'), $headers);
+        $valid_headers = array_keys_exists(config('valid_headers'), $headers);
         if (false === $valid_headers || ! isset($headers['X-Api-Token'])) {
 
             if (false === $valid_headers) {

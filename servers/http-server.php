@@ -13,12 +13,13 @@ require_once __DIR__ . '/bootstrap.php';
 // Set a custom session name
 ini_set('session.use_strict_mode', 0);
 session_name('WEBBACKENDPHPSESSID');
-ini_set('session.use_strict_mode', 1);
+// ini_set('session.use_strict_mode', 1);
 
-
+// Set Session
 $sessionName = session_name();
 $sessionId = '';
-session_start();
+
+
 
 use OpenSwoole\Http\Request as OpenSwooleRequest;
 use OpenSwoole\Http\Response as OpenSwooleResponse;
@@ -113,13 +114,23 @@ class CustomServerRequest extends \OpenSwoole\Core\Psr\ServerRequest
 {
 }
 
-class ExitException extends Exception
+class ExitException extends \OpenSwoole\ExitException
 {
+}
+
+// Start session
+if (session_status() === PHP_SESSION_NONE) {
+
+    session_start();
+
+    session_regenerate_id(true);
+    $sessionId = session_id();
+    // setcookie(session_name(), $sessionId, (env('SESSION_LIFETIME', 120) * 60), '/');
 }
 
 // Start Server
 $server->on("Start", function (Server $server) {
-    global $serverip, $serverport;
+    global $serverip, $serverport, $sessionId, $sessionName;
 
     echo "Swoole http server is started at http://" . $serverip . ":" . $serverport . "\n";
 });
@@ -132,22 +143,18 @@ $server->on("Connect", function (Server $server, int $fd) {
     $clientInfo = $server->getClientInfo($fd);
     // var_dump($clientInfo);
 
-    // \App\Core\Support\Log::debug($server, 'HttpServer.Connect.$server');
-    if ((session_status()) == PHP_SESSION_NONE) {
-        // You might call session_start() here if needed
-        session_start();
-
-        // session_regenerate_id(true);
-        // session_create_id('web-');
-        // setcookie(session_name(), $sessionId, (env('SESSION_LIFETIME', 120) * 60), '/');
-    }
-
     if ($clientInfo) {
         echo "Client connected: " . $clientInfo['remote_ip'] . "\n";
         echo "Client connected port: " . $clientInfo['remote_port'] . "\n";
         echo "Http sessStatus: " . session_status() . "\n";
         // echo "Http sessionId: " . $sessionId . "\n";
     }
+
+    // Session Active
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        
+    }
+
 });
 
 $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse $response) use ($server) {
@@ -168,6 +175,13 @@ $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse 
             echo "Http sessionId: " . $sessionId . "\n";
         }
 
+        if (isset($request->header['user-agent'])) {
+            $userAgent = $request->header['user-agent'];
+            echo  "Client User-Agent: " . $userAgent . PHP_EOL;
+        } else {
+            echo "Client User-Agent header not found." . PHP_EOL;
+        }
+
         // Handle an OPTIONS request with an empty response
         if ($request->server['request_method'] === 'OPTIONS') {
             // Explicitly set an HTTP status code for preflight requests
@@ -181,14 +195,14 @@ $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse 
         if ($request->server['request_uri'] === '/metrics') {
             $response->header("Content-Type", "text/plain");
 
-            $localIps = ['::1', '0.0.0.0', '127.0.0.1', 'localhost', 'host.docker.internal'];
-            if(in_array($clientInfo["remote_ip"], $localIps))
+            $localIps = config('local_ips');
+            if (in_array($clientInfo["remote_ip"], config('local_ips'))) {
                 $content = $server->stats(\OPENSWOOLE_STATS_OPENMETRICS);
-            else {
+            } else {
                 $content = "404 Not Found";
                 $response->status(404);
             }
-                
+
             $response->end($server->stats(\OPENSWOOLE_STATS_OPENMETRICS));
             return;
         }
@@ -224,22 +238,26 @@ $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse 
         // Simulate some asynchronous operation (e.g., fetching data from a database)
         go(function () use ($server, $request, $response, $returned, $clientInfo, $sessionId, $sessionName, $uri, $ignoredUri) {
 
-                // Return void
-                while (true) {
+            // Return void
+            while (true) {
 
-                    // \App\Core\Support\Log::debug($_SESSION, 'HttpServer.request.$_SESSION-A');
-                    $response = fetchDataAsynchronously($request, $response, 'response', $_SESSION);
+                // \App\Core\Support\Log::debug($_SESSION, 'HttpServer.request.$_SESSION-A');
+                $response = fetchDataAsynchronously($request, $response, 'response', $_SESSION);
 
-                    break;
-                }
+                break;
+            }
 
-            if ($response->isWritable())
-                    $response->end();
+            if ($response->isWritable()) {
+                $response->end();
+            }
 
             // \App\Core\Support\Log::debug($_SESSION, 'HttpServer.request.$_SESSION-B');
 
             die(0);
         });
+
+        // End process
+        echo  "---------" . PHP_EOL;
 
     } catch (Throwable $e) {
 
@@ -298,16 +316,6 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
     // \App\Core\Support\Log::debug($_SERVER, 'HttpServer.fetchDataAsynchronously.$_SERVER');
     // \App\Core\Support\Log::debug($_SESSION, 'HttpServer.fetchDataAsynchronously.$_SESSION');
     // \App\Core\Support\Log::debug($_COOKIE, 'HttpServer.fetchDataAsynchronously.$_COOKIE');
-
-
-
-    if (isset($request->header['user-agent'])) {
-        $userAgent = $request->header['user-agent'];
-        echo  "Client User-Agent: " . $userAgent . PHP_EOL . "---------" . PHP_EOL;
-    } else {
-        echo "Client User-Agent header not found." . PHP_EOL . "---------" . PHP_EOL;
-    }
-
 
     $baseDir = realpath(__DIR__ .'/../public');
     $fd = $request->fd;

@@ -28,7 +28,11 @@ return [
     ],
 
     'trusted_ips' => [
-        '', '::1', '0.0.0.0', '127.0.0.1', 'localhost', 'host.docker.internal', // local networks
+        '', '::1', '0.0.0.0', '127.0.0.1', 'localhost', 'host.docker.internal', // whitelist ips
+    ],
+
+    'local_ips' => [
+        '::1', '0.0.0.0', '127.0.0.1', 'localhost', 'host.docker.internal', // local networks
     ],
 
     'valid_headers' => [

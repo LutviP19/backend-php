@@ -41,6 +41,7 @@ class AuthController extends ApiController
     public function login(Request $request, Response $response)
     {
         try {
+
             $validator = new Validator();
             $validator->validate($this->jsonData, [
                 'email' => 'required|email',
@@ -51,7 +52,7 @@ class AuthController extends ApiController
 
             if ($errors) {
 
-                $status = 203;
+                $statusCode = 422;
                 $callback = false;
             } else {
 
@@ -64,7 +65,7 @@ class AuthController extends ApiController
                 // Sanitize Input
                 $payload = $this->filter->sanitize($jsonData, ['email', 'password']);
 
-                $status = 401;
+                $statusCode = 203;
                 $errors = ['auth' => 'Invalid credentials'];
 
                 $email = readJson('email', $payload);
@@ -82,81 +83,79 @@ class AuthController extends ApiController
                 ->setupForm(clientIP(), $callback, 5, 10, 1200);
             }
             
-
             if (false == $callback || empty($user)) {
+
                 return endResponse(
-                    $this->getOutput(false, $status, [
+                    $this->getOutput(false, $statusCode, [
                         $errors
-                   ]), $status);
+                   ]), $statusCode);
+            } else {
+
+                foreach ($user as $key => $value) {
+                    if ($key === 'ulid') {
+                        $key = 'uid';
+                    }
+
+                    Session::set($key, $value);
+                }
+
+                Session::set('gnr', generateRandomString(32, true));
+                $userId =  Session::get('uid');
+                $gnr =  Session::get('gnr');
+
+                // Set login session
+                $validateClient = new ValidateClient($userId);
+                $clientToken = $validateClient->getToken();
+                $clientTokenGen = $validateClient->generateToken();
+                Session::set('client_token', $clientTokenGen);
+
+                if (false === $validateClient->matchToken($clientTokenGen)) {
+                    return endResponse(
+                            $this->getOutput(false, 401, [
+                              'auth' => 'Client not found!',
+                           
+                            ], 'Invalid Client!'), 401);
+                }
+
+                // initJwtToken
+                Session::set('secret', encryptData($clientToken, $gnr));
+                Session::set('jwtId', generateUlid());
+                $this->jwtToken = $this->initJwtToken();
+
+                // Create specific data for jwt
+                $info = 'Api jwt-'.$userId;
+                $subject = 'Access API for user:'.$userId;
+                $tokenJwt =  $this->jwtToken->createToken($userId, $info, $subject);
+                Session::set('tokenJwt', $tokenJwt);
+
+                $sessionExp = (env('SESSION_LIFETIME', 120) * 60);
+                // $headers = ['Set-Cookie' => "{$sessionName}={$sessionId}; Max-Age={$sessionExp}; Path=/; SameSite=Lax;"];
+                $headers = ['Set-Cookie' => "{$this->sessionName}={$this->sessionId}; Max-Age={$sessionExp}; Path=/;"];
+
+                // \App\Core\Support\Log::debug($headers, 'AuthController.login.$headers');
+
+                // Cache session data by uid
+                if (\in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) {
+
+                    // Clean old keys
+                    delCache($_SESSION['uid'].'*', 'bp_session');
+                    cacheContent('set', $_SESSION['uid'] .'-'. $this->sessionId, 'bp_session', $_SESSION);
+                }
+
+                return endResponse(
+                    $this->getOutput(true, 201, [
+                            'token' => $tokenJwt,
+                            'sessid' => $this->sessionId,
+                            'account' => Session::all()
+                    ]), 201, $headers);
             }
         } catch (Exception $exception) {
+
             return endResponse(
                 $this->getOutput(false, 429, [
-                  $exception->getMessage(),
+                  'exception', $exception->getMessage(),
                ]), 429);
         }
-
-        // // Generate credentials
-        // \session_create_id($user->ulid.'-');
-        // $this->sessionId = session_id();
-
-        foreach ($user as $key => $value) {
-            if ($key === 'ulid') {
-                $key = 'uid';
-            }
-
-            Session::set($key, $value);
-        }
-
-        Session::set('gnr', generateRandomString(32, true));
-        $userId =  Session::get('uid');
-        $gnr =  Session::get('gnr');
-
-        // Set login session
-        $validateClient = new ValidateClient($userId);
-        $clientToken = $validateClient->getToken();
-        $clientTokenGen = $validateClient->generateToken();
-        Session::set('client_token', $clientTokenGen);
-
-        if (false === $validateClient->matchToken($clientTokenGen)) {
-            return endResponse(
-                    $this->getOutput(false, 401, [
-                      'auth' => 'Client not found!',
-                   
-                    ], 'Invalid Client!'), 401);
-        }
-
-        // initJwtToken
-        Session::set('secret', encryptData($clientToken, $gnr));
-        Session::set('jwtId', generateUlid());
-        $this->jwtToken = $this->initJwtToken();
-
-        // Create specific data for jwt
-        $info = 'Api jwt-'.$userId;
-        $subject = 'Access API for user:'.$userId;
-        $tokenJwt =  $this->jwtToken->createToken($userId, $info, $subject);
-        Session::set('tokenJwt', $tokenJwt);
-
-        $sessionExp = (env('SESSION_LIFETIME', 120) * 60);
-        // $headers = ['Set-Cookie' => "{$sessionName}={$sessionId}; Max-Age={$sessionExp}; Path=/; SameSite=Lax;"];
-        $headers = ['Set-Cookie' => "{$this->sessionName}={$this->sessionId}; Max-Age={$sessionExp}; Path=/;"];
-
-        // \App\Core\Support\Log::debug($headers, 'AuthController.login.$headers');
-
-        // Cache session data by uid
-        if (\in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) {
-
-            // Clean old keys
-            delCache($_SESSION['uid'].'*', 'bp_session');
-            cacheContent('set', $_SESSION['uid'] .'-'. $this->sessionId, 'bp_session', $_SESSION);
-        }
-        
-        return endResponse(
-            $this->getOutput(true, 201, [
-                'token' => $tokenJwt,
-                'sessid' => $this->sessionId,
-                'account' => Session::all()
-            ]), 201, $headers);
     }
 
     /**
@@ -172,6 +171,7 @@ class AuthController extends ApiController
         $this->useMiddleware();
         
         try {
+
             $validator = new Validator();
             $validator->validate($this->jsonData, [
                 'email' => 'required|email',
@@ -179,11 +179,10 @@ class AuthController extends ApiController
             ]);
             $errors = \App\Core\Support\Session::get('errors');
 
-
+            $callback = false;
             if ($errors) {
 
-                $status = 203;
-                $callback = false;
+                $statusCode = 422;
             } else {
 
                 // Filter Input
@@ -195,14 +194,25 @@ class AuthController extends ApiController
                 // Sanitize Input
                 $payload = $this->filter->sanitize($jsonData, ['email', 'password']);
 
-                $status = 401;
-                $errors = ['auth' => 'Invalid credentials'];
+                $statusCode = 203;
+                $errors = ['auth' => 'Missing credentials'];
 
                 $email = readJson('email', $payload);
                 $password = readJson('password', $payload);
 
-                $user = User::getUserByEmail($email);
-                $callback = $this->checkCredentials($user, $password);
+                // Match email with auth session
+                $validEmail = false;
+                if (!empty($email)) {
+                    $validEmail = (bool)(Session::get('email') === $email);
+                }
+
+                if ($validEmail) {
+                    $statusCode = 203;
+                    $errors = ['auth' => 'Invalid credentials'];
+
+                    $user = User::getUserByEmail($email);
+                    $callback = $this->checkCredentials($user, $password);
+                }
             }
 
             // Middleware
@@ -212,29 +222,32 @@ class AuthController extends ApiController
             }
 
             if (false == $callback || empty($user)) {
+                
                 return endResponse(
-                    $this->getOutput(false, $status, [
+                    $this->getOutput(false, $statusCode, [
                         $errors
-                   ]), $status);
+                   ], 'Validation errors.'), $statusCode);
+            } else {
+
+                // Update Client Token
+                $userId = Session::get('uid');
+                $validateClient = new ValidateClient($userId);
+                $validateClient->updateToken();
+
+                Session::destroy();
+
+                return endResponse(
+                    $this->getOutput(true, 201, [
+                    'auth' => 'Token successfully updated, please re-login to use new token!',
+                ]), 201);
             }
         } catch (Exception $exception) {
+            
             return endResponse(
                 $this->getOutput(false, 429, [
-                  $exception->getMessage(),
+                  'exception', $exception->getMessage(),
                ]), 429);
         }
-
-        // Update Client Token
-        $userId = Session::get('uid');
-        $validateClient = new ValidateClient($userId);
-        $validateClient->updateToken();
-
-        Session::destroy();
-
-        return endResponse(
-                $this->getOutput(true, 201, [
-                'auth' => 'Token successfully updated, please re-login to use new token!',
-            ]), 201);
     }
 
     /**
@@ -249,16 +262,77 @@ class AuthController extends ApiController
     {
         $this->useMiddleware();
 
-        // clear cache token
-        $userId = Session::get('uid');
-        $validateClient = new ValidateClient($userId);
-        $validateClient->delToken();
+        try {
 
-        Session::destroy();
+            $validator = new Validator();
+            $validator->validate($this->jsonData, [
+                'email' => 'required|email',
+            ]);
+            $errors = \App\Core\Support\Session::get('errors');
 
-        return $response->json($this->getOutput(true, 200, [
-            'auth' => 'You are logged out!',
-        ]), 200);
+            $callback = false;
+            if ($errors) {
+
+                $statusCode = 422;
+            } else {
+
+                // Filter Input
+                $jsonData = $this->filter->filter($this->jsonData, [
+                    'email' => 'trim|sanitize_string',
+                ]);
+
+                // Sanitize Input
+                $payload = $this->filter->sanitize($jsonData, ['email']);
+
+                $statusCode = 203;
+                $errors = ['auth' => 'Invalid credentials'];
+
+                $email = readJson('email', $payload);
+
+                $user = Session::get('email');
+                $callback = (bool)($email === $user);
+            }
+
+            // Middleware
+            if ($this->rateLimit) {
+                (new \App\Core\Security\Middleware\RateLimiter('logout_request'))
+                    ->setupForm(clientIP(), $callback, 5, 10, 1200);
+            }
+
+            if (false == $callback || empty($user)) {
+
+                return endResponse(
+                    $this->getOutput(false, $statusCode, [
+                        $errors
+                   ], 'Validation errors.'), $statusCode);
+            } else {
+
+                // clear cache token
+                $userId = Session::get('uid');
+                $validateClient = new ValidateClient($userId);
+                $validateClient->delToken();
+
+                // Delete Cache session data by uid
+                if (\in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) {
+
+                    // Clean old keys
+                    delCache($userId.'*', 'bp_session');
+                }
+
+                Session::destroy();
+
+                return endResponse(
+                    $this->getOutput(true, 200, [
+                    'auth' => 'You are logged out!',
+                    ]), 200);
+            }
+        } catch (Exception $exception) {
+
+            return endResponse(
+                $this->getOutput(false, 429, [
+                  'exception', $exception->getMessage(),
+               ]), 429);
+        }
     }
 
     /**

@@ -80,19 +80,68 @@ class UserController extends ServerApiController
         // ];
         $jsonData = $data['jsonData'];
 
-        // clear cache token
-        $userId = Session::get('uid');
-        $validateClient = new ValidateClient($userId);
-        $validateClient->delToken();
+        try {
 
-        Session::destroy();
+            // Validate Input
+            $validator = new Validator();
+            $validator->validate($jsonData, [
+                'email' => 'required|email'
+            ]);
+            $errors = \App\Core\Support\Session::get('errors');
 
-        $statusCode = 200;
-        $output = [
-                    'auth' => 'You are logged out!',
-                ];
+            $callback = false;
+            if ($errors) {
 
-        return $this->SetOpenSwooleResponse(true, $statusCode, $output);
+                $statusCode = 422;
+            } else {
+
+                // Filter Input
+                $jsonData = $this->filter->filter($jsonData, [
+                    'email' => 'trim|sanitize_string'
+                ]);
+
+                // Sanitize Input
+                $payload = $this->filter->sanitize($jsonData, ['email']);
+
+                $statusCode = 203;
+                $errors = ['auth' => 'Invalid credentials'];
+
+                $email = readJson('email', $payload, $payload['email']);
+
+                // Match email with auth session
+                if (!empty(Session::get('email')) && !empty($email )) {
+                    $callback = (bool)(Session::get('email') === $email);
+                }
+            }
+
+            // // Middleware
+            // (new \App\Core\Security\Middleware\RateLimiter('uptoken_request'))
+            //     ->setupForm(Session::get('uid'), $callback, 5, 10, 1200);
+
+            if (false == $callback) {
+
+                return $this->SetOpenSwooleResponse(false, $statusCode, [$errors], 'Validation errors.');
+            } else {
+
+                // clear cache token
+                $userId = Session::get('uid');
+                $validateClient = new ValidateClient($userId);
+                $validateClient->delToken();
+
+                Session::destroy();
+
+                $statusCode = 200;
+                $output = [
+                            'auth' => 'You are logged out!',
+                        ];
+
+                return $this->SetOpenSwooleResponse(true, $statusCode, $output);
+            }
+        } catch (Exception $exception) {
+
+            $statusCode = 429;
+            return $this->SetOpenSwooleResponse(false, $statusCode, ['exception', $exception->getMessage()], 'Validation errors.');
+        }
     }
 
     /**
@@ -119,6 +168,7 @@ class UserController extends ServerApiController
         $jsonData = $data['jsonData'];
 
         try {
+
             // Validate Input
             $validator = new Validator();
             $validator->validate($jsonData, [
@@ -130,7 +180,7 @@ class UserController extends ServerApiController
             $callback = false;
             if ($errors) {
 
-                $statusCode = 203;
+                $statusCode = 422;
             } else {
 
                 // Filter Input
@@ -142,8 +192,8 @@ class UserController extends ServerApiController
                 // Sanitize Input
                 $payload = $this->filter->sanitize($jsonData, ['email', 'password']);
 
-                $statusCode = 422;
-                $errors = ['auth' => 'Invalid credentials,',];
+                $statusCode = 203;
+                $errors = ['auth' => 'Missing credentials'];
 
                 $email = readJson('email', $payload, $payload['email']);
                 $password = readJson('password', $payload, $payload['password']);
@@ -155,7 +205,8 @@ class UserController extends ServerApiController
                 }
 
                 if ($validEmail) {
-                    $statusCode = 401;
+                    $statusCode = 203;
+                    $errors = ['auth' => 'Invalid credentials'];
 
                     $user = User::getUserByEmail($email);
                     $callback = $this->checkCredentials($user, $password);
@@ -167,33 +218,34 @@ class UserController extends ServerApiController
             //     ->setupForm(Session::get('uid'), $callback, 5, 10, 1200);
 
             if (false === $validEmail || false == $callback || empty($user)) {
-                return $this->SetOpenSwooleResponse(false, $statusCode, $errors, 'Validation errors.');
-            }
 
+                return $this->SetOpenSwooleResponse(false, $statusCode, [$errors], 'Validation errors.');
+            } else {
+
+                // Update Client Token
+                $userId = Session::get('uid');
+                $validateClient = new ValidateClient($userId);
+
+                if (false === $validateClient->updateToken()) {
+                    $statusCode = 203;
+                    $output = ['auth' => 'Failed update your token, please try again in few moments!'];
+
+                    return $this->SetOpenSwooleResponse(false, $statusCode, $output, 'Failed update');
+                }
+
+                // Auto logout
+                $validateClient->delToken();
+                Session::destroy();
+
+                $statusCode = 201;
+                $output = [ 'auth' => 'Token successfully updated, please re-login to use new token!' ];
+
+                return $this->SetOpenSwooleResponse(true, $statusCode, $output);
+            }
         } catch (Exception $exception) {
 
             $statusCode = 429;
-            return $this->SetOpenSwooleResponse(false, $statusCode, $exception->getMessage(), 'Validation errors.');
+            return $this->SetOpenSwooleResponse(false, $statusCode, ['exception', $exception->getMessage()]);
         }
-
-        // Update Client Token
-        $userId = Session::get('uid');
-        $validateClient = new ValidateClient($userId);
-
-        if (false === $validateClient->updateToken()) {
-            $statusCode = 203;
-            $output = [ 'auth' => 'Failed update your token, please try again in few moments!'];
-
-            return $this->SetOpenSwooleResponse(false, $statusCode, $output, 'Failed update');
-        }
-
-        // Auto logout
-        $validateClient->delToken();
-        Session::destroy();
-
-        $statusCode = 201;
-        $output = [ 'auth' => 'Token successfully updated, please re-login to use new token!' ];
-
-        return $this->SetOpenSwooleResponse(true, $statusCode, $output);
     }
 }

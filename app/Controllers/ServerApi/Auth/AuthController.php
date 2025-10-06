@@ -120,7 +120,7 @@ class AuthController extends ServerApiController
                             'account' => Session::all()
                         ];
                         
-                return $this->SetOpenSwooleResponse($status, $statusCode, $output, $message, $headers);
+                return $this->SetOpenSwooleResponse($status, $statusCode, $output, '', $headers);
             }
         } catch (Exception $exception) {
 

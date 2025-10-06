@@ -300,7 +300,7 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
 
     if (! in_array($uri, $ignoredUri)) {
         // Try get session data from Redis
-        $_SESSION['app'] = 'web';
+        // $_SESSION['app'] = 'web';
         // $_SESSION = array_merge($_SESSION, $sessionData, cacheContent('get', $_COOKIE[$sessionName], 'bp_web_session') ?: []);
         $_SESSION = array_merge($_SESSION, $sessionData);
     }

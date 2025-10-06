@@ -69,19 +69,22 @@ function endResponse($response, $status = 200, $headers = [])
         die(response()->json($response, $status));
     }
 
+    // // Get output response
+    // \App\Core\Support\Log::debug($response, 'Helper.endResponse.$response');
+
     $cookieSessID = isset($_COOKIE[session_name()]) ? $_COOKIE[session_name()] : false;
     // get sessionId, then merged it to response
     $sessionId = $cookieSessID ?: session_id();
-    
+
     // 
     if (isset($_SESSION['uid'])) {
         delCache($_SESSION['uid'].'*', 'bp_session');
         $sessionId = $_SESSION['uid'] . '-' . session_id();
     } else {
-        if($cookieSessID) {
+        if ($cookieSessID) {
 
             $getSessionId = explode("-", $_COOKIE[session_name()]);
-            if(count($getSessionId) == 2) {
+            if (count($getSessionId) == 2) {
 
                 if (isset($_SESSION['uid']) && $getSessionId[0] !== $_SESSION['uid']) {
                     delCache($_SESSION['uid'].'*', 'bp_session');
@@ -96,6 +99,8 @@ function endResponse($response, $status = 200, $headers = [])
     cacheContent('set', $sessionId, 'bp_session', $_SESSION);
 
     $response = array_merge($response, ['sessionId' => $sessionId]);
+
+    session_write_close();
 
     $responseX = [];
     $responseArr = response()->json($response, $status);
@@ -119,8 +124,6 @@ function endResponse($response, $status = 200, $headers = [])
     } else {
         print json_encode($responseArr);
     }
-
-    session_write_close();
 
     return;
 }

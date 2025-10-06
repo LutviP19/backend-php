@@ -158,8 +158,19 @@ class Router
             );
         } else {
             //no route registered with the uri.
-            if ($_SERVER['SERVER_PORT'] !== 9501) {
+            if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // non OpenSwoole Server
                 throw new Exception("Route not Found!");
+            } else {
+                return endResponse(
+                        [ 
+                            'status' => false,
+                            'statusCode' => 405,
+                            'message' => 'Method Not Allowed',
+                            'errors' => [
+                                'Invalid method to access '.$_SERVER['REQUEST_URI']
+                            ]
+                        ], 
+                        405);
             }
         }
     }

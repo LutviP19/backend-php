@@ -136,11 +136,14 @@ class ValidateClient
     public function delToken(): void
     {
         // get cache from redis
-        $token = $this->redis->mget(['client_token:'.$this->clientId]);
+        // $token = $this->redis->mget(['client_token:'.$this->clientId]);
 
-        if (! is_null($token) && isset($token[0])) {
+        $prefix = 'client_token:'.$this->clientId;
+        $keysToDelete = $this->redis->keys($prefix);
+
+        if (!empty($keysToDelete)) {
             // delete cache from redis
-            $this->redis->del(['client_token:'.$this->clientId]);
+            $this->redis->del($keysToDelete);
         }
     }
 

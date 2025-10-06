@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 // Disabled Log Errors
 ini_set('log_errors', 0);
-ini_set('display_errors', 0);
-ini_set('display_startup_errors', 0);
-error_reporting(0);
+// ini_set('display_errors', 0);
+// ini_set('display_startup_errors', 0);
+error_reporting(~E_NOTICE & ~E_DEPRECATED);
 
 require_once __DIR__ . '/bootstrap.php';
 
@@ -213,11 +213,12 @@ $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse 
             return;
         }
 
-
 //============= START WEB
-        // \App\Core\Support\Log::debug($request, 'HttpServer.fetchDataAsynchronously.$request');
         // Init Server constants
         initializeServerConstant($request);
+
+        // Get header metadata
+        $headers = getallheaders();
 
         $_SESSION = [];
         if (isset($_COOKIE[$sessionName])) {
@@ -242,29 +243,18 @@ $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse 
 
         // Simulate some asynchronous operation (e.g., fetching data from a database)
         go(function () use ($server, $request, $response, $clientInfo, $sessionId, $sessionName, $uri, $ignoredUri) {
-            // returned of fetchDataAsynchronously
-            $returned = ['response', 'content', 'tmp', 'void'];
+            // // returned of fetchDataAsynchronously
+            // $returned = ['response', 'tmp', 'void'];
 
-            // Return void
-            while (true) {
-                // \App\Core\Support\Log::debug($_SESSION, 'HttpServer.request.$_SESSION-A');
-                $response = fetchDataAsynchronously($request, $response, 'response', $_SESSION);
-                break;
-            }
+            $response = fetchDataAsynchronously($request, $response, 'response', $_SESSION);
 
             if ($response->isWritable()) {
                 $response->end();
             }
-    
-            // \App\Core\Support\Log::debug($_SESSION, 'HttpServer.request.$_SESSION-B');
-            // exit;
+
             throw new ExitException();
-            // die(0);
         });
 //============= END WEB
-
-        
-
     } catch (Throwable $e) {
 
         // Handle exceptions and errors
@@ -273,8 +263,6 @@ $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse 
         // Log the exception or send it to an error monitoring service
         echo "Exception: " . $e->getMessage() . "\n";
     }
-
-
 });
 
 $server->on('Task', function (Swoole\Server $server, $task_id, $reactorId, $data) {
@@ -293,8 +281,7 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
     // requestServer
     $requestServer = $request;
 
-    // Get header metadata
-    $headers = getallheaders();
+    
 
     $uri = $request->request_uri ?? $_SERVER['REQUEST_URI'];
 
@@ -363,8 +350,8 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
                 $response->header('Content-Type', 'image/vnd.microsoft.icon');
                 $response->header('Content-Length', strlen($content));
 
-                // $setHeaders[] = "Content-Type, image/vnd.microsoft.icon";
-                // $setHeaders[] = "Content-Length, ".strlen($content);
+                $setHeaders[] = "Content-Type, image/vnd.microsoft.icon";
+                $setHeaders[] = "Content-Length, ".strlen($content);
 
                 $response->write($content);
                 break;
@@ -373,8 +360,8 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
                 $response->header('Content-Type', 'text/css; charset=UTF-8');
                 $response->header('Content-Length', strlen($content));
 
-                // $setHeaders[] = "Content-Type, text/css; charset=UTF-8";
-                // $setHeaders[] = "Content-Length, ".strlen($content);
+                $setHeaders[] = "Content-Type, text/css; charset=UTF-8";
+                $setHeaders[] = "Content-Length, ".strlen($content);
 
                 $response->write($content);
                 break;
@@ -383,8 +370,8 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
                 $response->header('Content-Type', 'application/javascript');
                 $response->header('Content-Length', strlen($content));
 
-                // $setHeaders[] = "Content-Type, application/javascript";
-                // $setHeaders[] = "Content-Length, ".strlen($content);
+                $setHeaders[] = "Content-Type, application/javascript";
+                $setHeaders[] = "Content-Length, ".strlen($content);
 
                 $response->end($content);
                 break;
@@ -394,8 +381,8 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
                 $response->header('Content-Type', 'image/jpeg');
                 $response->header('Content-Length', strlen($content));
 
-                // $setHeaders[] = "Content-Type, image/jpeg";
-                // $setHeaders[] = "Content-Length, ".strlen($content);
+                $setHeaders[] = "Content-Type, image/jpeg";
+                $setHeaders[] = "Content-Length, ".strlen($content);
 
                 $response->write($content);
                 break;
@@ -404,8 +391,8 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
                 $response->header('Content-Type', 'image/png');
                 $response->header('Content-Length', strlen($content));
 
-                // $setHeaders[] = "Content-Type, image/png";
-                // $setHeaders[] = "Content-Length, ".strlen($content);
+                $setHeaders[] = "Content-Type, image/png";
+                $setHeaders[] = "Content-Length, ".strlen($content);
 
                 $response->write($content);
                 break;
@@ -414,8 +401,8 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
                 $response->header('Content-Type', 'image/gif');
                 $response->header('Content-Length', strlen($content));
 
-                // $setHeaders[] = "Content-Type, image/gif";
-                // $setHeaders[] = "Content-Length, ".strlen($content);
+                $setHeaders[] = "Content-Type, image/gif";
+                $setHeaders[] = "Content-Length, ".strlen($content);
 
                 $response->write($content);
                 break;
@@ -424,8 +411,8 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
                 $response->header('Content-Type', 'image/svg+xml');
                 $response->header('Content-Length', strlen($content));
 
-                // $setHeaders[] = "Content-Type, image/svg+xml";
-                // $setHeaders[] = "Content-Length, ".strlen($content);
+                $setHeaders[] = "Content-Type, image/svg+xml";
+                $setHeaders[] = "Content-Length, ".strlen($content);
 
                 $response->write($content);
                 break;
@@ -434,8 +421,8 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
                 $response->header('Content-Type', 'font/woff');
                 $response->header('Content-Length', strlen($content));
 
-                // $setHeaders[] = "Content-Type, font/woff";
-                // $setHeaders[] = "Content-Length, ".strlen($content);
+                $setHeaders[] = "Content-Type, font/woff";
+                $setHeaders[] = "Content-Length, ".strlen($content);
 
                 $response->write($content);
                 break;
@@ -444,8 +431,8 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
                 $response->header('Content-Type', 'font/woff2');
                 $response->header('Content-Length', strlen($content));
 
-                // $setHeaders[] = "Content-Type, font/woff2";
-                // $setHeaders[] = "Content-Length, ".strlen($content);
+                $setHeaders[] = "Content-Type, font/woff2";
+                $setHeaders[] = "Content-Length, ".strlen($content);
 
                 $response->write($content);
                 break;
@@ -454,8 +441,8 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
                 $response->header('Content-Type', 'font/ttf');
                 $response->header('Content-Length', strlen($content));
 
-                // $setHeaders[] = "Content-Type, font/ttf";
-                // $setHeaders[] = "Content-Length, ".strlen($content);
+                $setHeaders[] = "Content-Type, font/ttf";
+                $setHeaders[] = "Content-Length, ".strlen($content);
 
                 $response->write($content);
                 break;
@@ -464,8 +451,8 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
                 $response->header('Content-Type', 'font/otf');
                 $response->header('Content-Length', strlen($content));
 
-                // $setHeaders[] = "Content-Type, font/otf";
-                // $setHeaders[] = "Content-Length, ".strlen($content);
+                $setHeaders[] = "Content-Type, font/otf";
+                $setHeaders[] = "Content-Length, ".strlen($content);
 
                 $response->write($content);
                 break;
@@ -495,9 +482,9 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
                 $response->header('Content-Encoding', 'gzip');
                 $response->header('Content-Length', strlen(gzencode($content)));
 
-                $setHeaders[] = "Content-Type, text/html; charset=UTF-8";
-                $setHeaders[] = "Content-Encoding, gzip";
-                $setHeaders[] = "Content-Length, ".strlen(gzencode($content));
+                // $setHeaders[] = "Content-Type, text/html; charset=UTF-8";
+                // $setHeaders[] = "Content-Encoding, gzip";
+                // $setHeaders[] = "Content-Length, ".strlen(gzencode($content));
 
                 if ($response->isWritable() && $returned === 'response') {
                     $response->end(gzencode($content));
@@ -505,73 +492,6 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
                     echo "{$filePath}, URI Not rendered! \n";
                 }
                 break;
-            // case '/auth/login':
-            // case '/auth/uptoken':
-            // case '/auth/logout':
-            // case '/api/v1/webhook':
-            //     ob_start();
-            //     include $filePath;
-            //     $content = ob_get_contents();
-            //     ob_clean();
-
-            //     $response->header("Content-Type", "application/json");
-            //     $setHeaders[] = "Content-Type, application/json";
-
-            //     // Parsing content to ressponse
-            //     // \App\Core\Support\Log::debug(gettype($content), 'HttpServer.fetchDataAsynchronously.type.$content');
-            //     // \App\Core\Support\Log::debug($content, 'HttpServer.fetchDataAsynchronously.json.$content');
-
-            //     // Get first index
-            //     $contents = explode('@|@', $content);
-            //     // \App\Core\Support\Log::debug(gettype($contents), 'HttpServer.fetchDataAsynchronously.gettype.$contents');
-            //     // \App\Core\Support\Log::debug($contents, 'HttpServer.fetchDataAsynchronously.$contents');
-            //     // \App\Core\Support\Log::debug($contents[0], 'HttpServer.fetchDataAsynchronously.gettype.$contents[0]');
-
-            //     if ($response->isWritable() && count($contents)) {
-            //         $convertArr = json_decode($contents[0], true);
-
-            //         // Set response headers
-            //         // \App\Core\Support\Log::debug($convertArr, 'HttpServer.fetchDataAsynchronously.$convertArr');
-            //         if (isset($convertArr["headers"]) && count($convertArr["headers"])) {
-
-            //             // \App\Core\Support\Log::debug($convertArr["headers"], 'HttpServer.fetchDataAsynchronously.$convertArr["headers"]');
-            //             foreach ($convertArr["headers"] as $header => $value) {
-            //                 $response->header($header, $value);
-
-            //                 if (is_array($header)) {
-            //                     foreach ($header as $key => $val) {
-            //                         $response->header($key, $val);
-            //                     }
-            //                 }
-            //             }
-            //         }
-
-            //         // Find key sessionId
-            //         $sessionIdx = readJson('data.sessionId', $convertArr);
-
-            //         // \App\Core\Support\Log::debug($sessionIdx, 'HttpServer.fetchDataAsynchronously.Routing.$sessionIdx');
-            //         // \App\Core\Support\Log::debug($_SESSION, 'HttpServer.fetchDataAsynchronously.Routing.$_SESSION');
-            //         if (! empty($sessionIdx)) {
-            //             $sessionExp = (env('SESSION_LIFETIME', 120) * 60);
-
-            //             $response->header('Set-Cookie', "{$sessionName}={$sessionIdx}; Max-Age={$sessionExp}; Path=/;");
-
-            //             $sessionId = $sessionIdx;
-            //         }
-
-            //         // Hidden session ID on non debug mode
-            //         if (false === config('app.debug') && isset($convertArr['data']['sessionId'])) {
-            //             unset($convertArr['data']['sessionId']);
-            //         }
-
-            //         $response->status($convertArr['code']);
-            //         $response->end(json_encode($convertArr['data'], JSON_UNESCAPED_SLASHES));
-            //         // throw new ExitException();
-            //     } else {
-            //         echo "{$filePath}, URI Not rendered! \n";
-            //     }
-
-            //     break;
             default:
                 // Handle any other unmatched requests with a 404 Not Found
                 $content = "404 Not Found";
@@ -608,10 +528,6 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
 
     if ($returned === 'response') {
         return $response;
-    }
-
-    if ($returned === 'content') {
-        return $content;
     }
 }
 

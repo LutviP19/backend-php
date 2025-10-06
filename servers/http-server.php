@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-// // Disabled Log Errors
-// ini_set('log_errors', 0);
-// // ini_set('display_errors', 0);
-// // ini_set('display_startup_errors', 0);
-// error_reporting(~E_NOTICE & ~E_DEPRECATED);
+// Disabled Log Errors
+ini_set('log_errors', 0);
+// ini_set('display_errors', 0);
+// ini_set('display_startup_errors', 0);
+error_reporting(~E_NOTICE & ~E_DEPRECATED);
 
 require_once __DIR__ . '/bootstrap.php';
 
@@ -234,34 +234,22 @@ $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse 
         // print_r($server->stats());
         // \App\Core\Support\Log::debug($server->stats() 'Swoole.request.$server->stats()');
 
-        // // Simulate some asynchronous operation (e.g., fetching data from a database)
+        // Simulate some asynchronous operation (e.g., fetching data from a database)
         go(function () use ($server, $request, $response, $clientInfo, $sessionId, $sessionName, $uri, $ignoredUri) {
-
-            // // Return void
-            // while (true) {
-
-                // // \App\Core\Support\Log::debug($_SESSION, 'HttpServer.request.$_SESSION-A');
-                // $response = fetchDataAsynchronously($request, $response, 'response', $_SESSION);
-                $content = fetchDataAsynchronously($request, $response, 'content', $_SESSION);
-
-            //     break;
-            // }
+            
+            // $returned = ['response', 'tmp', 'void'];
+            $content = fetchDataAsynchronously($request, $response, 'content', $_SESSION);
 
             if ($response->isWritable()) {
                 $response->end($content);
             }
 
-    //     // \App\Core\Support\Log::debug($_SESSION, 'HttpServer.request.$_SESSION-B');
-                throw new ExitException();
-            //     // die(0);
-            // return;
-        
+            throw new ExitException();
         });
 
 
         // End process
         echo  "---------" . PHP_EOL;
-
     } catch (Throwable $e) {
 
         // Handle exceptions and errors
@@ -298,7 +286,6 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
         $_SESSION = array_merge($_SESSION, $sessionData);
     }
 
-
     // \App\Core\Support\Log::debug($sessionData, 'HttpServer.fetchDataAsynchronously.first.$sessionData');
     // \App\Core\Support\Log::debug($_SESSION, 'HttpServer.fetchDataAsynchronously.first.$_SESSION');
     // \App\Core\Support\Log::debug(\App\Core\Support\Session::all(), 'HttpServer.fetchDataAsynchronously.first.Session::all()');
@@ -319,256 +306,92 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
     // \App\Core\Support\Log::debug($_COOKIE, 'HttpServer.fetchDataAsynchronously.$_COOKIE');
 
     $baseDir = __DIR__ .'/../public';
-    $fd = $request->fd;
+    $filePath = $baseDir . '/index.php';
+    $fileName = str_replace('/', '', $uri).".php";
 
-    $filePath = $baseDir . $uri;
-    if (is_dir($filePath)) {
-        $filePath = rtrim($filePath, '/') . '/index.php';
-    }
+    // Routing REST-API content
+    switch ($uri) {
+        case '/auth/login':
+        case '/auth/uptoken':
+        case '/auth/logout':
+        case '/api/v1/webhook':
+            ob_start();
+            include $filePath;
+            $content = ob_get_clean();
 
-    if (file_exists($filePath)) {
-        // $fileInfo = pathinfo($filePath);
-        // $extension = isset($fileInfo['extension']) ? $fileInfo['extension'] : '';
-        // $fileName = isset($fileInfo['basename']) ? $fileInfo['basename'] : '';
+            $response->header("Content-Type", "application/json");
 
-        // switch ($extension) {
-        //     case 'php':
-        //         ob_start();
-        //         include $filePath;
-        //         $content = ob_get_clean();
-        //         $response->header('Content-Type', 'text/html; charset=UTF-8');
-        //         $response->header('Content-Encoding', 'gzip');
-        //         $response->header('Content-Length', strlen(gzencode($content)));
+            // Parsing content to ressponse
+            // \App\Core\Support\Log::debug(gettype($content), 'HttpServer.fetchDataAsynchronously.type.$content');
+            // \App\Core\Support\Log::debug($content, 'HttpServer.fetchDataAsynchronously.json.$content');
 
-        //         $setHeaders[] = "Content-Type, text/html; charset=UTF-8";
-        //         $setHeaders[] = "Content-Encoding, gzip";
-        //         $setHeaders[] = "Content-Length, ".strlen(gzencode($content));
+            // Get first index
+            $contents = explode('@|@', $content);
+            // \App\Core\Support\Log::debug(gettype($contents), 'HttpServer.fetchDataAsynchronously.gettype.$contents');
+            // \App\Core\Support\Log::debug($contents, 'HttpServer.fetchDataAsynchronously.$contents');
+            // \App\Core\Support\Log::debug($contents[0], 'HttpServer.fetchDataAsynchronously.gettype.$contents[0]');
 
-        //         $response->write(gzencode($content));
-        //         break;
-        //     case 'ico':
-        //         $content = file_get_contents($filePath);
-        //         $response->header('Content-Type', 'image/vnd.microsoft.icon');
-        //         $response->header('Content-Length', strlen($content));
+            if ($response->isWritable() && count($contents)) {
+                $convertArr = json_decode($contents[0], true);
 
-        //         $setHeaders[] = "Content-Type, image/vnd.microsoft.icon";
-        //         $setHeaders[] = "Content-Length, ".strlen($content);
+                // Set response headers
+                // \App\Core\Support\Log::debug($convertArr, 'HttpServer.fetchDataAsynchronously.$convertArr');
+                if (isset($convertArr["headers"]) && count($convertArr["headers"])) {
 
-        //         $response->write($content);
-        //         break;
-        //     case 'css':
-        //         $content = file_get_contents($filePath);
-        //         $response->header('Content-Type', 'text/css; charset=UTF-8');
-        //         $response->header('Content-Length', strlen($content));
+                    // \App\Core\Support\Log::debug($convertArr["headers"], 'HttpServer.fetchDataAsynchronously.$convertArr["headers"]');
+                    foreach ($convertArr["headers"] as $header => $value) {
+                        $response->header($header, $value);
 
-        //         $setHeaders[] = "Content-Type, text/css; charset=UTF-8";
-        //         $setHeaders[] = "Content-Length, ".strlen($content);
-
-        //         $response->write($content);
-        //         break;
-        //     case 'js':
-        //         $content = file_get_contents($filePath);
-        //         $response->header('Content-Type', 'application/javascript');
-        //         $response->header('Content-Length', strlen($content));
-
-        //         $setHeaders[] = "Content-Type, application/javascript";
-        //         $setHeaders[] = "Content-Length, ".strlen($content);
-
-        //         $response->write($content);
-        //         break;
-        //     case 'jpg':
-        //     case 'jpeg':
-        //         $content = file_get_contents($filePath);
-        //         $response->header('Content-Type', 'image/jpeg');
-        //         $response->header('Content-Length', strlen($content));
-
-        //         $setHeaders[] = "Content-Type, image/jpeg";
-        //         $setHeaders[] = "Content-Length, ".strlen($content);
-
-        //         $response->write($content);
-        //         break;
-        //     case 'png':
-        //         $content = file_get_contents($filePath);
-        //         $response->header('Content-Type', 'image/png');
-        //         $response->header('Content-Length', strlen($content));
-
-        //         $setHeaders[] = "Content-Type, image/png";
-        //         $setHeaders[] = "Content-Length, ".strlen($content);
-
-        //         $response->write($content);
-        //         break;
-        //     case 'gif':
-        //         $content = file_get_contents($filePath);
-        //         $response->header('Content-Type', 'image/gif');
-        //         $response->header('Content-Length', strlen($content));
-
-        //         $setHeaders[] = "Content-Type, image/gif";
-        //         $setHeaders[] = "Content-Length, ".strlen($content);
-
-        //         $response->write($content);
-        //         break;
-        //     case 'svg':
-        //         $content = file_get_contents($filePath);
-        //         $response->header('Content-Type', 'image/svg+xml');
-        //         $response->header('Content-Length', strlen($content));
-
-        //         $setHeaders[] = "Content-Type, image/svg+xml";
-        //         $setHeaders[] = "Content-Length, ".strlen($content);
-
-        //         $response->write($content);
-        //         break;
-        //     case 'woff':
-        //         $content = file_get_contents($filePath);
-        //         $response->header('Content-Type', 'font/woff');
-        //         $response->header('Content-Length', strlen($content));
-
-        //         $setHeaders[] = "Content-Type, font/woff";
-        //         $setHeaders[] = "Content-Length, ".strlen($content);
-
-        //         $response->write($content);
-        //         break;
-        //     case 'woff2':
-        //         $content = file_get_contents($filePath);
-        //         $response->header('Content-Type', 'font/woff2');
-        //         $response->header('Content-Length', strlen($content));
-
-        //         $setHeaders[] = "Content-Type, font/woff2";
-        //         $setHeaders[] = "Content-Length, ".strlen($content);
-
-        //         $response->write($content);
-        //         break;
-        //     case 'ttf':
-        //         $content = file_get_contents($filePath);
-        //         $response->header('Content-Type', 'font/ttf');
-        //         $response->header('Content-Length', strlen($content));
-
-        //         $setHeaders[] = "Content-Type, font/ttf";
-        //         $setHeaders[] = "Content-Length, ".strlen($content);
-
-        //         $response->write($content);
-        //         break;
-        //     case 'otf':
-        //         $content = file_get_contents($filePath);
-        //         $response->header('Content-Type', 'font/otf');
-        //         $response->header('Content-Length', strlen($content));
-
-        //         $setHeaders[] = "Content-Type, font/otf";
-        //         $setHeaders[] = "Content-Length, ".strlen($content);
-
-        //         $response->write($content);
-        //         break;
-        //     default:
-        //         // Explicitly set an HTTP status code for preflight requests
-        //         $response->status(204); // 204 No Content
-        //         break;
-        // }
-    } else {
-
-        $filePath = $baseDir . '/index.php';
-        // $lastSegment = $uri;
-        $fileName = str_replace('/', '', $uri).".php";
-
-        // Routing content
-        switch ($uri) {
-            // case '/home':
-            // case '/contact':
-            // case '/about':
-            // case '/extra':
-            //     ob_start();
-            //     include $filePath;
-            //     $content = ob_get_clean();
-            //     $response->header('Content-Type', 'text/html; charset=UTF-8');
-            //     $response->header('Content-Encoding', 'gzip');
-            //     $response->header('Content-Length', strlen(gzencode($content)));
-
-            //     $setHeaders[] = "Content-Type, text/html; charset=UTF-8";
-            //     $setHeaders[] = "Content-Encoding, gzip";
-            //     $setHeaders[] = "Content-Length, ".strlen(gzencode($content));
-
-            //     if ($response->isWritable()) {
-            //         $response->end(gzencode($content));
-            //     } else {
-            //         echo "{$filePath}, URI Not rendered! \n";
-            //     }
-            //     break;
-            case '/auth/login':
-            case '/auth/uptoken':
-            case '/auth/logout':
-            case '/api/v1/webhook':
-                ob_start();
-                include $filePath;
-                $content = ob_get_clean();
-
-                // $response->header("Content-Type", "application/json");
-                // $setHeaders[] = "Content-Type, application/json";
-
-                // Parsing content to ressponse
-                // \App\Core\Support\Log::debug(gettype($content), 'HttpServer.fetchDataAsynchronously.type.$content');
-                // \App\Core\Support\Log::debug($content, 'HttpServer.fetchDataAsynchronously.json.$content');
-
-                // Get first index
-                $contents = explode('@|@', $content);
-                // \App\Core\Support\Log::debug(gettype($contents), 'HttpServer.fetchDataAsynchronously.gettype.$contents');
-                // \App\Core\Support\Log::debug($contents, 'HttpServer.fetchDataAsynchronously.$contents');
-                // \App\Core\Support\Log::debug($contents[0], 'HttpServer.fetchDataAsynchronously.gettype.$contents[0]');
-
-                if ($response->isWritable() && count($contents)) {
-                    $convertArr = json_decode($contents[0], true);
-
-                    // Set response headers
-                    \App\Core\Support\Log::debug($convertArr, 'HttpServer.fetchDataAsynchronously.$convertArr');
-                    if (isset($convertArr["headers"]) && count($convertArr["headers"])) {
-
-                        // \App\Core\Support\Log::debug($convertArr["headers"], 'HttpServer.fetchDataAsynchronously.$convertArr["headers"]');
-                        foreach ($convertArr["headers"] as $header => $value) {
-                            $response->header($header, $value);
-
-                            if (is_array($header)) {
-                                foreach ($header as $key => $val) {
-                                    $response->header($key, $val);
-                                }
+                        if (is_array($header)) {
+                            foreach ($header as $key => $val) {
+                                $response->header($key, $val);
                             }
                         }
                     }
-
-                    // Find key sessionId
-                    $sessionIdx = readJson('data.sessionId', $convertArr);
-
-                    // \App\Core\Support\Log::debug($sessionIdx, 'HttpServer.fetchDataAsynchronously.Routing.$sessionIdx');
-                    // \App\Core\Support\Log::debug($_SESSION, 'HttpServer.fetchDataAsynchronously.Routing.$_SESSION');
-                    if ($sessionIdx && ! empty($sessionIdx)) {
-                        $sessionExp = (env('SESSION_LIFETIME', 120) * 60);
-
-                        $response->header('Set-Cookie', "{$sessionName}={$sessionIdx}; Max-Age={$sessionExp}; Path=/;");
-
-                        $sessionId = $sessionIdx;
-                    } else {
-                        $response->header('Set-Cookie', "{$sessionName}=; Max-Age={$sessionExp}; Path=/;");
-                    }
-
-                    // Hidden session ID on non debug mode
-                    if (false === config('app.debug') && isset($convertArr['data']['sessionId'])) {
-                        unset($convertArr['data']['sessionId']);
-                    }
-
-                    $response->status($convertArr['code'] ?? 500);
-                    // $response->end(json_encode($convertArr['data'], JSON_UNESCAPED_SLASHES));
-
-                    $content = json_encode($convertArr['data'], JSON_UNESCAPED_SLASHES);
-                    // throw new ExitException();
-                } else {
-                    echo "{$filePath}, URI Not rendered! \n";
                 }
 
-                break;
-            default:
-                // Handle any other unmatched requests with a 404 Not Found
-                $content = "404 Not Found";
-                $response->status(404);
-                $response->header("Content-Type", "text/plain");
-                $response->end($content);
-                break;
-        }
+                // Find key sessionId
+                $sessionIdx = readJson('data.sessionId', $convertArr);
+
+                // \App\Core\Support\Log::debug($sessionIdx, 'HttpServer.fetchDataAsynchronously.Routing.$sessionIdx');
+                // \App\Core\Support\Log::debug($_SESSION, 'HttpServer.fetchDataAsynchronously.Routing.$_SESSION');
+                if ($sessionIdx && ! empty($sessionIdx)) {
+                    $sessionExp = (env('SESSION_LIFETIME', 120) * 60);
+                    $response->header('Set-Cookie', "{$sessionName}={$sessionIdx}; Max-Age={$sessionExp}; Path=/;");
+
+                    $sessionId = $sessionIdx;
+                } else {
+                    $response->header('Set-Cookie', "{$sessionName}=; Max-Age={$sessionExp}; Path=/;");
+                }
+
+                // Hidden session ID on non debug mode
+                if (false === config('app.debug') && isset($convertArr['data']['sessionId'])) {
+                    unset($convertArr['data']['sessionId']);
+                }
+
+                $response->status($convertArr['code'] ?? 500);
+
+                if ($returned === 'response') {
+                    $response->end(json_encode($convertArr['data'], JSON_UNESCAPED_SLASHES));
+                }
+
+                if ($returned === 'content') {
+                    $content = json_encode($convertArr['data'], JSON_UNESCAPED_SLASHES);
+                }
+            } else {
+
+                echo "{$filePath}, URI Not rendered! \n";
+            }
+
+            break;
+        default:
+            // Handle any other unmatched requests with a 404 Not Found
+            $content = "404 Not Found";
+            $response->status(404);
+            $response->header("Content-Type", "text/plain");
+            $response->end($content);
+
+            break;
     }
 
 
@@ -587,51 +410,11 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
         }
     }
 
-    if ($returned === 'tmp') {
-        $tmpFile = createTmp($fd, $fileName, $setHeaders, $content);
-        return $tmpFile;
-    }
-
     if ($returned === 'response') {
         return $response;
     }
 
     if ($returned === 'content') {
-         \App\Core\Support\Log::debug($content, 'HttpServer.fetchDataAsynchronously.$content');
         return $content;
     }
-}
-
-function createTmp($fd, $fileName, $setHeaders, $content)
-{
-    $tmpPath = __DIR__ . "/../storage/framework/tmp";
-
-    $fdPath = "{$tmpPath}/{$fd}";
-    if (! file_exists($fdPath)) {
-        mkdir($fdPath);
-    }
-
-    $filePath = "{$fdPath}/$fileName";
-    if (file_exists($filePath)) {
-        unlink($filePath);
-    }
-
-    $fileContents = "<?php " . PHP_EOL;
-    foreach ($setHeaders as $header) {
-        $value = explode(",", $header);
-        if (is_numeric($value[1])) {
-            $fileContents .= '$response->header("'.$value[0].'", '.$value[1].');' . PHP_EOL;
-        } else {
-            $fileContents .= '$response->header("'.$value[0].'", "'.trim($value[1]).'");' . PHP_EOL;
-        }
-    }
-
-    $content = base64_encode($content);
-    $fileContents .= '$content=\''.($content).'\';' . PHP_EOL;
-    $fileContents .= '$response->write(base64_decode($content));' . PHP_EOL;
-
-    // write contents to file
-    file_put_contents($filePath, $fileContents);
-
-    return $filePath;
 }

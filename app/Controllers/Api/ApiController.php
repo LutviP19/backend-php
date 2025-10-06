@@ -87,30 +87,6 @@ class ApiController extends BaseController
         }
     }
 
-    public function useMiddleware($guest = false)
-    {
-        if($guest) {
-            // Validate Api token
-            $this->validateApiToken();
-        } else {
-            // Validate header X-Client-Token
-            // \App\Core\Support\Log::debug($this->headers, 'WebAuth.updateToken.$headers');
-            $validate = $this->validateClientToken();
-            if($validate) return $validate;
-
-            // Validate Jwt
-            $validate = $this->validateJwt();
-            if($validate) return $validate;
-
-            // Validate using session data
-            if (Session::has('uid') && Session::has('secret') && Session::has('jwtId')) {
-                // ValidateSession
-                $validate = (new \App\Core\Security\Middleware\ValidateSession())->handle();
-                if($validate) return $validate;
-            }
-        }
-    }
-
     public function onlyAcceptedJSON()
     {
         if ($this->headers['Accept'] !== 'application/json' || 
@@ -155,6 +131,104 @@ class ApiController extends BaseController
     }
 
     /**
+     * setLoginSession function, Set session for login user
+     *
+     * @param  [object]  $user
+     *
+     * @return mixed
+     */
+    protected function setLoginSession($user)
+    {
+        foreach ($user as $key => $value) {
+            if ($key === 'ulid') {
+                $key = 'uid';
+            }
+
+            Session::set($key, $value);
+        }
+
+        Session::set('gnr', generateRandomString(32, true));
+        $userId =  Session::get('uid');
+        $gnr =  Session::get('gnr');
+
+        // Set login session
+        $validateClient = new \App\Core\Security\Middleware\ValidateClient($userId);
+        $clientToken = $validateClient->getToken();
+        $clientTokenGen = $validateClient->generateToken();
+        Session::set('client_token', $clientTokenGen);
+
+        if (false === $validateClient->matchToken($clientTokenGen)) {
+
+            Session::destroy();
+            return false;
+
+            // return endResponse(
+            //     $this->getOutput(false, 401, [
+            //       'auth' => 'Client not found!',
+               
+            //     ], 'Invalid Client!'), 401);
+        }
+
+        // initJwtToken
+        Session::set('secret', encryptData($clientToken, $gnr));
+        Session::set('jwtId', generateUlid());
+        $jwtToken = $this->initJwtToken();
+
+        // Create specific data for jwt
+        $info = 'Api jwt-'.$userId;
+        $subject = 'Access API for user:'.$userId;
+        $tokenJwt =  $jwtToken->createToken($userId, $info, $subject);
+        Session::set('tokenJwt', $tokenJwt);
+
+        return $tokenJwt;
+    }
+
+    /**
+     * checkCredentials function
+     *
+     * @param  [string]  $user
+     * @param  [string]  $password
+     *
+     * @return boolean
+     */
+    protected function checkCredentials($user, $password): bool
+    {
+        if ($user) {
+            $hash = new \App\Core\Security\Hash();
+
+            if ($hash->matchPassword($password, $user->password)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    protected function useMiddleware($guest = false)
+    {
+        if($guest) {
+            // Validate Api token
+            $this->validateApiToken();
+        } else {
+            // Validate header X-Client-Token
+            // \App\Core\Support\Log::debug($this->headers, 'WebAuth.updateToken.$headers');
+            $validate = $this->validateClientToken();
+            if($validate) return $validate;
+
+            // Validate Jwt
+            $validate = $this->validateJwt();
+            if($validate) return $validate;
+
+            // Validate using session data
+            if (Session::has('uid') && Session::has('secret') && Session::has('jwtId')) {
+                // ValidateSession
+                $validate = (new \App\Core\Security\Middleware\ValidateSession())->handle();
+                if($validate) return $validate;
+            }
+        }
+    }
+
+    /**
      * validateApiToken function
      *
      * @param  Request  $request
@@ -162,7 +236,7 @@ class ApiController extends BaseController
      *
      * @return void
      */
-    public function validateApiToken()
+    protected function validateApiToken()
     {
         // $header = $this->headers;
 
@@ -186,7 +260,7 @@ class ApiController extends BaseController
      *
      * @return void
      */
-    public function validateClientToken()
+    protected function validateClientToken()
     {
         // $header = $request->headers();
 
@@ -225,7 +299,7 @@ class ApiController extends BaseController
         }
     }
 
-    public function validateJwt()
+    protected function validateJwt()
     {
         $user = Session::all();
         $tokenJwt = Session::get('tokenJwt');

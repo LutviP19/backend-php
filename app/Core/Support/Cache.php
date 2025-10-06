@@ -76,7 +76,7 @@ class Cache
         }
 
         if ($this->driver == 'file') {
-            $path = realpath($this->path_cache.$this->prefix.'_'.$this->_formatId($id).'.cache');
+            $path = $this->path_cache.$this->prefix.'_'.$this->_formatId($id).'.cache';
             if (! \file_exists($path)) {
                 saveData($id, $data);
             }

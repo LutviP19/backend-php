@@ -41,9 +41,9 @@ $server = new Server($serverip, $serverport);
 // Server settings
 $server->set([
     // Process ID
-    "pid_file" => realpath(__DIR__ . "/apisrv-swoole.pid"),
+    "pid_file" => __DIR__ . "/apisrv-swoole.pid",
     // 'document_root' => __DIR__ .'../public',
-    'document_root' => realpath(__DIR__ . '/../public/'),
+    'document_root' => __DIR__ . '/../public/',
 
     // Worker
     'worker_num' => 2,
@@ -56,7 +56,7 @@ $server->set([
     // 'ssl_key_file' => $ssl_dir . '/ssl.key',
 
     // Logging
-    "log_file" => realpath(__DIR__ . "/../storage/logs/apisrv-swoole.log"),
+    "log_file" => __DIR__ . "/../storage/logs/apisrv-swoole.log",
     "log_rotation" => SWOOLE_LOG_ROTATION_DAILY,
     "log_date_format" => "%d-%m-%Y %H:%M:%S",
     "log_date_with_microseconds" => false,

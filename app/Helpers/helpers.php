@@ -292,7 +292,7 @@ function clearRedisDataByPrefix($prefix = null)
 
 function clearCacheFileByPrefix($directory = null, $pattern = null)
 {
-    $directory = $directory ?: realpath(__DIR__ . '/../../storage/framework/cache/'); // Specify the directory where files are located
+    $directory = $directory ?: __DIR__ . '/../../storage/framework/cache/'; // Specify the directory where files are located
     $pattern = $pattern ?: '*.cache'; // Default: Delete all files ending with .cache
 
     // Combine directory and pattern to form the full pattern for glob()

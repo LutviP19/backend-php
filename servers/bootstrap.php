@@ -15,7 +15,7 @@ $dotenv = Dotenv\Dotenv::createUnsafeImmutable(__DIR__.'/..');
 $dotenv->load();
 
 //register configuration to the app.
-\App\Core\Support\App::register('config', require realpath(__DIR__ . '/../config/app.php'));
+\App\Core\Support\App::register('config', require __DIR__ . '/../config/app.php');
 
 date_default_timezone_set(env('APP_TIMEZONE', 'UTC'));
 
@@ -25,7 +25,7 @@ if (env('SESSION_DRIVER') === "redis") {
     ini_set('session.save_path', "tcp://" . env('REDIS_HOST') . ":" . env('REDIS_PORT') . "?auth" . env('REDIS_PASSWORD'));
     ini_set('session.gc_maxlifetime', (env('SESSION_LIFETIME', 120) * 60)); // Set default to 2 hours
 } else {
-    ini_set('session.save_path', realpath(__DIR__ . '/../storage/framework/sessions'));
+    ini_set('session.save_path', __DIR__ . '/../storage/framework/sessions');
 }
 
 // Set a custom session name
@@ -63,7 +63,7 @@ function initializeServerConstant($request): void
     $_REQUEST = array_merge($_GET, $_POST);
 
     $_SERVER['SERVER_NAME'] = $serverip;
-    $_SERVER['DOCUMENT_ROOT'] = realpath(__DIR__ . '/../public/');
+    $_SERVER['DOCUMENT_ROOT'] = __DIR__ . '/../public/';
     $_SERVER['SERVER_SOFTWARE'] = "Backend PHP";
     $_SERVER['PHP_SELF'] = isset($request->server['php_self']) ? $request->server['php_self'] : 'index';
     $_SERVER['SCRIPT_NAME'] = isset($request->server['script_name']) ? $request->server['script_name'] : 'php';

@@ -44,6 +44,53 @@ class ServerApiController extends BaseController
     }
 
     /**
+     * setLoginSession function, Set session for login user
+     *
+     * @param  [object]  $user
+     *
+     * @return mixed
+     */
+    protected function setLoginSession($user)
+    {
+        foreach ($user as $key => $value) {
+            if ($key === 'ulid') {
+                $key = 'uid';
+            }
+
+            Session::set($key, $value);
+        }
+
+        Session::set('gnr', generateRandomString(32, true));
+        $userId =  Session::get('uid');
+        $gnr =  Session::get('gnr');
+
+        // Set login session
+        $validateClient = new \App\Core\Security\Middleware\ValidateClient($userId);
+        $clientToken = $validateClient->getToken();
+        $clientTokenGen = $validateClient->generateToken();
+        Session::set('client_token', $clientTokenGen);
+
+        if (false === $validateClient->matchToken($clientTokenGen)) {
+
+            Session::destroy();
+            return false;
+        }
+
+        // initJwtToken
+        Session::set('secret', encryptData($clientToken, $gnr));
+        Session::set('jwtId', generateUlid());
+        $jwtToken = $this->initJwtToken();
+
+        // Create specific data for jwt
+        $info = 'Api jwt-'.$userId;
+        $subject = 'Access API for user:'.$userId;
+        $tokenJwt =  $jwtToken->createToken($userId, $info, $subject);
+        Session::set('tokenJwt', $tokenJwt);
+
+        return $tokenJwt;
+    }
+
+    /**
      * checkCredentials function
      *
      * @param  [string]  $user

@@ -90,48 +90,21 @@ class AuthController extends ApiController
                         $errors
                    ]), $statusCode);
             } else {
+                
+                // Set Session and generate new JwtToken
+                $tokenJwt = $this->setLoginSession($user);
+                if (false === $tokenJwt) {
 
-                foreach ($user as $key => $value) {
-                    if ($key === 'ulid') {
-                        $key = 'uid';
-                    }
-
-                    Session::set($key, $value);
-                }
-
-                Session::set('gnr', generateRandomString(32, true));
-                $userId =  Session::get('uid');
-                $gnr =  Session::get('gnr');
-
-                // Set login session
-                $validateClient = new ValidateClient($userId);
-                $clientToken = $validateClient->getToken();
-                $clientTokenGen = $validateClient->generateToken();
-                Session::set('client_token', $clientTokenGen);
-
-                if (false === $validateClient->matchToken($clientTokenGen)) {
                     return endResponse(
-                            $this->getOutput(false, 401, [
-                              'auth' => 'Client not found!',
-                           
-                            ], 'Invalid Client!'), 401);
+                        $this->getOutput(false, 401, [
+                          'auth' => 'Client not found!',
+                       
+                        ], 'Invalid Client!'), 401);
                 }
 
-                // initJwtToken
-                Session::set('secret', encryptData($clientToken, $gnr));
-                Session::set('jwtId', generateUlid());
-                $this->jwtToken = $this->initJwtToken();
-
-                // Create specific data for jwt
-                $info = 'Api jwt-'.$userId;
-                $subject = 'Access API for user:'.$userId;
-                $tokenJwt =  $this->jwtToken->createToken($userId, $info, $subject);
-                Session::set('tokenJwt', $tokenJwt);
-
+                // Set cookie
                 $sessionExp = (env('SESSION_LIFETIME', 120) * 60);
-                // $headers = ['Set-Cookie' => "{$sessionName}={$sessionId}; Max-Age={$sessionExp}; Path=/; SameSite=Lax;"];
                 $headers = ['Set-Cookie' => "{$this->sessionName}={$this->sessionId}; Max-Age={$sessionExp}; Path=/;"];
-
                 // \App\Core\Support\Log::debug($headers, 'AuthController.login.$headers');
 
                 // Cache session data by uid
@@ -335,24 +308,5 @@ class AuthController extends ApiController
         }
     }
 
-    /**
-     * checkCredentials function
-     *
-     * @param  [string]  $user
-     * @param  [string]  $password
-     *
-     * @return boolean
-     */
-    private function checkCredentials($user, $password): bool
-    {
-        if ($user) {
-            $hash = new Hash();
-
-            if ($hash->matchPassword($password, $user->password)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
+    
 }

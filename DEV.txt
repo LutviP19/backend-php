@@ -10,13 +10,13 @@
 - Mailer (done)
 - Open Swoole [PHP Server: WebSocket, Api Server, Http Server] (done)
 - Sanitize Input [XSS, SQL Injection] (done)
-- Message Bus [Symfony Message]
-- GraphQL
+- PHP Unit Testing [Pest] 
+- Ignoring Boot and scrapper [Rate limiter: with conditions] 
+- Message Bus [Symfony Message] 
+- GraphQL 
 - No SQL [MongoDB]
-- Ignoring Boot and scrapper
 - HTTP 2.0 Support
 - PHP FFI performance, to do routine task [Compiled lib from: C++, Python, Golang, Rust, etc]
-- PHP Unit Testing [Pest] 
 - Server Swithching [Network Route, Erlang]
 
 - Docker Grafana Dashboard [Prometheus] (done)
@@ -27,5 +27,7 @@
 
 STATUS :
 - Api Server : Stable 
-- Web Server : Compabillity checks
-- WebSocket Server : Still template, will todo as sync channeling (AI supported)
+- Web Server : Performance test
+- Http Server : Performance test
+- WebSocket Server : Still template, will todo as async channeling (AI supported)
+

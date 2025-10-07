@@ -4,12 +4,13 @@
 
 # Requirement
 
-- PHP 8.2+.
+- PHP 8.2+
 - Redis CLI
 - RabbitMQ
 - MySQL / SQLite
-- [OpenSwoole 22.x](https://openswoole.com/docs)
-- Docker Desktop (optional)
+- [OpenSwoole 22.x](https://openswoole.com/docs/get-started/installation)
+- Docker Desktop
+- Reserved Ports: 8008, 8080, 9501, 9502
 
 # Setup the app up and running
 
@@ -64,6 +65,10 @@ php -S localhost:8000 -t public/
 - Or using swoole.
 
 ```bash
+# Frontend
+php servers/web-server.php
+
+# Rest Api
 php servers/http-server.php
 ```
 

@@ -40,7 +40,6 @@ class TestCommand extends Command
         // Event Listener
         Event::listen($this->eventName, function ($body) {
             echo "EventListener[{$this->eventName}]: {$body}\n" . PHP_EOL;
-            ;
 
             // concurrent process
             $data = json_decode($body, true);
@@ -50,7 +49,6 @@ class TestCommand extends Command
 
                 $json = is_array($output) ? json_encode($output) : 'xxx';
                 echo "simulateConcurrent-output: {$json}\n" . PHP_EOL;
-                ;
             }
         });
 
@@ -134,7 +132,6 @@ class TestCommand extends Command
             }
 
             return $data['id'] . " counter: {$counter}x";
-            ;
         });
 
         $future2 = async(function () use ($data) {
@@ -149,7 +146,6 @@ class TestCommand extends Command
             }
 
             return $data['title'] . " counter: {$counter}x";
-            ;
         });
 
         $future3 = async(function () use ($data) {

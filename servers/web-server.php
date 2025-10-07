@@ -82,11 +82,11 @@ $server->set([
 
     // Compression
     'http_compression' => true,
-    'http_compression_level' => 3, // 1 - 9
+    'http_compression_level' => 5, // 1 - 9
     'compression_min_length' => 20,
 
     // // Coroutine
-    'enable_coroutine' => false,
+    // 'enable_coroutine' => true,
 
     // // Protocol
     // 'open_http_protocol' => true,

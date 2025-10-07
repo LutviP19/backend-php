@@ -12,6 +12,8 @@ use App\Core\Support\Session;
 use App\Core\Events\EventDispatcher;
 use App\Services\OrderService;
 
+use function Amp\async;
+
 class PagesController extends Controller
 {
     /**
@@ -88,8 +90,8 @@ class PagesController extends Controller
         $broker = new Broker();
         $broker->sendMessage($message);
 
-        \App\Core\Support\Log::debug($_SERVER, 'PagesController.extra.$_SERVER');
-        \App\Core\Support\Log::debug($_COOKIE, 'PagesController.extra.$_COOKIE');
+        // \App\Core\Support\Log::debug($_SERVER, 'PagesController.extra.$_SERVER');
+        // \App\Core\Support\Log::debug($_COOKIE, 'PagesController.extra.$_COOKIE');
 
         echo "[x] SESSION_ID: ", \session_id(), "<br>\r\n";
         echo "[x] Sent[$date]: ", decryptData($message), "<br>\r\n";
@@ -117,6 +119,91 @@ class PagesController extends Controller
         /**
          * END Main script to place an order and trigger the event-driven process.
          */
+
+
+        // concurrent process
+        $index = array_search(1, array_column($data, 'id')) ?: 1; // get index
+        if (isset($data[$index]) && ! isset($data['event'])) {
+            $output = $this->simulateConcurrent($data[$index]);
+
+            $json = is_array($output) ? json_encode($output) : 'xxx';
+            echo "simulateConcurrent-output: {$json}\n" . PHP_EOL;
+        }
+    }
+
+    // concurrent
+    private function simulateConcurrent($data)
+    {
+        $output = [];
+        $future1 = async(function () use ($data) {
+            echo 'Parse key id: ';
+            echo "[key:id, value:" . $data['id'] . "]" . PHP_EOL;
+
+            // delay() is a non-blocking version of PHP's sleep() function,
+            // which only pauses the current fiber instead of blocking the whole process.
+            // delay(1);
+            for ($i = 0; $i <= 30; $i++) {
+
+                $counter = $i;
+                $this->calculateNthFibonacci($counter);
+            }
+
+            return $data['id'] . " counter: {$counter}x";
+        });
+
+        $future2 = async(function () use ($data) {
+            echo 'Parse key title: ';
+            echo "[key:title, value:" . $data['title'] . "]" . PHP_EOL;
+
+            // Let's pause for only 1 instead of 2 seconds here,
+            // so our text is printed in the correct order.
+            // delay(2);
+            for ($i = 0; $i <= 30; $i++) {
+                
+                $counter = $i;
+                $this->calculateNthFibonacci($counter);
+            }
+
+            return $data['title'] . " counter: {$counter}x";
+        });
+
+        $future3 = async(function () use ($data) {
+            echo 'Parse key contents: ';
+            echo "[key:contents, value:" . $data['contents'] . "]" . PHP_EOL;
+
+            // Let's pause for only 1 instead of 3 seconds here,
+            // so our text is printed in the correct order.
+            // delay(3);
+            for ($i = 0; $i <= 30; $i++) {
+
+                $counter = $i;
+                $this->calculateNthFibonacci($counter);
+            }
+
+            return $data['contents'] . " counter: {$counter}x";
+        });
+
+        // Our functions have been queued, but won't be executed until the event-loop gains control.
+        echo "Let's start non-blocking version: " . PHP_EOL;
+
+        // Awaiting a future outside a fiber switches to the event loop until the future is complete.
+        // Once the event loop gains control, it executes our already queued functions we've passed to async()
+        $output['id'] = $future1->await();
+        $output['title'] = $future2->await();
+        $output['contents'] = $future3->await();
+
+        echo PHP_EOL;
+
+        return $output;
+    }
+
+
+    // Simulate currency process
+    private function calculateNthFibonacci($n, $max = 30) {
+        if ($n <= 1 || $n >= $max) {
+            return $n;
+        }
+        return $this->calculateNthFibonacci($n - 1) + $this->calculateNthFibonacci($n - 2);
     }
 
 }

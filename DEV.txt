@@ -16,10 +16,11 @@
 Extra:
 - Ignoring Boot and scrapper [Rate limiter: with conditions] 
 - Message Bus [Symfony Message] 
-- GraphQL 
 - No SQL [MongoDB]
 - HTTP 2.0 Support
+- GRPC 
 - PHP FFI performance, to do routine task [Compiled lib from: C++, Python, Golang, Rust, etc]
+- GraphQL 
 - Server Swithching [Network Route, Erlang]
 
 - Docker Grafana Dashboard [Prometheus] (done)

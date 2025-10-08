@@ -69,6 +69,9 @@ class PagesController extends Controller
      */
     public function extra()
     {
+        $this->include('includes.header');
+        echo "<div class='container' style='word-wrap: break-word;'>";
+
         // $get =  Request::get('get');
         // $this->view('extra', ['low' => 'lower', 'get' => $get]);
 
@@ -99,7 +102,7 @@ class PagesController extends Controller
 
         // Simulate Event with param as array
         Event::listen('message.producer', function ($date, $message) {
-            echo "Event[message.producer][$date]: $message<br>\r\n";
+            echo "<br>Event[message.producer][$date]: $message<br>\r\n";
         });
 
         if (true) {
@@ -116,6 +119,7 @@ class PagesController extends Controller
 
         $order = ['id' => 123, 'items' => ['item1', 'item2']];
         $orderService->placeOrder($order);
+        echo "<br>";
         /**
          * END Main script to place an order and trigger the event-driven process.
          */
@@ -127,8 +131,11 @@ class PagesController extends Controller
             $output = $this->simulateConcurrent($data[$index]);
 
             $json = is_array($output) ? json_encode($output) : 'xxx';
-            echo "simulateConcurrent-output: {$json}\n" . PHP_EOL;
+            echo "<br>simulateConcurrent-output: {$json}\n" . PHP_EOL;
         }
+
+        echo "</div>";
+        $this->include('includes.footer');
     }
 
     // concurrent
@@ -184,7 +191,7 @@ class PagesController extends Controller
         });
 
         // Our functions have been queued, but won't be executed until the event-loop gains control.
-        echo "Let's start non-blocking version: " . PHP_EOL;
+        echo "<br>Let's start non-blocking version: <br>" . PHP_EOL;
 
         // Awaiting a future outside a fiber switches to the event loop until the future is complete.
         // Once the event loop gains control, it executes our already queued functions we've passed to async()

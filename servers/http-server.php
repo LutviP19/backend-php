@@ -151,7 +151,7 @@ $server->on("Connect", function (Server $server, int $fd) {
 
     // Session Active
     if (session_status() === PHP_SESSION_ACTIVE) {
-        
+
     }
 
 });
@@ -190,6 +190,22 @@ $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse 
             return;
         }
 
+        // Handle /health URI
+        if ($uri === '/health') {
+            $response->header("Content-Type", "text/plain");
+
+            $localIps = config('local_ips');
+            if (in_array($clientInfo["remote_ip"], config('local_ips'))) {
+                $content = "Server running.";
+            } else {
+                $content = "404 Not Found";
+                $response->status(404);
+            }
+
+            $response->end($content);
+            return;
+        }
+
         // Handle /metrics URI
         if ($uri === '/metrics') {
             $response->header("Content-Type", "text/plain");
@@ -202,7 +218,7 @@ $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse 
                 $response->status(404);
             }
 
-            $response->end($server->stats(\OPENSWOOLE_STATS_OPENMETRICS));
+            $response->end($content);
             return;
         }
 
@@ -236,7 +252,7 @@ $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse 
 
         // Simulate some asynchronous operation (e.g., fetching data from a database)
         go(function () use ($server, $request, $response, $clientInfo, $sessionId, $sessionName, $uri, $ignoredUri) {
-            
+
             // $returned = ['response', 'tmp', 'void'];
             $content = fetchDataAsynchronously($request, $response, 'content', $_SESSION);
 
@@ -406,7 +422,7 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
         // Delete old session_id()
         $getSessionId = explode("-", $_COOKIE[$sessionName]);
         if (count($getSessionId) == 2) {
-            delCache($getSessionId[1], 'bp_session');            
+            delCache($getSessionId[1], 'bp_session');
         }
     }
 

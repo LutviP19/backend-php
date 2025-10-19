@@ -8,7 +8,7 @@ use Exception;
  * Router for our MVC Application.
  * This router supports both static routes as
  * well as routes with dynamic parameters.
- * 
+ *
  * @author Lutvi <lutvip19@gmail.com>
  */
 class Router
@@ -159,18 +159,20 @@ class Router
         } else {
             //no route registered with the uri.
             if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // non OpenSwoole Server
-                throw new Exception("Route not Found!");
+                // throw new Exception("Route not Found!");
+                $this->notFound();
             } else {
                 return endResponse(
-                        [ 
+                    [
                             'status' => false,
                             'statusCode' => 405,
                             'message' => 'Method Not Allowed',
                             'errors' => [
                                 'Invalid method to access '.$_SERVER['REQUEST_URI']
                             ]
-                        ], 
-                        405);
+                        ],
+                    405
+                );
             }
         }
     }
@@ -207,10 +209,12 @@ class Router
     {
         if (!$controller = new $controller()) {
             throw new Exception("Controller Not Found");
+            $this->notFound();
         }
 
         if (!method_exists($controller, $action)) {
             throw new Exception("Controller Method not Found");
+            $this->notFound();
         }
 
         return $controller;
@@ -479,5 +483,19 @@ class Router
     protected function getRegex()
     {
         return $this->regex;
+    }
+
+    /**
+     * notFound function
+     *
+     * @return html 404
+     */
+    protected function notFound()
+    {
+        header("HTTP/1.0 404 Not Found");
+        // Optionally, you can include content for the 404 page
+        echo "<h1>404 Not Found</h1>";
+        echo "<p>The page you requested could not be found.</p>";
+        exit(); // Terminate script execution after sending the 404
     }
 }

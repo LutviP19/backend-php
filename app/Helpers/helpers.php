@@ -12,6 +12,12 @@ use App\Core\Support\App;
 use App\Core\Support\Config;
 use App\Core\Validation\MessageBag;
 
+/** ===== Utils ===== */
+function b64url($data)
+{
+    return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
+}
+
 /**
  * get environment variable.
  *
@@ -64,6 +70,9 @@ function response()
  */
 function endResponse($response, $status = 200, $headers = [])
 {
+    // noindex instructs crawlers not to index the resource
+    // nofollow instructs crawlers not to follow links on the resource
+    header('X-Robots-Tag: noindex, nofollow');
 
     if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // non OpenSwoole Server
         die(response()->json($response, $status));
@@ -182,7 +191,7 @@ function dd($data = [])
 function url($uri = '')
 {
     $uri = sanitizeUri($uri);
-    return "//{$_SERVER['HTTP_HOST']}/{$uri}";
+    return config('app.url')."/{$uri}";
 }
 
 function assets($uri = '')
@@ -192,7 +201,7 @@ function assets($uri = '')
         return "//{$_SERVER['HTTP_HOST']}/{$uri}";
     }
 
-    return "//{$_SERVER['HTTP_HOST']}/{$uri}";
+    return config('app.url')."/{$uri}";
 }
 
 function cacheContent($method, $id, $prefix = null, $content = null)

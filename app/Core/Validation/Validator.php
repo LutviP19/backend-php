@@ -47,6 +47,9 @@ class Validator
         'file', //Field should an uploaded file.
         'alpha_numeric', //Field can have alphabets and digits.
         'numeric', //Field should be a numeric value.
+        'decimal', //Field should be a decimal value.
+        'latitude', //Field should be a latitude value.
+        'longitude', //Field should be a longitude value.
 
         /**
          * Should be an image.
@@ -235,6 +238,18 @@ class Validator
 
             case 'numeric':
                 $rules->validateNumeric($field);
+                break;
+
+            case 'decimal':
+                $rules->validateDecimal($field);
+                break;
+
+            case 'latitude':
+                $rules->validateLatitude($field);
+                break;
+
+            case 'longitude':
+                $rules->validateLongitude($field);
                 break;
 
             case 'file':

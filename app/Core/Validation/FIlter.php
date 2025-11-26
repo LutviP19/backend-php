@@ -2,6 +2,8 @@
 
 namespace App\Core\Validation;
 
+use Exception;
+
 class Filter
 {
     /**

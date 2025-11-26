@@ -8,7 +8,7 @@ use Exception;
  * Router for our MVC Application.
  * This router supports both static routes as
  * well as routes with dynamic parameters.
- *
+ * 
  * @author Lutvi <lutvip19@gmail.com>
  */
 class Router
@@ -163,16 +163,15 @@ class Router
                 $this->notFound();
             } else {
                 return endResponse(
-                    [
+                        [ 
                             'status' => false,
                             'statusCode' => 405,
                             'message' => 'Method Not Allowed',
                             'errors' => [
                                 'Invalid method to access '.$_SERVER['REQUEST_URI']
                             ]
-                        ],
-                    405
-                );
+                        ], 
+                        405);
             }
         }
     }
@@ -209,12 +208,12 @@ class Router
     {
         if (!$controller = new $controller()) {
             throw new Exception("Controller Not Found");
-            $this->notFound();
+            $this->notFound(false);
         }
 
         if (!method_exists($controller, $action)) {
             throw new Exception("Controller Method not Found");
-            $this->notFound();
+            $this->notFound(false);
         }
 
         return $controller;
@@ -485,13 +484,34 @@ class Router
         return $this->regex;
     }
 
-    /**
-     * notFound function
-     *
-     * @return html 404
-     */
-    protected function notFound()
+
+    protected function notFound($rateLimit = true)
     {
+        // Middleware - Rate limiter
+        $identifier = 'notFound-'.\clientIP();
+        $perSeconds = 6000;
+        if ($rateLimit && false === checkRateLimit($identifier, 5, $perSeconds)) {
+            $after = $perSeconds / 60;
+            $afteText = $after > 1 ? "{$after} minutes" : "{$after} minute";
+            $message = "Too many requests. Please try again after {$afteText}.";
+            // $errors = [
+            //     'busy' => ["Too many requests. Please try again after {$afteText}."]
+            // ];
+            // return endResponse(
+            //     $this->getOutput(false, 429, [
+            //        $errors
+            //     ]),
+            //     429
+            // );
+
+            header('HTTP/1.1 429 Too Many Requests');
+            header('Retry-After: ' . $perSeconds); // Optional: Recommend waiting $perSeconds
+            // Optionally, you can include content for the 429 page
+            echo "<h1>404 Not Found</h1>";
+            echo "<p>The page you requested could not be found.</p>";
+            exit(); // Terminate script execution after sending the 429
+        }
+
         header("HTTP/1.0 404 Not Found");
         // Optionally, you can include content for the 404 page
         echo "<h1>404 Not Found</h1>";

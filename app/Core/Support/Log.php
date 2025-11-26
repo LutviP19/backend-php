@@ -49,7 +49,7 @@ class Log
         self::saveLog('debug', $logs, $modul, $single);
     }
 
-    protected static function saveLog($type = 'info', $logs = [], $modul = '', $single = true)
+    public static function saveLog($type = 'info', $logs = [], $modul = '', $single = true)
     {
         $logfile = self::getLogdir() . 'app_' . $type . '.log';
 

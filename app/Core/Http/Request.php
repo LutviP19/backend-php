@@ -454,7 +454,7 @@ class Request
      */
     public function __get($key)
     {
-        return $this->attributes[$key];
+        return $this->attributes[$key] ?? false;
     }
 
     /**

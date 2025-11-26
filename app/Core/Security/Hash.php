@@ -15,11 +15,15 @@ class Hash
      *
      * @param  mixed  $value
      * @param  string  $key
+     * @param  string  $mode : base64 | string
      * @return string
      */
-    public static function create(#[\SensitiveParameter] $value, #[\SensitiveParameter] $key = '')
+    public static function create(#[\SensitiveParameter] $value, #[\SensitiveParameter] $key = '', $mode = 'base64')
     {
         $key = str_replace('base64:', '', (string) $key ?: Config::get('app.hash_key'));
+
+        if($mode === 'string')
+        return hash_hmac('sha256', $value, $key);
 
         return base64_encode(hash_hmac('sha256', $value, $key));
     }
@@ -29,11 +33,13 @@ class Hash
      *
      * @param string $str
      * @param string $hash
+     * @param  string  $key
+     * @param  string  $mode : base64 | string
      * @return bool
      */
-    public static function matchHash(#[\SensitiveParameter] $str, $hash, #[\SensitiveParameter] $key = '')
+    public static function matchHash(#[\SensitiveParameter] $str, $hash, #[\SensitiveParameter] $key = '', $mode = 'base64')
     {
-        return hash_equals(self::create($str, $key), $hash);
+        return hash_equals(self::create($str, $key, $mode), $hash);
     }
 
     /**
@@ -76,9 +82,10 @@ class Hash
      * @param int $len
      * @return string
      */
-    public static function randomString($len = 64)
+    public static function randomString($len = 64, $special = true)
     {
-        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ*&!@%^#$';
+        $characters = '012356789ABCDEFGHIJKLMNOPQRSTUVWXYZ098765321';
+        $characters .= $special ? 'abcdefghijklmnopqrstuvwxyz*&!@%^#$' : '';
         $strings = [];
         $max = mb_strlen($characters, '8bit') - 1;
 

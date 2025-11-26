@@ -74,7 +74,22 @@ function endResponse($response, $status = 200, $headers = [])
     // nofollow instructs crawlers not to follow links on the resource
     header('X-Robots-Tag: noindex, nofollow');
 
+    // CSRF-TOKEN
+    $csrfToken = \App\Core\Security\CSRF::generate();
+    $expired_seconds = time() + (60 * 60 * 24 * 1);
+    $domain = env('APP_ENV') === 'local' ? 'localhost' : 'happyfew.org';
+    $path = '/';
+    $csrfHeader[] = ['Set-Cookie' => "XSRF-TOKEN={$csrfToken}; Max-Age={$expired_seconds}; Path={$path}; Domain={$domain}; HttpOnly; SameSite=Lax; Secure;"];
+    $headers = array_merge($csrfHeader, $headers);
+
     if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // non OpenSwoole Server
+        if(count($headers)) {
+            foreach ($headers as $header) {
+                foreach ($header as $key => $value)
+                header("{$key}: {$value}");
+            }
+        }
+        
         die(response()->json($response, $status));
     }
 
@@ -84,6 +99,7 @@ function endResponse($response, $status = 200, $headers = [])
     $cookieSessID = isset($_COOKIE[session_name()]) ? $_COOKIE[session_name()] : false;
     // get sessionId, then merged it to response
     $sessionId = $cookieSessID ?: session_id();
+    
 
     // 
     if (isset($_SESSION['uid'])) {
@@ -171,13 +187,41 @@ function database_path($db_name)
 }
 
 /**
+ * default database path for sqlite
+ *
+ * @param  string $key
+ *
+ * @return string
+ */
+function storage_path($filePath)
+{
+    return BASE_PATH . 'storage/' . $filePath;
+}
+
+/**
+ * default database path for sqlite
+ *
+ * @param  string $key
+ *
+ * @return string
+ */
+function assets_path($filePath)
+{
+    return BASE_PATH . 'public/assets/' . $filePath;
+}
+
+/**
  * dump the data and kill the page.
  *
  * @param array $data
  * @return void
  */
-function dd($data = [])
+function dd($data = [], $json = false)
 {
+    if($json) {
+        die(json_encode($data, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
+    }
+    
     echo "<pre>", var_dump($data), "</pre>";
     die();
 }
@@ -380,6 +424,28 @@ function e($str, $doubleEncode = true)
         return json_encode($str);
     }
 
+    // if (is_numeric($str) && !is_float($str)) {
+    //     return (int)$str;
+    // }
+
+    // if (is_numeric($str) && is_float($str)) {
+    //     return floattostr(floatval($str));
+    // }
+
+    // // if (is_float($str) && is_numeric($str) === true && is_decimal($str) === false) {
+    // if (is_float_string($str) && is_numeric($str) && is_decimal($str) === false) {
+    //     dd($str);
+    //     //sprintf("%.2f", $str);
+    //     return round($str, 2);
+    // }
+
+    // if (is_decimal($str) && is_numeric($str) === true && is_float($str) === false) {
+    //     // number_format($latitude, 6);
+    //     return $str;
+    // }
+
+    
+
     return htmlentities($str, ENT_QUOTES, 'UTF-8');
     // return htmlspecialchars($str ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8', $doubleEncode);
 }
@@ -456,6 +522,63 @@ function clientIP()
 
     return $ip == '::1' ? '127.0.0.1' : $ip;
 }
+
+/**
+ * checkRateLimit function
+ *
+ * @param  string $identifier : client identity IP, Location, etc...
+ * @param  int $limit : limit hit 
+ * @param  int $timeframeSeconds : time in second
+ *
+ * @return void
+ */
+function checkRateLimit($identifier, $limit, $timeframeSeconds) {
+    $dirPath = storage_path('framework/tmp/rate_limits');
+    $filePath =  $dirPath .'/'. md5($identifier) . '.txt';
+
+    // Create directory if it doesn't exist
+    if (!is_dir($dirPath)) {
+        mkdir($dirPath, 0775, true);
+    }
+
+    $timestamps = [];
+    if (file_exists($filePath)) {
+        $content = file_get_contents($filePath);
+        $timestamps = json_decode($content, true) ?: [];
+    }
+
+    $currentTime = time();
+    $newTimestamps = [];
+    $requestCount = 0;
+
+    // Filter out old timestamps and count recent requests
+    foreach ($timestamps as $timestamp) {
+        if ($currentTime - $timestamp < $timeframeSeconds) {
+            $newTimestamps[] = $timestamp;
+            $requestCount++;
+        }
+    }
+
+    if ($requestCount >= $limit) {
+        return false; // Rate limit exceeded
+    }
+
+    // Add current request timestamp
+    $newTimestamps[] = $currentTime;
+    file_put_contents($filePath, json_encode($newTimestamps));
+
+    return true; // Request allowed
+}
+
+// --- Base64URL Encoding/Decoding Functions ---
+function base64url_encode($data) {
+    return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
+}
+
+function base64url_decode($data) {
+    return base64_decode(strtr($data, '-_', '+/'));
+}
+
 
 /**
  * Match encryption data
@@ -547,13 +670,13 @@ function decryptData($value, $key = null)
  *
  * @return string
  */
-function generateRandomString($len = 64, $base64 = false): string
+function generateRandomString($len = 64, $base64 = false, $special = true): string
 {
     if ($base64) {
-        return base64_encode(\App\Core\Security\Hash::randomString($len));
+        return base64_encode(\App\Core\Security\Hash::randomString($len, $special));
     }
 
-    return \App\Core\Security\Hash::randomString($len);
+    return \App\Core\Security\Hash::randomString($len, $special);
 }
 
 /**
@@ -596,13 +719,52 @@ function sendMessageQueue($message): void
  * @param  array  $attachment
  * @param  array  $image
  *
- * @return void
+ * @return bool
  */
-function sendEmail(string $from = '', string $to, string $subject, $bodyText = '', $bodyHtml = '', array $attachment = [], array $image = []): void
+function sendEmail(string $from = '', string $to, string $subject, $bodyText = '', $bodyHtml = '', array $attachment = [], array $image = []): bool
 {
-    $email = (new \App\Core\Mailer\Email());
-    $email->prepareData($from, $to, $subject, $bodyText, $bodyHtml, $attachment, $image);
-    $email->send();
+    if(env('APP_ENV') === 'local') {
+        try {
+            $email = (new \App\Core\Mailer\Email());
+            $email->prepareData($from, $to, $subject, $bodyText, $bodyHtml, $attachment, $image);
+            $email->send();
+            return true;
+        } catch (\Exception $e) {
+            // throw new Exception('Error send email: ' . $e->getMessage());
+            return false;
+        }
+    } else {
+        $from = explode(",", $from);
+        $to = explode(",", $to);
+
+        if(count($from)) {
+            $from = $from[0];
+        }
+
+        if(count($to)) {
+            $to = $to[0];
+        }
+
+        $headers = 'From: '. $from . "\r\n" .
+                   'Reply-To: '. $from . "\r\n" .
+                   'X-Mailer: PHP/' . phpversion();
+
+        if (mail($to, $subject, $bodyText, $headers)) {
+            $status = true;
+        } else {
+            $status = false;
+            $msg = 'Gagal mengirim email.';
+            \App\Core\Support\Log::error([
+                'msg' => $msg,
+                'to' => $to,
+                'subject' => $subject,
+                'headers' => $headers,
+            ], 'Helpers.sendEmail.mail');
+        }
+
+        return $status;
+    }
+    
 }
 
 /**
@@ -689,4 +851,51 @@ function slug($title, $separator = '-', $language = 'en', $dictionary = ['@' => 
     $title = preg_replace('![' . preg_quote($separator) . '\s]+!u', $separator, $title);
 
     return trim($title, $separator);
+}
+
+function formatPhoneSnapshot($phoneNumber)
+{
+    $phone_number = str_replace('62', '0', trim($phoneNumber));
+    return substr($phone_number, 0, 4).'****'.substr($phone_number, 8, strlen($phone_number));
+}
+
+function base64ToWebP($base64_string, $output_file, $quality = 80) {
+    // Remove the "data:image/webp;base64," prefix if present
+    $data = explode(',', $base64_string);
+    $decoded_data = base64_decode(end($data));
+
+    // Create an image resource from the decoded data
+    $image = imagecreatefromstring($decoded_data);
+
+    if ($image === false) {
+        return false; // Error creating image resource
+    }
+
+    // 3. Handle Transparency (Optional but Recommended for PNG/GIF)
+    imagepalettetotruecolor($image);
+    imagealphablending($image, true);
+    imagesavealpha($image, true);
+
+    // Save the image as a WebP file
+    $success = imagewebp($image, $output_file, $quality);
+
+    // Free up memory
+    imagedestroy($image);
+
+    return $success;
+}
+
+function base64ToImage($base64_string, $output_file) {
+    // Separate the metadata from the base64 string
+    $parts = explode(',', $base64_string);
+    $imageData = base64_decode($parts[1]);
+
+    // Save the decoded data to a file
+    if (file_put_contents($output_file, $imageData)) {
+        // return 'Image successfully saved to: ' . $output_file;
+        return true;
+    } else {
+        // return 'Failed to save image.';
+        return false;
+    }
 }

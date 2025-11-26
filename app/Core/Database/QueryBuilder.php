@@ -389,14 +389,24 @@ class QueryBuilder
      * @param bool $lastInsertId
      * @return mixed
      */
-    public function execQuery($query, array $params, $lastInsertId = false)
+    public function execQuery($query, array $params, $lastInsertId = false, $fetch = false, $fetchAll = false)
     {
         $this->setParams($params);
         $exec = $this->setSQL($query)->query();
+        // \App\Core\Support\Log::debug($this->getSQL(), 'QueryBuilder.execQuery.getSQL');
 
         if ($exec && $lastInsertId) {
             return $this->getPDO()->lastInsertId();
         }
+
+        if ($exec && $fetch) {
+            return $exec->fetch();
+        }
+
+        if ($exec && $fetchAll) {
+            return $exec->fetchAll();
+        }
+
         return $exec ? true : false;
     }
 
@@ -419,7 +429,7 @@ class QueryBuilder
             // \App\Core\Support\Log::debug($query, 'QueryBuilder.query');
             // \App\Core\Support\Log::debug($this->getSQL(), 'QueryBuilder.query.getSQL');
 
-            if ($query->execute($this->getParams())) {
+            if($query->execute($this->getParams())) {
                 $this->params = [];
                 return $query;
             }

@@ -52,12 +52,13 @@ class BaseController
      * @param string $view
      * @return void
      */
-    public function include($view)
+    public function include($view, $dataExtra = [])
     {
         if (!$this->exists($view)) {
             throw new Exception("Include not found");
         }
 
+        extract($dataExtra);
         include $this->name($view);
     }
 

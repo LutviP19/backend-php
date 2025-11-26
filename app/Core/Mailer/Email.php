@@ -75,6 +75,7 @@ class Email
         $email->priority(SymfonyEmail::PRIORITY_HIGHEST);
         $email->subject($subject);
         $email->text($bodyText);
+        if($bodyHtml != '')
         $email->html($bodyHtml);
 
         if (empty($from)) {
@@ -82,12 +83,16 @@ class Email
         } else {
             if (is_string($from)) {
                 $from = explode(",", $from);
+                if (count($from) > 1) {
 
-                if (! isset($from[0]) || ! isset($from[1])) {
-                    throw new Exception('Invalid sender email address.!');
+                    if (! isset($from[0]) || ! isset($from[1])) {
+                        throw new Exception('Invalid sender email address.!');
+                    }
+
+                    $email->from(new Address($from[0], $from[1]));
                 }
 
-                $email->from(new Address($from[0], $from[1]));
+                $email->from(new Address($from[0]));
             } else {
                 throw new Exception('Invalid sender email address.!');
             }
@@ -95,12 +100,14 @@ class Email
 
         if (is_string($to)) {
             $to = explode(",", $to);
+            if (count($to) > 1) {
+                if (! isset($to[0]) || ! isset($to[1])) {
+                    throw new Exception('Invalid recepient email address.!');
+                }
 
-            if (! isset($to[0]) || ! isset($to[1])) {
-                throw new Exception('Invalid recepient email address.!');
+                $email->to(new Address($to[0], $to[1]));
             }
-
-            $email->to(new Address($to[0], $to[1]));
+            $email->to(new Address($to[0]));
         } else {
             throw new Exception('Invalid recepient email address.!');
         }

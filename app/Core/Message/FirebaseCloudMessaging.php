@@ -47,12 +47,12 @@ class FirebaseCloudMessaging
           'iat'   => $now,
           'exp'   => $now + 3600
         ]));
-
+    
         $input = $header . '.' . $claim;
         $signature = '';
         openssl_sign($input, $signature, $sa['private_key'], 'SHA256');
         $jwt = $input . '.' . b64url($signature);
-
+    
         $ch = curl_init('https://oauth2.googleapis.com/token');
         curl_setopt_array($ch, [
           CURLOPT_POST => true,
@@ -94,7 +94,7 @@ class FirebaseCloudMessaging
         }
 
         $accessToken = $json['access_token'] ?: null;
-
+        
         // \App\Core\Support\Log::debug($accessToken, 'FirebaseCloudMessaging.createAccessToken.accessToken');
         return $accessToken;
     }
@@ -103,7 +103,7 @@ class FirebaseCloudMessaging
     {
         $accessToken = $accessToken ?: $this->createAccessToken();
 
-        if (\is_null($accessToken)) {
+        if(\is_null($accessToken)) {
             \App\Core\Support\Log::error([
                 'message' => "Failed createAccessToken for token: {$token}"
             ], 'FirebaseCloudMessaging.sendMessage.$accessToken');
@@ -111,11 +111,11 @@ class FirebaseCloudMessaging
             return null;
         }
 
-        $icon = $icon ?: assets('/assets/icons/icon-192.png');
+        $icon = $icon ?: assets('/assets/icons/new-icon-192.png');
 
         $projectId = \readJson('project_id', $this->config);
         $url = "https://fcm.googleapis.com/v1/projects/{$projectId}/messages:send";
-        $payload = [
+        $payload = [ 
                         'message' => [
                             'token' => $token,
                             'notification' => [
@@ -158,7 +158,7 @@ class FirebaseCloudMessaging
 
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
-
+        
         return [$code, $res];
     }
 }

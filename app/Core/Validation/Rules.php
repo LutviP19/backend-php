@@ -63,7 +63,8 @@ class Rules
      */
     public function validateOptional($field)
     {
-        return !$this->request->has($field) ? true : false;
+        // return !$this->request->has($field) ? true : false;
+        return !isset($this->request[$field]) ? true : false;
     }
 
     /**
@@ -102,10 +103,16 @@ class Rules
     public function validateRequired($field)
     {
         if (\is_array($this->request)) {
-            if (! isset($this->request[$field])) {
+            if ((empty($field))) {
                 $this->error($field, 'is required!');
             }
+            if (! isset($this->request[$field]) || $this->request[$field] == '') {
+                $this->error($field, 'is required!');
+            }            
         } else {
+            if ((empty($field) || $field == '')) {
+                $this->error($field, 'is required!');
+            }
             if (!$this->getRequest()->has($field)) {
                 $this->error($field, 'is required!');
             }
@@ -176,6 +183,50 @@ class Rules
     {
         if (!is_numeric($this->value($field))) {
             $this->error($field, 'should be numeric!');
+        }
+    }
+
+    /**
+     * Check if the input value contains decimal
+     * characters.
+     *
+     * @param string $field
+     * @return void
+     */
+    public function validateDecimal($field)
+    {
+        if(filter_var($this->value($field), FILTER_VALIDATE_FLOAT) === false) {
+            $this->error($field, 'should be decimal!');
+        }
+    }
+
+    /**
+     * Check if the input value contains Latitude
+     * characters.
+     *
+     * @param string $field
+     * @return void
+     */
+    public function validateLatitude($field)
+    {
+        $value = $this->value($field);
+        if((is_numeric($value) && $value >= -90.0 && $value <= 90.0) === false) {
+            $this->error($field, 'should be valid latitude!');
+        }
+    }
+
+    /**
+     * Check if the input value contains Longitude
+     * characters.
+     *
+     * @param string $field
+     * @return void
+     */
+    public function validateLongitude($field)
+    {
+        $value = $this->value($field);
+        if((is_numeric($value) && $value >= -180.0 && $value <= 180.0) === false) {
+            $this->error($field, 'should be valid longitude!');
         }
     }
 

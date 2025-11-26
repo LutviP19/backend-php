@@ -36,8 +36,11 @@ class CSRF
         $csrf = Session::get($key);
         if ($csrf && $token == $csrf) {
             Session::unset($key);
+            Session::set('validCsrf', true);
             return true;
         }
+
+        Session::set('validCsrf', false);
         return false;
     }
 
@@ -49,6 +52,7 @@ class CSRF
     public static function csrfField()
     {
         $token = self::generate();
-        return "<input type=\"hidden\" name=\"csrf_token\" value=\"{$token}\">";
+        return "<input type=\"hidden\" id=\"csrf_token\" name=\"csrf_token\" value=\"{$token}\">";
     }
+
 }

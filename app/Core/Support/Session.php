@@ -2,6 +2,8 @@
 
 namespace App\Core\Support;
 
+use App\Core\Support\Config;
+
 /**
  * Handle all the stuff related to session.
  * @author Lutvi <lutvip19@gmail.com>
@@ -16,7 +18,9 @@ class Session
     public static function all()
     {
         $sessions = [];
-        $escaped = ['password', 'errors', 'secret', 'jwtId', 'tokenJwt', 'gnr', '_previous_uri', '_old_input'];
+        // $escaped = ['ori'];
+        // Hide non user data
+        $escaped = [Config::get('session.csrf_token'), 'OBSOLETE', 'EXPIRES', 'nonce', 'userAgent', 'IPaddress', 'password', 'pin', 'errors', 'secret', 'jwtId', 'tokenJwt', 'gnr', '_previous_uri', '_old_input'];
         foreach ($_SESSION as $key => $value) {
             if (in_array($key, $escaped)) {
                 continue;
@@ -69,9 +73,12 @@ class Session
      * @param string $key
      * @return void
      */
-    public static function unset($key)
+    public static function unset($key, $recursive_unset = false)
     {
-        unset($_SESSION[$key]);
+        if($recursive_unset)
+            recursive_unset($_SESSION, $key);
+        else
+            unset($_SESSION[$key]);
     }
 
     /**
@@ -81,11 +88,32 @@ class Session
      */
     public static function destroy()
     {
+        $key = Config::get('session.csrf_token');
+        $csrfToken = self::get($key);
         session_unset();
         $_SESSION = [];
         
-        if (session_status() == PHP_SESSION_ACTIVE)
-        session_destroy();
+        if (session_status() == PHP_SESSION_ACTIVE) {
+            session_destroy();
+        }
+
+
+        self::set($key, $csrfToken);
+    }
+
+    /**
+     * Destroy the user session data only.
+     *
+     * @return void
+     */
+    public static function softDestroy()
+    {
+
+        $ignoreKeys = [Config::get('session.csrf_token'), '_previous_uri', 'IPaddress', 'userAgent'];
+        foreach($_SESSION as $key =>$value) {
+            if(! in_array($key, $ignoreKeys))
+                unset($_SESSION[$key]);
+        }
     }
 
     /**

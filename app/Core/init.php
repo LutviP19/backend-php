@@ -5,6 +5,8 @@
  * @author Lutvi <lutvip19@gmail.com>
  */
 
+use App\Core\Support\App;
+
 if (!defined('BASEPATH')) {
     define('BASEPATH', __DIR__ . '/../..');
 }
@@ -20,8 +22,12 @@ ini_set("error_append_string ", "</pre>");
 $dotenv = Dotenv\Dotenv::createUnsafeImmutable(__DIR__ . '/../..');
 $dotenv->load();
 
+//register configuration to the app.
+App::register('config', require __DIR__ . '/../../config/app.php');
+
 date_default_timezone_set(env('APP_TIMEZONE', 'Asia/Jakarta'));
 
+// dd(config('app.ignore_port'), true);
 // if ($_SERVER['SERVER_PORT'] !== 9501) { // Ignore OpenSwoole Server
 if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // Ignore OpenSwoole Server
 
@@ -55,15 +61,11 @@ if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // Ignore
 /**
  * Bootstrap the Application
  */
-
 use App\Core\Http\Request;
 use App\Core\Http\Router;
-use App\Core\Support\App;
 use App\Core\Support\Session;
 use App\Core\Validation\MessageBag;
 
-//register configuration to the app.
-App::register('config', require __DIR__ . '/../../config/app.php');
 
 /**
  * Register MessageBag with all the validation errors

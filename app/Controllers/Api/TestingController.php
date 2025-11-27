@@ -13,6 +13,9 @@ class TestingController extends ApiController
     public function index(Request $request, Response $response)    
     {
 
+        // Validate token and CSRF
+        $this->validateApiToken(true);
+
         // \App\Core\Support\Log::debug($request->all(), 'TestingController.index.request');
         return endResponse(
             $this->getOutput(true, 200, [

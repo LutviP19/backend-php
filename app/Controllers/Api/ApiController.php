@@ -10,6 +10,7 @@ use App\Core\Security\Encryption;
 use App\Core\Security\Middleware\JwtToken;
 use App\Core\Support\Config;
 use App\Core\Support\Session;
+use App\Core\Security\CSRF;
 
 /**
  * ApiController class
@@ -25,6 +26,7 @@ class ApiController extends BaseController
     protected $headers;
     protected $jsonData;
     protected bool $rateLimit;
+    protected $isDev;
 
     public function __construct()
     {
@@ -32,6 +34,7 @@ class ApiController extends BaseController
 
         parent::__construct();
 
+        $this->isDev = $this->isDev ?? false;
         $this->rateLimit = false;
         $this->filter = new \App\Core\Validation\Filter();
         $this->requestServer = $requestServer;
@@ -236,7 +239,7 @@ class ApiController extends BaseController
      *
      * @return void
      */
-    protected function validateApiToken()
+    protected function validateApiToken($csrf = false)
     {
         // $header = $this->headers;
 
@@ -249,6 +252,54 @@ class ApiController extends BaseController
                 ], 'Invalid api token!'),
                 403
             );
+        }
+
+        // CSRF_TOKEN
+        if ($csrf) {
+
+            // Check isDev
+            if($this->isDev === true) {
+                $request_token = CSRF::generate();
+            } else {
+                // Assuming token is sent in X-CSRF-Token header
+                $request_token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+            }
+
+            if (CSRF::match($request_token) === false) {
+                $validCsrf = Session::get('validCsrf');
+                // \App\Core\Support\Log::debug($validCsrf, 'ApiController.validateApiToken.csrf.$validCsrf');
+
+                // $request_token = $validCsrf ? filter_input(INPUT_COOKIE, 'XSRF-TOKEN', FILTER_SANITIZE_SPECIAL_CHARS) : '';
+                $request_token = filter_input(INPUT_COOKIE, 'XSRF-TOKEN', FILTER_SANITIZE_SPECIAL_CHARS) ?? '';
+                if (CSRF::match($request_token) === false) {
+                    // Middleware - Rate limiter
+                    $identifier = 'CSRF_TOKEN-'.\clientIP();
+                    $perSeconds = 600;
+                    if (false === checkRateLimit($identifier, 10, $perSeconds)) {
+                        $after = $perSeconds / 60;
+                        $afteText = $after > 1 ? "{$after} minutes" : "{$after} minute";
+                        $errors = [
+                            'busy' => ["Too many requests. Please try again after {$afteText}."]
+                        ];
+                        return endResponse(
+                            $this->getOutput(false, 429, [
+                               $errors
+                            ]),
+                            429
+                        );
+                    }
+
+                    $errors = [
+                        'csrfToken' => ['Token expired, please reload page.'],
+                    ];
+                    return endResponse(
+                        $this->getOutput(false, 403, [
+                           $errors
+                        ]),
+                        403
+                    );
+                }
+            }
         }
     }
 
@@ -317,6 +368,77 @@ class ApiController extends BaseController
                 401
             );
         }
+    }
+
+    protected function setRatelimiter($identifier, $perSeconds = 120, $limit = 10)
+    {
+        $identifier = str_replace(" ", "_", $identifier);
+        $identifier = $identifier.'-'.\clientIP();
+        $perSeconds = 120;
+        if (false === checkRateLimit($identifier, $limit, $perSeconds)) {
+            $after = $perSeconds / 60;
+            $afteText = $after > 1 ? "{$after} minutes" : "{$after} minute";
+            $errors = [
+                'busy' => ["Too many requests. Please try again after {$afteText}."]
+            ];
+            return endResponse(
+                $this->getOutput(false, 429, [
+                   $errors
+                ]),
+                429
+            );
+        }
+    }
+
+    protected function returnSystemBusy($errCode = 422, $info = 'System busy, please try again in few moments.')
+    {
+        $errors = [
+            'busy' => [$info],
+        ];
+        return endResponse(
+            $this->getOutput(false, $errCode, [
+               $errors
+            ]),
+            $errCode
+        );
+    }
+
+    protected function formatCamelCaseKey(array $jsonData = [], $replaced = ['' => '']): array
+    {
+        $formated = $output = [];
+        foreach($jsonData as $key => $value) {
+            $key = str_replace_multi($replaced, $key);
+            $formatKey = camelCaseToUnderscore($key);
+
+            $formated[$formatKey] = $value;
+        }
+
+        // dd($formated, true);
+        return $formated;
+
+        // if(count($formated)) {
+        //     foreach($formated as $key => $value) {
+        //         if (is_numeric($value) && strpos($value, '.') === false) {
+        //             $value = (int)$value;
+        //         } elseif (is_numeric($value) && strpos($value, '.') !== false) {
+        //             $value = (float)$value;
+        //         } elseif (is_bool($value)) {
+        //             $value = (bool)$value;
+        //         } elseif (is_array($value)) {
+        //             $value = (array)$value;
+        //         } elseif (is_object($value)) {
+        //             $value = (object)$value;
+        //         }  elseif (is_string($value)) {
+        //             $value = (string)$value;
+        //         } else {
+        //             $value = null;
+        //         }
+    
+        //         $output[$key] = $value;
+        //     }
+        // }        
+
+        // return $output;
     }
 
 }

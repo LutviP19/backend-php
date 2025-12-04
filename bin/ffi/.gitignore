@@ -1,8 +1,7 @@
-*.pid
-*.sock
-*.backup
-*.sample
-*.old
-*.cache
-*.tmp
+*
+/*
+.*
+!/lib*
+!*.h
+!*.so
 !.gitignore

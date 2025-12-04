@@ -2,7 +2,9 @@
 .env.backup
 *.pid
 *.cache
+*.zip
 NOTES.txt
+SNIP.txt
 /tools
 /bin/ffi/source*
 /node_modules

@@ -241,8 +241,6 @@ class ApiController extends BaseController
      */
     protected function validateApiToken($csrf = false)
     {
-        // $header = $this->headers;
-
         if (isset($this->headers['X-Api-Token']) === false ||
             matchEncryptedData($this->getPass(), $this->headers['X-Api-Token']) === false) {
 
@@ -258,6 +256,7 @@ class ApiController extends BaseController
         if ($csrf) {
 
             // Check isDev
+            // \App\Core\Support\Log::debug($this->isDev, 'ApiController.validateApiToken.csrf.isDev');
             if($this->isDev === true) {
                 $request_token = CSRF::generate();
             } else {
@@ -265,12 +264,11 @@ class ApiController extends BaseController
                 $request_token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
             }
 
+            // \App\Core\Support\Log::debug($request_token, 'ApiController.validateApiToken.csrf.$request_token');
             if (CSRF::match($request_token) === false) {
-                $validCsrf = Session::get('validCsrf');
-                // \App\Core\Support\Log::debug($validCsrf, 'ApiController.validateApiToken.csrf.$validCsrf');
 
-                // $request_token = $validCsrf ? filter_input(INPUT_COOKIE, 'XSRF-TOKEN', FILTER_SANITIZE_SPECIAL_CHARS) : '';
                 $request_token = filter_input(INPUT_COOKIE, 'XSRF-TOKEN', FILTER_SANITIZE_SPECIAL_CHARS) ?? '';
+                // \App\Core\Support\Log::debug($request_token, 'ApiController.validateApiToken.csrf.$request_token2');
                 if (CSRF::match($request_token) === false) {
                     // Middleware - Rate limiter
                     $identifier = 'CSRF_TOKEN-'.\clientIP();

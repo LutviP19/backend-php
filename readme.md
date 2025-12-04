@@ -143,4 +143,4 @@ Please read DEMO.txt
 
 Please read DEV.txt
 
-**Please note this framework still in development and not tested in production environment.**
+**Please note this framework is still under development and requires some manual enhancements in a production environment.**

@@ -8,25 +8,18 @@ use App\Core\Database\QueryBuilder; // import the class.
 class User extends Model
 {
     /**
-     * Table to query from.
+     * static table name for this model.
      *
      * @var string
      */
-    protected $table = "users";
-
-    /**
-     * Primary key column name.
-     *
-     * @var string
-     */
-    protected $pk = "id";
+    protected static $tableM = "users";
 
 
     //user model code....
 
     public static function getUserByEmail($email)
     {
-        $data = self::select([
+        $data = self::table(self::$tableM)->select([
                         'ulid',
                         'name',
                         'email',
@@ -49,7 +42,7 @@ class User extends Model
 
     public static function getUlid($id)
     {
-        $data = self::select(['ulid'])->where('id', '=', $id)->first();
+        $data = self::table(self::$tableM)->select(['ulid'])->where('id', '=', $id)->first();
         // \App\Core\Support\Log::debug($data, 'UserModel.getUlid');
 
         if ($data) {
@@ -63,8 +56,8 @@ class User extends Model
     {
         $token = generateRandomString();
 
-        self::primaryKey($columnId);
-        $update = self::updateWhere(['client_token' => $token], $columnId, $id);
+        self::table(self::$tableM)->primaryKey($columnId);
+        $update = self::table(self::$tableM)->updateWhere(['client_token' => $token], $columnId, $id);
 
         if (true === $update) {
             return $token;

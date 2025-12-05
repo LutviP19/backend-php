@@ -7,14 +7,35 @@ use App\Core\Http\{Request, Response};
 use App\Core\Message\FirebaseCloudMessaging;
 use App\Core\Validation\Validator;
 use App\Core\Database\QueryBuilder;
+use App\Core\Database\Model;
+use App\Models\User;
+use App\Models\Role;
 
 class TestingController extends ApiController
 {
+    public function __construct()
+    {
+        parent::__construct();
+        
+        // State DEV environment
+        $this->isDev = true;
+
+        // dd($this->isDev);
+    }
+
     public function index(Request $request, Response $response)    
     {
 
         // Validate token and CSRF
         $this->validateApiToken(true);
+
+
+        $user = Model::table('users')->select(['*'])->get();
+        $roles = Model::table('roles')->select(['id', 'slug', 'name'])->get();
+        $role = Role::getRoleById(3);
+        $userUlid = User::getUlid(3);
+
+        dd($role, true);
 
         // \App\Core\Support\Log::debug($request->all(), 'TestingController.index.request');
         return endResponse(

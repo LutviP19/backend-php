@@ -244,6 +244,11 @@ class ApiController extends BaseController
         if (isset($this->headers['X-Api-Token']) === false ||
             matchEncryptedData($this->getPass(), $this->headers['X-Api-Token']) === false) {
 
+            // Middleware - Rate limiter
+            $identifier = 'API_KEY-'.\clientIP();
+            $perSeconds = 6000;
+            $this->setRatelimiter($identifier, $perSeconds, 3);
+
             return endResponse(
                 $this->getOutput(false, 403, [
                     'token' => 'Invalid api token!',
@@ -273,19 +278,7 @@ class ApiController extends BaseController
                     // Middleware - Rate limiter
                     $identifier = 'CSRF_TOKEN-'.\clientIP();
                     $perSeconds = 600;
-                    if (false === checkRateLimit($identifier, 10, $perSeconds)) {
-                        $after = $perSeconds / 60;
-                        $afteText = $after > 1 ? "{$after} minutes" : "{$after} minute";
-                        $errors = [
-                            'busy' => ["Too many requests. Please try again after {$afteText}."]
-                        ];
-                        return endResponse(
-                            $this->getOutput(false, 429, [
-                               $errors
-                            ]),
-                            429
-                        );
-                    }
+                    $this->setRatelimiter($identifier, $perSeconds, 10);
 
                     $errors = [
                         'csrfToken' => ['Token expired, please reload page.'],
@@ -372,7 +365,6 @@ class ApiController extends BaseController
     {
         $identifier = str_replace(" ", "_", $identifier);
         $identifier = $identifier.'-'.\clientIP();
-        $perSeconds = 120;
         if (false === checkRateLimit($identifier, $limit, $perSeconds)) {
             $after = $perSeconds / 60;
             $afteText = $after > 1 ? "{$after} minutes" : "{$after} minute";

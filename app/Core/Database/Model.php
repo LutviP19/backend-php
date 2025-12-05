@@ -2,6 +2,10 @@
 
 namespace App\Core\Database;
 
+
+use Exception;
+use PDOException;
+
 /**
  * Model class
  * @author Lutvi <lutvip19@gmail.com>
@@ -17,4 +21,17 @@ class Model extends QueryBuilder
      * models...
      */
 
+    
+    /**
+     * static table name for this model.
+     *
+     * @var string
+     */
+    protected static $tableM;
+
+    public function __construct(PDO $pdo = null)
+    {
+        parent::__construct($pdo);
+    }
+    
 }

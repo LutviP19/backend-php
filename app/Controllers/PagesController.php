@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Core\Database\Model;
 use App\Models\User;
 use App\Core\Events\Event;
 use App\Core\Http\{Request, Response};
@@ -25,7 +26,8 @@ class PagesController extends Controller
      */
     public function index(Request $request, Response $response)
     {
-        $users = (new User())->all();
+        $users = Model::table('users')->select(['*'])->get();
+        // dd($users);
         // Session::set('users', generateUlid());
         $server = \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port')) ? "OpenSwoole" : "PHP FPM";
 

@@ -70,9 +70,11 @@ function response()
  */
 function endResponse($response, $status = 200, $headers = [])
 {
-    // noindex instructs crawlers not to index the resource
-    // nofollow instructs crawlers not to follow links on the resource
-    header('X-Robots-Tag: noindex, nofollow');
+    if (!headers_sent()) {
+        // noindex instructs crawlers not to index the resource
+        // nofollow instructs crawlers not to follow links on the resource
+        header('X-Robots-Tag: noindex, nofollow');
+    }
 
     // CSRF-TOKEN
     $csrfToken = \App\Core\Security\CSRF::generate();

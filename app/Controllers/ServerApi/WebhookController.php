@@ -9,20 +9,19 @@ use App\Core\Support\Session;
 use App\Core\Support\Config;
 use App\Models\User;
 // Events
-use App\Core\Events\EventDispatcher;
+use App\Dispatchers\EventDispatcher;
 use App\Services\OrderService;
 use OpenSwoole\Core\Psr\Response as OpenSwooleResponse;
 
 class WebhookController extends ServerApiController
 {
-    protected $orderService;
+    // protected $orderService;
 
     public function __construct()
     {
         parent::__construct();
 
-        $dispatcher = new EventDispatcher();
-        $this->orderService = new OrderService($dispatcher);
+        
     }
 
 
@@ -79,9 +78,12 @@ class WebhookController extends ServerApiController
                 }
                 break;
             case 'order.placed':
+                $dispatcher = new EventDispatcher();
+                $orderService = new OrderService($dispatcher);
                 $order = ['id' => rand(0, 2), 'items' => ['item1', 'item2']];
-                if( false !== $this->orderService->placeOrder($order))
+                if(false !== $orderService->placeOrder($order)) {
                     $status = true;
+                }                    
                 break;
             default:
                 $status = false;

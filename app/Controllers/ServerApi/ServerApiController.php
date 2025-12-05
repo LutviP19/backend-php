@@ -11,6 +11,7 @@ use App\Core\Security\Middleware\JwtToken;
 use App\Core\Support\Config;
 use App\Core\Support\Session;
 use App\Core\Security\Hash;
+use Exception;
 
 class ServerApiController extends BaseController
 {
@@ -167,23 +168,32 @@ class ServerApiController extends BaseController
 
     public function validateJwt()
     {
-        $user = Session::all();
-        $tokenJwt = Session::get('tokenJwt');
-        $bearerToken = str_replace('Bearer ', '', $this->headers['Authorization'][0] ?? '');
-
-        if (empty($user) ||
-            is_null($this->jwtToken) ||
-            $bearerToken !== $tokenJwt ||
-            false === $this->jwtToken->validateToken($bearerToken)) {
-
+        try {
+            $user = Session::all();
+            $tokenJwt = Session::get('tokenJwt');
+            $bearerToken = str_replace('Bearer ', '', $this->headers['Authorization'][0] ?? '');
+    
+            if (empty($user) ||
+                is_null($this->jwtToken) ||
+                $bearerToken !== $tokenJwt ||
+                false === $this->jwtToken->validateToken($bearerToken)) {
+    
+                $statusCode = 401;
+                $message = 'Please login!';
+                $output = [ 'jwt' => 'Invalid jwt!' ];
+                
+                return $this->SetOpenSwooleResponse(false, $statusCode, $output, $message);
+            }
+    
+            return false;
+        } catch(Exception $e) {
             $statusCode = 401;
             $message = 'Please login!';
-            $output = [ 'jwt' => 'Invalid jwt!' ];
+            $output = [ 'jwt' => $e->getMessage() ];
             
             return $this->SetOpenSwooleResponse(false, $statusCode, $output, $message);
         }
-
-        return false;
+        
     }
 
 }

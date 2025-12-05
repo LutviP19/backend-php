@@ -3,10 +3,11 @@
 declare(strict_types=1);
 
 // Disabled Log Errors
-ini_set('log_errors', 0);
-// ini_set('display_errors', 0);
-// ini_set('display_startup_errors', 0);
 error_reporting(~E_NOTICE & ~E_DEPRECATED);
+ini_set('log_errors', false);
+ini_set('ignore_repeated_errors', true);
+ini_set("display_errors", "off");
+// ini_set('display_startup_errors', 0);
 
 require_once __DIR__ . '/bootstrap.php';
 
@@ -253,8 +254,8 @@ $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse 
         // Simulate some asynchronous operation (e.g., fetching data from a database)
         go(function () use ($server, $request, $response, $clientInfo, $sessionId, $sessionName, $uri, $ignoredUri) {
 
-            // $returned = ['response', 'tmp', 'void'];
-            $content = fetchDataAsynchronously($request, $response, 'content', $_SESSION);
+            // $returned = ['content', 'response', 'tmp', 'void'];
+            $content = fetchDataAsynchronously($request, $response, 'response', $_SESSION);
 
             if ($response->isWritable()) {
                 $response->end($content);
@@ -354,13 +355,22 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
                 // \App\Core\Support\Log::debug($convertArr, 'HttpServer.fetchDataAsynchronously.$convertArr');
                 if (isset($convertArr["headers"]) && count($convertArr["headers"])) {
 
-                    // \App\Core\Support\Log::debug($convertArr["headers"], 'HttpServer.fetchDataAsynchronously.$convertArr["headers"]');
+                    \App\Core\Support\Log::debug($convertArr["headers"], 'HttpServer.fetchDataAsynchronously.$convertArr["headers"]');
                     foreach ($convertArr["headers"] as $header => $value) {
-                        $response->header($header, $value);
+                        if(is_array($value)) {
+                            $response->header(key($value), $value[key($value)]);
+                        } else {
+                            $response->header($header, $value);
+                        }
+                        
 
                         if (is_array($header)) {
                             foreach ($header as $key => $val) {
-                                $response->header($key, $val);
+                                if (is_array($val)) {
+                                    $response->header(key($val), $val[key($val)]);
+                                } else {
+                                    $response->header($key, $val);
+                                }
                             }
                         }
                     }
@@ -371,8 +381,8 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
 
                 // \App\Core\Support\Log::debug($sessionIdx, 'HttpServer.fetchDataAsynchronously.Routing.$sessionIdx');
                 // \App\Core\Support\Log::debug($_SESSION, 'HttpServer.fetchDataAsynchronously.Routing.$_SESSION');
+                $sessionExp = (env('SESSION_LIFETIME', 120) * 60);
                 if ($sessionIdx && ! empty($sessionIdx)) {
-                    $sessionExp = (env('SESSION_LIFETIME', 120) * 60);
                     $response->header('Set-Cookie', "{$sessionName}={$sessionIdx}; Max-Age={$sessionExp}; Path=/;");
 
                     $sessionId = $sessionIdx;
@@ -392,7 +402,8 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
                 }
 
                 if ($returned === 'content') {
-                    $content = json_encode($convertArr['data'], JSON_UNESCAPED_SLASHES);
+                    $content = json_encode($convertArr['data'] ?? [], JSON_UNESCAPED_SLASHES);
+                    $response->end($content);
                 }
             } else {
 

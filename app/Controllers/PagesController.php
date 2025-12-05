@@ -59,6 +59,16 @@ class PagesController extends Controller
      *
      * @return void
      */
+    public function notification()
+    {
+        $this->view('notification');
+    }
+
+    /**
+     * Show the home page.
+     *
+     * @return void
+     */
     public function dashboard()
     {
         $this->view('dashboard');

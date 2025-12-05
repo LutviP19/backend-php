@@ -24,7 +24,7 @@ const now = new Date();
 const expiryDate = new Date(fcmTokenExpiry); // Example: October 26, 2025, 10:00 AM
 
 async function registerSW() {
-  return await navigator.serviceWorker.register("/happyfew-sw-v3.js");
+  return await navigator.serviceWorker.register("/backend-php-sw.js");
 }
 
 function delay(ms) {
@@ -48,7 +48,7 @@ async function requestPermissionAndGetToken() {
   const reg = await registerSW();
   const messaging = getMessaging(app);
   const t = await getToken(messaging, {
-    vapidKey: "BKykTlZyhoU5dkGcDy4ESfDY5Xwyb36B9Nzz5MPJYSZMcrapLOJfV5saKliwTeLcEooa3t9Es5s6B0tYeWDG6UE",
+    vapidKey: "BB6cYo9XK7YlqO4BjngaK6IlWgOnUAwQrl83cL1hax9yn1I-h6iFkBe-y30nlmgFe103VExFT5nMZOjj1tNR_fs",
     serviceWorkerRegistration: reg,
   });
 

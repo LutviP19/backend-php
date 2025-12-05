@@ -1,5 +1,5 @@
 // Initialize Firebase
-import { axios } from "/assets/js/axios.min.js";
+// import { axios } from "/assets/js/axios.min.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getMessaging,
@@ -22,7 +22,7 @@ const tokenBox = document.getElementById("tokenBox");
 const setToken = (t) => (tokenBox.textContent = t);
 
 async function registerSW() {
-  return await navigator.serviceWorker.register("/firebase-messaging-sw.js");
+  return await navigator.serviceWorker.register("/backend-php-sw.js");
 }
 
 function delay(ms) {

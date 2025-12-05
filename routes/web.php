@@ -13,5 +13,6 @@ $router->get('', 'PagesController@index');
 $router->get('/', 'PagesController@index');
 $router->get('/contact', 'PagesController@contact');
 $router->get('/about', 'PagesController@about');
+$router->get('/notification', 'PagesController@notification');
 $router->get('/dashboard', 'PagesController@dashboard');
 $router->get('/extra', 'PagesController@extra');

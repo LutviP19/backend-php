@@ -47,6 +47,9 @@
                         <a href="<?= url('/about') ?>">About</a>
                     </li>
                     <li>
+                        <a href="<?= url('/notification') ?>">Notification</a>
+                    </li>
+                    <li>
                         <a href="<?= url('/dashboard') ?>">Dashboard</a>
                     </li>
                     <li>
@@ -70,6 +73,12 @@
                         <a href="<?= url('/about') ?>" class="waves-effect">
                             <i class="material-icons">info_outline</i>
                             About
+                        </a>
+                    </li>
+                    <li>
+                        <a href="<?= url('/notification') ?>" class="waves-effect">
+                            <i class="material-icons">info_outline</i>
+                            Notification
                         </a>
                     </li>
                     <li>

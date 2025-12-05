@@ -1,3 +1,5 @@
+/assets/js/firebase.js
+/assets/js/notifications.js
 *-sw*.js
 !.htaccess
 !.gitignore

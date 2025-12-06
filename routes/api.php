@@ -16,6 +16,7 @@ $router->get('/api/v1/client/profile', 'Api\v1\ClientController@profile');
 
 // Testing
 $router->post('/api/index', 'Api\TestingController@index');
+$router->post('/api/queue', 'Api\TestingController@queue');
 // Testing - FCM
 $router->post('/api/save-fcm-token/{regId}', 'Api\TestingController@saveFcmToken');
 $router->post('/api/test-fcm-token/{regId}', 'Api\TestingController@testFcmToken');

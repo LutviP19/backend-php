@@ -213,6 +213,227 @@ function is_decimal($n) {
     return is_numeric($n) && floor($n) != $n;
 }
 
+/**
+ * Divide an array into two arrays. One with keys and the other with values.
+ *
+ * @param  array  $array
+ * @return array
+ */
+function divideArray($array) {
+    return [array_keys($array), array_values($array)];
+}
+
+/**
+ * Flatten a multi-dimensional associative array with dots.
+ *
+ * @param  iterable  $array
+ * @param  string  $prepend
+ * @return array
+ */
+function dotArray($array, $prepend = '') {
+    $results = [];
+
+    foreach ($array as $key => $value) {
+        if (is_array($value) && ! empty($value)) {
+            $results = array_merge($results, dotArray($value, $prepend.$key.'.'));
+        } else {
+            $results[$prepend.$key] = $value;
+        }
+    }
+
+    return $results;
+}
+
+/**
+ * Convert a flatten "dot" notation array into an expanded array.
+ *
+ * @param  iterable  $array
+ * @return array
+ */
+function undotArray($array)
+{
+    $results = [];
+
+    foreach ($array as $key => $value) {
+        setDotArray($results, $key, $value);
+    }
+
+    return $results;
+}
+
+/**
+ * Set an array item to a given value using "dot" notation.
+ *
+ * If no key is given to the method, the entire array will be replaced.
+ *
+ * @param  array  $array
+ * @param  string|int|null  $key
+ * @param  mixed  $value
+ * @return array
+ */
+function setDotArray(&$array, $key, $value)
+{
+    if (is_null($key)) {
+        return $array = $value;
+    }
+
+    $keys = explode('.', $key);
+
+    foreach ($keys as $i => $key) {
+        if (count($keys) === 1) {
+            break;
+        }
+
+        unset($keys[$i]);
+
+        // If the key doesn't exist at this depth, we will just create an empty array
+        // to hold the next value, allowing us to create the arrays to hold final
+        // values at the correct depth. Then we'll keep digging into the array.
+        if (! isset($array[$key]) || ! is_array($array[$key])) {
+            $array[$key] = [];
+        }
+
+        $array = &$array[$key];
+    }
+
+    $array[array_shift($keys)] = $value;
+
+    return $array;
+}
+
+/**
+ * Flatten a multi-dimensional array into a single level.
+ *
+ * @param  iterable  $array
+ * @param  int  $depth
+ * @return array
+ */
+function flattenArray($array, $depth = INF)
+{
+    $result = [];
+
+    foreach ($array as $item) {
+        $item = $item instanceof Collection ? $item->all() : $item;
+
+        if (! is_array($item)) {
+            $result[] = $item;
+        } else {
+            $values = $depth === 1
+                ? array_values($item)
+                : flattenArray($item, $depth - 1);
+
+            foreach ($values as $value) {
+                $result[] = $value;
+            }
+        }
+    }
+
+    return $result;
+}
+
+/**
+ * Wrap the string with the given strings.
+ *
+ * @param  string  $value
+ * @param  string  $before
+ * @param  string|null  $after
+ * @return string
+ */
+function wrapStr($value, $before, $after = null)
+{
+    return $before.$value.($after ??= $before);
+}
+
+/**
+ * Limit the number of characters in a string.
+ *
+ * @param  string  $value
+ * @param  int  $limit
+ * @param  string  $end
+ * @param  bool  $preserveWords
+ * @return string
+ */
+function limitStr($value, $limit = 100, $end = '...', $preserveWords = false)
+{
+    if (mb_strwidth($value, 'UTF-8') <= $limit) {
+        return $value;
+    }
+
+    if (! $preserveWords) {
+        return rtrim(mb_strimwidth($value, 0, $limit, '', 'UTF-8')).$end;
+    }
+
+    $value = trim(preg_replace('/[\n\r]+/', ' ', strip_tags($value)));
+
+    $trimmed = rtrim(mb_strimwidth($value, 0, $limit, '', 'UTF-8'));
+
+    if (mb_substr($value, $limit, 1, 'UTF-8') === ' ') {
+        return $trimmed.$end;
+    }
+
+    return preg_replace("/(.*)\s.*/", '$1', $trimmed).$end;
+}
+
+/**
+ * Limit the number of words in a string.
+ *
+ * @param  string  $value
+ * @param  int  $words
+ * @param  string  $end
+ * @return string
+ */
+function limitWordsStr($value, $words = 100, $end = '...')
+{
+    preg_match('/^\s*+(?:\S++\s*+){1,'.$words.'}/u', $value, $matches);
+
+    if (! isset($matches[0]) || mb_strlen($value) === mb_strlen($matches[0])) {
+        return $value;
+    }
+
+    return rtrim($matches[0]).$end;
+}
+
+
+/**
+ * Remove all whitespace from both ends of a string.
+ *
+ * @param  string  $value
+ * @param  string  $mode : both | ltrim | rtrim
+ * @param  string|null  $charlist
+ * @return string
+ */
+function trimStr($value, $mode = 'both', $charlist = null)
+{
+    if ($charlist === null) {
+        $trimDefaultCharacters = " \n\r\t\v\0";
+
+        if($mode === 'ltrim')
+            return preg_replace('~^[\s\x{FEFF}\x{200B}\x{200E}'.$ltrimDefaultCharacters.']+~u', '', $value) ?? ltrim($value);
+        elseif($mode === 'rtrim')
+            return preg_replace('~[\s\x{FEFF}\x{200B}\x{200E}'.$rtrimDefaultCharacters.']+$~u', '', $value) ?? rtrim($value);
+        else
+            return preg_replace('~^[\s\x{FEFF}\x{200B}\x{200E}'.$trimDefaultCharacters.']+|[\s\x{FEFF}\x{200B}\x{200E}'.$trimDefaultCharacters.']+$~u', '', $value) ?? trim($value);
+    }
+
+    if($mode === 'ltrim')
+        return ltrim($value, $charlist);
+    elseif($mode === 'rtrim')
+        return rtrim($value, $charlist);
+    else
+        return trim($value, $charlist);
+}
+
+/**
+ * Remove all "extra" blank space from the given string.
+ *
+ * @param  string  $value
+ * @return string
+ */
+function squishStr($value)
+{
+    return preg_replace('~(\s|\x{3164}|\x{1160})+~u', ' ', trimStr($value));
+}
+
 // function tofloat($num) {
 //     $dotPos = strrpos($num, '.');
 //     $commaPos = strrpos($num, ',');

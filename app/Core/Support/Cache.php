@@ -84,7 +84,7 @@ class Cache
             $data = \file_get_contents($this->path_cache.$this->prefix.'_'.$this->_formatId($id).'.cache');
         }
 
-        return unserialize(base64_decode($data));
+        return unserialize(base64_decode((string) $data));
     }
 
     public function deleteData($id)

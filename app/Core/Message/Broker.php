@@ -128,7 +128,8 @@ class Broker
 
         $channel = $connection->channel();
         $channel->exchange_declare($queueName, $method, false, false, false);
-        list($queue_name, , ) = $channel->queue_declare("", false, false, true, false);
+        // list($queue_name, , ) = $channel->queue_declare("", false, false, true, false);
+        [$queue_name, , ] = $channel->queue_declare("", false, false, true, false);
 
         $channel->queue_bind($queue_name, $queueName);
         $channel->basic_consume($queue_name, '', false, true, false, false, $callback);

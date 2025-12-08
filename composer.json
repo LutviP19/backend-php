@@ -41,7 +41,8 @@
     },
     "require-dev": {
         "pestphp/pest": "^3.8",
-        "fakerphp/faker": "^1.24"
+        "fakerphp/faker": "^1.24",
+        "rector/rector": "^2.2"
     },
     "config": {
         "allow-plugins": {

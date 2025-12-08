@@ -28,7 +28,7 @@ class ClearcacheCommand extends Command
     public function __invoke(InputInterface $input, OutputInterface $output)
     {
         if ($input->getOption('groups')) {
-            $groups = explode(",", $input->getOption('groups'));
+            $groups = explode(",", (string) $input->getOption('groups'));
             $progressBar = new ProgressBar($output, count($groups));
 
             $progressBar->start();

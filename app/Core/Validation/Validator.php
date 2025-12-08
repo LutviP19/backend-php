@@ -168,7 +168,7 @@ class Validator
 
             }
 
-            if (!preg_match('(:)', $rule)) {
+            if (!preg_match('(:)', (string) $rule)) {
 
                 //check if the rule exists.
                 if (!in_array($rule, $this->getValidRules())) {
@@ -181,7 +181,7 @@ class Validator
             } else {
 
                 //split the rule from ":" character.
-                $paramRule = explode(':', $rule);
+                $paramRule = explode(':', (string) $rule);
 
                 //check if the rule exists.
                 if (!in_array($paramRule[0], $this->getValidParamRules())) {

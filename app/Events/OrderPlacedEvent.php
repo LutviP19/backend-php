@@ -13,16 +13,16 @@ class OrderPlacedEvent extends Event
 {
     public const NAME = 'order.placed';
 
-    protected $order;
+    // protected $order;
 
     /**
      * Constructor to initialize the order data.
      *
      * @param array $order The order details.
      */
-    public function __construct($order)
+    public function __construct(protected $order)
     {
-        $this->order = $order;
+        // $this->order = $order;
     }
 
     /**

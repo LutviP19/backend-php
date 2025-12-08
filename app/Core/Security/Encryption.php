@@ -61,7 +61,8 @@ class Encryption
      */
     public static function generateKey($cipher = 'aes-256-cbc')
     {
-        return 'base64:' . base64_encode(random_bytes(self::$supportedCiphers[strtolower($cipher)]['size'] ?? 32));
+        // return 'base64:' . base64_encode(random_bytes(self::$supportedCiphers[strtolower($cipher)]['size'] ?? 32));
+        return 'base64:' . base64_encode(random_bytes(self::$supportedCiphers[strtolower((string) $cipher)]['size'] ?? 32));
     }
 
     /**
@@ -85,11 +86,13 @@ class Encryption
      */
     public function encrypt(#[\SensitiveParameter] string $data): string
     {
-        $iv = random_bytes(openssl_cipher_iv_length(strtolower($this->cipher)));
+        // $iv = random_bytes(openssl_cipher_iv_length(strtolower($this->cipher)));
+        $iv = random_bytes(openssl_cipher_iv_length(strtolower((string) $this->cipher)));
 
         $value = \openssl_encrypt(
             $data,
-            strtolower($this->cipher),
+            // strtolower($this->cipher),
+            strtolower((string) $this->cipher),
             $this->encryptionKey,
             0,
             $iv,
@@ -102,7 +105,8 @@ class Encryption
 
         $iv = base64_encode($iv);
         $tag = base64_encode($tag ?? '');
-        $mac = self::$supportedCiphers[strtolower($this->cipher)]['aead']
+        // $mac = self::$supportedCiphers[strtolower($this->cipher)]['aead']
+        $mac = self::$supportedCiphers[strtolower((string) $this->cipher)]['aead']
             ? '' // For AEAD-algorithms, the tag / MAC is returned by openssl_encrypt...
             : $this->hash($iv, $value, $this->encryptionKey);
 
@@ -122,10 +126,12 @@ class Encryption
     {
         $payload = $this->getJsonPayload($encryptedData);
 
-        $iv = base64_decode($payload['iv']);
+        // $iv = base64_decode($payload['iv']);
+        $iv = base64_decode((string) $payload['iv']);
 
         $this->ensureTagIsValid(
-            $tag = empty($payload['tag']) ? null : base64_decode($payload['tag'])
+            // $tag = empty($payload['tag']) ? null : base64_decode($payload['tag'])
+            $tag = empty($payload['tag']) ? null : base64_decode((string) $payload['tag'])
         );
 
         $foundValidMac = false;
@@ -140,7 +146,8 @@ class Encryption
 
             $decrypted = \openssl_decrypt(
                 $payload['value'],
-                strtolower($this->cipher),
+                // strtolower($this->cipher),
+                strtolower((string) $this->cipher),
                 $key,
                 0,
                 $iv,
@@ -197,7 +204,8 @@ class Encryption
      */
     protected function shouldValidateMac()
     {
-        return ! self::$supportedCiphers[strtolower($this->cipher)]['aead'];
+        // return ! self::$supportedCiphers[strtolower($this->cipher)]['aead'];
+        return ! self::$supportedCiphers[strtolower((string) $this->cipher)]['aead'];
     }
 
     /**
@@ -260,11 +268,13 @@ class Encryption
      */
     protected function ensureTagIsValid($tag)
     {
-        if (self::$supportedCiphers[strtolower($this->cipher)]['aead'] && strlen($tag) !== 16) {
+        // if (self::$supportedCiphers[strtolower($this->cipher)]['aead'] && strlen($tag) !== 16) {
+        if (self::$supportedCiphers[strtolower((string) $this->cipher)]['aead'] && strlen($tag) !== 16) {
             throw new RuntimeException('Could not decrypt the data.');
         }
 
-        if (! self::$supportedCiphers[strtolower($this->cipher)]['aead'] && is_string($tag)) {
+        // if (! self::$supportedCiphers[strtolower($this->cipher)]['aead'] && is_string($tag)) {
+        if (! self::$supportedCiphers[strtolower((string) $this->cipher)]['aead'] && is_string($tag)) {
             throw new RuntimeException('Unable to use tag because the cipher algorithm does not support AEAD.');
         }
     }
@@ -311,7 +321,8 @@ class Encryption
             return false;
         }
 
-        return strlen(base64_decode($payload['iv'], true)) === openssl_cipher_iv_length(strtolower($this->cipher));
+        // return strlen(base64_decode($payload['iv'], true)) === openssl_cipher_iv_length(strtolower($this->cipher));
+        return strlen(base64_decode((string) $payload['iv'], true)) === openssl_cipher_iv_length(strtolower((string) $this->cipher));
     }
 
     /**

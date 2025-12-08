@@ -21,6 +21,7 @@ class BpTransportFactory implements TransportFactoryInterface
 
     public function supports(string $dsn, array $options): bool
     {
-        return 0 === strpos($dsn, 'bp-transport://');
+        // return 0 === strpos($dsn, 'bp-transport://');
+        return str_starts_with($dsn, 'bp-transport://');
     }
 }

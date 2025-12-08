@@ -7,20 +7,21 @@ use App\Core\Security\Hash;
 
 class RememberMe
 {
-    protected $table_user;
-    protected $table_primary_id;
+    // protected $table_user;
+    // protected $table_primary_id;
     protected $phone_number;
     protected $hash;
     protected $hashKey;
     protected $hashMode;
 
-    public function __construct($table_user, $table_primary_id, $phone_number)
+    // public function __construct($table_user, $table_primary_id, $phone_number)
+    public function __construct(protected $table_user, protected $table_primary_id, $phone_number)
     {
-        // users, customers, drivers
-        $this->table_user = $table_user;
+        // // users, customers, drivers
+        // $this->table_user = $table_user;
 
-        // primary id column
-        $this->table_primary_id = $table_primary_id;
+        // // primary id column
+        // $this->table_primary_id = $table_primary_id;
 
         // unique phone_number
         $this->phone_number = \is_numeric($phone_number) ? $phone_number : base64url_decode($phone_number);
@@ -35,7 +36,7 @@ class RememberMe
         // $phone_number = $this->hash->create($this->phone_number, $this->hashKey, $this->hashMode);
         $phone_number = base64url_encode($this->phone_number);
         $validator = $this->hash->randomString(32, false);
-        $hash_validator = password_hash($validator, PASSWORD_DEFAULT);
+        $hash_validator = password_hash((string) $validator, PASSWORD_DEFAULT);
 
         // \App\Core\Support\Log::debug($hash_validator, 'RememberMe.generateTokens.hash_validator');
         // \App\Core\Support\Log::debug(strlen($hash_validator), 'RememberMe.generateTokens.hash_validator-strlen');
@@ -68,7 +69,7 @@ class RememberMe
         // insert a token to the database 'Y-m-d H:i:s'
         $expiry = date('Y-m-d H:i:s', $expired_seconds);
         
-        $matched = password_verify($validator, $hash_validator);
+        $matched = password_verify((string) $validator, (string) $hash_validator);
         // \App\Core\Support\Log::debug($matched, 'RememberMe.rememberToken.matchHash');
         if($matched) {
             $insertData = $this->insertUserToken($user_id, $phone_number, $validator, $expiry);
@@ -115,9 +116,9 @@ class RememberMe
 
         // Parse token from db remember_token
         $remember_token = $tokens->remember_token;
-        $validator = \explode(':', $remember_token)[1];
+        $validator = \explode(':', (string) $remember_token)[1];
 
-        $matched = password_verify($validator, $hash_validator);
+        $matched = password_verify($validator, (string) $hash_validator);
         // \App\Core\Support\Log::debug($matched, 'RememberMe.tokenIsValid.$matchHash');
         
         return $matched;
@@ -242,7 +243,8 @@ class RememberMe
             // remove the remember_me cookie
             if (isset($_COOKIE['remember_me'])) {
                 unset($_COOKIE['remember_me']);
-                setcookie('remember_user', null, -1);
+                // setcookie('remember_user', null, -1);
+                setcookie('remember_user', '', ['expires' => -1]);
             }
 
             // remove all session data

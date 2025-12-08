@@ -36,3 +36,5 @@ STATUS :
 - Http Server : Performance test
 - WebSocket Server : Still template, will todo as async channeling (AI supported)
 
+MAINTENANCE:
+- Add Rector : Rector instantly upgrades and refactors the PHP code of your application.

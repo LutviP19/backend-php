@@ -151,25 +151,36 @@ class Response
      */
     protected function httpError($code)
     {
-        switch ($code) {
-            case 403:
-                //403 forbidden!
-                $this->sendErrorResponse($code, 'errors.403');
-                break;
-            case 404:
-                //404 not found!
-                $this->sendErrorResponse($code, 'errors.404');
-                break;
-            case 503:
-                //503 service unavailable!
-                $this->sendErrorResponse($code, 'errors.503');
-                break;
-            case 500:
-            default:
-                //500 internal server error!
-                $this->sendErrorResponse($code, 'errors.500');
-                break;
-        }
+        // switch ($code) {
+        //     case 403:
+        //         //403 forbidden!
+        //         $this->sendErrorResponse($code, 'errors.403');
+        //         break;
+        //     case 404:
+        //         //404 not found!
+        //         $this->sendErrorResponse($code, 'errors.404');
+        //         break;
+        //     case 503:
+        //         //503 service unavailable!
+        //         $this->sendErrorResponse($code, 'errors.503');
+        //         break;
+        //     case 500:
+        //     default:
+        //         //500 internal server error!
+        //         $this->sendErrorResponse($code, 'errors.500');
+        //         break;
+        // }
+
+        match ($code) {
+            //403 forbidden!
+            403 => $this->sendErrorResponse($code, 'errors.403'),
+            //404 not found!
+            404 => $this->sendErrorResponse($code, 'errors.404'),
+            //503 service unavailable!
+            503 => $this->sendErrorResponse($code, 'errors.503'),
+            //500 internal server error!
+            default => $this->sendErrorResponse($code, 'errors.500'),
+        };
     }
 
     /**

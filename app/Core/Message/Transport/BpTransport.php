@@ -16,14 +16,13 @@ use Symfony\Component\Uid\Uuid;
  */
 class BpTransport implements TransportInterface
 {
-    private SerializerInterface $serializer;
 
     /**
      * @param BpDatabase $db is used for init core database.
      */
     public function __construct(
-        private BpDatabase $db = null,
-        ?SerializerInterface $serializer = null,
+        private BpDatabase $db,
+        private readonly ?SerializerInterface $serializer = new PhpSerializer(),
     ) {
         $this->db = $db ?? new BpDatabase();
         $this->serializer = $serializer ?? new PhpSerializer();

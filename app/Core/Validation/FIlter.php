@@ -62,7 +62,8 @@ class Filter
                 $value = $this->sanitize($value, [], $utf8_encode);
             }
             if (is_string($value)) {
-                if (strpos($value, "\r") !== false) {
+                // if (strpos($value, "\r") !== false) {
+                if (str_contains($value, "\r")) {
                     $value = trim($value);
                 }
 
@@ -106,7 +107,8 @@ class Filter
                 if (is_array($input[$field])) {
                     $input_array = &$input[$field];
                 } else {
-                    $input_array = array(&$input[$field]);
+                    // $input_array = array(&$input[$field]);
+                    $input_array = [&$input[$field]];
                 }
 
                 foreach ($input_array as &$value) {
@@ -145,7 +147,8 @@ class Filter
         $method = self::filter_to_method($rule);
 
         // use native filters
-        if (is_callable(array($this, $method))) {
+        // if (is_callable(array($this, $method))) {
+        if (is_callable([$this, $method])) {
             return $this->$method($value, $rule_params);
         }
 
@@ -210,8 +213,10 @@ class Filter
             'param' => []
         ];
 
-        if (strpos($rule, self::$rules_parameters_delimiter) !== false) {
-            list($rule, $param) = explode(self::$rules_parameters_delimiter, $rule);
+        // if (strpos($rule, self::$rules_parameters_delimiter) !== false) {
+        //     list($rule, $param) = explode(self::$rules_parameters_delimiter, $rule);
+        if (str_contains($rule, self::$rules_parameters_delimiter)) {
+            [$rule, $param] = explode(self::$rules_parameters_delimiter, $rule);
 
             $result['rule'] = $rule;
             $result['param'] = $this->parse_rule_params($param);
@@ -232,7 +237,8 @@ class Filter
             return $param;
         }
 
-        if (strpos($param, self::$rules_parameters_arrays_delimiter) !== false) {
+        // if (strpos($param, self::$rules_parameters_arrays_delimiter) !== false) {
+        if (str_contains($param, self::$rules_parameters_arrays_delimiter)) {
             return explode(self::$rules_parameters_arrays_delimiter, $param);
         }
 
@@ -340,7 +346,7 @@ class Filter
      */
     public static function polyfill_filter_var_string($value)
     {
-        $str = preg_replace('/\x00|<[^>]*>?/', '', $value);
+        $str = preg_replace('/\x00|<[^>]*>?/', '', (string) $value);
         return (string) str_replace(["'", '"'], ['&#39;', '&#34;'], $str);
     }
 
@@ -440,7 +446,8 @@ class Filter
     public function filter_slug($value, array $params = [])
     {
         $delimiter = '-';
-        return mb_strtolower(trim(preg_replace('/[\s-]+/', $delimiter, preg_replace('/[^A-Za-z0-9-]+/', $delimiter, preg_replace('/[&]/', 'and', preg_replace('/[\']/', '', iconv('UTF-8', 'ASCII//TRANSLIT', $value))))), $delimiter));
+        // return mb_strtolower(trim(preg_replace('/[\s-]+/', $delimiter, preg_replace('/[^A-Za-z0-9-]+/', $delimiter, preg_replace('/[&]/', 'and', preg_replace('/[\']/', '', iconv('UTF-8', 'ASCII//TRANSLIT', $value))))), $delimiter));
+        return mb_strtolower(trim((string) preg_replace('/[\s-]+/', $delimiter, (string) preg_replace('/[^A-Za-z0-9-]+/', $delimiter, (string) preg_replace('/[&]/', 'and', (string) preg_replace('/[\']/', '', iconv('UTF-8', 'ASCII//TRANSLIT', $value))))), $delimiter));
     }
 
     /**

@@ -73,14 +73,14 @@ class WebhookController extends ServerApiController
         switch ($event) {
             case 'users.get':
                 $users = (new User())->all();
-                if (!empty($users) && \count($users) <= rand(5,10)) {
+                if (!empty($users) && \count($users) <= random_int(5,10)) {
                     $status = true;
                 }
                 break;
             case 'order.placed':
                 $dispatcher = new EventDispatcher();
                 $orderService = new OrderService($dispatcher);
-                $order = ['id' => rand(0, 2), 'items' => ['item1', 'item2']];
+                $order = ['id' => random_int(0, 2), 'items' => ['item1', 'item2']];
                 if(false !== $orderService->placeOrder($order)) {
                     $status = true;
                 }                    

@@ -83,8 +83,8 @@ class Rules
     {
         // Default
         if (count($params) === 0) {
-            $cdate1 = date('Y-m-d', strtotime($value));
-            $cdate2 = date('Y-m-d H:i:s', strtotime($value));
+            $cdate1 = date('Y-m-d', strtotime((string) $value));
+            $cdate2 = date('Y-m-d H:i:s', strtotime((string) $value));
 
             return !($cdate1 != $value && $cdate2 != $value);
         }
@@ -167,7 +167,7 @@ class Rules
      */
     public function validateAlphaNumeric($field)
     {
-        if (!ctype_alnum($this->value($field))) {
+        if (!ctype_alnum((string) $this->value($field))) {
             $this->error($field, 'should be alpha numerical!');
         }
     }

@@ -74,7 +74,7 @@ class Sanitize extends Filter
     {
         // Remove whitespace, spaces, leading and trailing slashes
         $path = preg_replace('/\s+/', '', $path);
-        $path = trim($path, '/');
+        $path = trim((string) $path, '/');
 
         // Convert all invalid slashes to one single forward slash
         $replacements = [
@@ -133,7 +133,8 @@ class Sanitize extends Filter
         } elseif (is_array($value)) {
 
             self::$encoding = $encoding;
-            array_walk_recursive($value, [self::class, '_escapeRecursive']);
+            // array_walk_recursive($value, [self::class, '_escapeRecursive']);
+            array_walk_recursive($value, self::_escapeRecursive(...));
             return $value;
 
         }

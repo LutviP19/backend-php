@@ -15,7 +15,7 @@ use App\Core\Validation\MessageBag;
 /** ===== Utils ===== */
 function b64url($data)
 {
-    return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
+    return rtrim(strtr(base64_encode((string) $data), '+/', '-_'), '=');
 }
 
 /**
@@ -26,7 +26,7 @@ function b64url($data)
  */
 function env($key, $alt = '')
 {
-    return isset($_ENV[$key]) ? $_ENV[$key] : $alt;
+    return $_ENV[$key] ?? $alt;
 }
 
 /**
@@ -98,7 +98,8 @@ function endResponse($response, $status = 200, $headers = [])
     // // Get output response
     // \App\Core\Support\Log::debug($response, 'Helper.endResponse.$response');
 
-    $cookieSessID = isset($_COOKIE[session_name()]) ? $_COOKIE[session_name()] : false;
+    // $cookieSessID = isset($_COOKIE[session_name()]) ? $_COOKIE[session_name()] : false;
+    $cookieSessID = $_COOKIE[session_name()] ?? false;
     // get sessionId, then merged it to response
     $sessionId = $cookieSessID ?: session_id();
     
@@ -110,7 +111,7 @@ function endResponse($response, $status = 200, $headers = [])
     } else {
         if ($cookieSessID) {
 
-            $getSessionId = explode("-", $_COOKIE[session_name()]);
+            $getSessionId = explode("-", (string) $_COOKIE[session_name()]);
             if (count($getSessionId) == 2) {
 
                 if (isset($_SESSION['uid']) && $getSessionId[0] !== $_SESSION['uid']) {
@@ -279,7 +280,8 @@ function getDataFromRedis($id, $prefix = null)
         'database' => Config::get('redis.cache.database')
     ]);
 
-    $prefix = $prefix ?? 'bp_data';
+    // $prefix = $prefix ?? 'bp_data';
+    $prefix ??= 'bp_data';
 
     $data = $redis->get($prefix.':'.$id);
 
@@ -384,7 +386,8 @@ function currentUrl()
  */
 function sanitizeUri($uri)
 {
-    if (strpos($uri, '/') == 0) {
+    // if (strpos($uri, '/') == 0) {
+    if (str_starts_with($uri, '/')) {
         $uri = ltrim($uri, '/');
     }
 
@@ -574,7 +577,7 @@ function checkRateLimit($identifier, $limit, $timeframeSeconds) {
 
 // --- Base64URL Encoding/Decoding Functions ---
 function base64url_encode($data) {
-    return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
+    return rtrim(strtr(base64_encode((string) $data), '+/', '-_'), '=');
 }
 
 function base64url_decode($data) {
@@ -723,50 +726,98 @@ function sendMessageQueue($message): void
  *
  * @return bool
  */
-function sendEmail(string $from = '', string $to, string $subject, $bodyText = '', $bodyHtml = '', array $attachment = [], array $image = []): bool
+function sendEmailPhp(string $from, string $to, string $subject, $bodyText = '', $bodyHtml = '', array $attachment = [], array $image = []): bool
 {
-    if(env('APP_ENV') === 'local') {
-        try {
-            $email = (new \App\Core\Mailer\Email());
-            $email->prepareData($from, $to, $subject, $bodyText, $bodyHtml, $attachment, $image);
-            $email->send();
-            return true;
-        } catch (\Exception $e) {
-            // throw new Exception('Error send email: ' . $e->getMessage());
-            return false;
-        }
-    } else {
-        $from = explode(",", $from);
-        $to = explode(",", $to);
+    $from = explode(",", $from);
+    $to = explode(",", $to);
 
-        if(count($from)) {
-            $from = $from[0];
-        }
-
-        if(count($to)) {
-            $to = $to[0];
-        }
-
-        $headers = 'From: '. $from . "\r\n" .
-                   'Reply-To: '. $from . "\r\n" .
-                   'X-Mailer: PHP/' . phpversion();
-
-        if (mail($to, $subject, $bodyText, $headers)) {
-            $status = true;
-        } else {
-            $status = false;
-            $msg = 'Gagal mengirim email.';
-            \App\Core\Support\Log::error([
-                'msg' => $msg,
-                'to' => $to,
-                'subject' => $subject,
-                'headers' => $headers,
-            ], 'Helpers.sendEmail.mail');
-        }
-
-        return $status;
+    if(count($from)) {
+        $from = $from[0];
     }
-    
+
+    if(count($to)) {
+        $to = $to[0];
+    }
+
+    $headers = 'From: '. $from . "\r\n" .
+               'Reply-To: '. $from . "\r\n" .
+               'X-Mailer: PHP/' . phpversion();
+
+    if (mail($to, $subject, $bodyText, $headers)) {
+        $status = true;
+    } else {
+        $status = false;
+        $msg = 'Gagal mengirim email.';
+        \App\Core\Support\Log::error([
+            'msg' => $msg,
+            'to' => $to,
+            'subject' => $subject,
+            'headers' => $headers,
+        ], 'Helpers.sendEmail.mail');
+    }
+
+    return $status;
+}
+
+/**
+ * sort function to sending email
+ *
+ * @param  string $from
+ * @param  string $to
+ * @param  string $subject
+ * @param  string $bodyText
+ * @param  string $bodyHtml
+ * @param  array  $attachment
+ * @param  array  $image
+ *
+ * @return bool
+ */
+function sendEmail(string $from, string $to, string $subject, $bodyText = '', $bodyHtml = '', array $attachment = [], array $image = []): bool
+{
+    // if(env('APP_ENV') === 'local') {
+    try {
+        $email = (new \App\Core\Mailer\Email());
+        $email->prepareData($from, $to, $subject, $bodyText, $bodyHtml, $attachment, $image);
+        $email->send();
+        return true;
+    } catch (\Exception $e) {
+        // throw new Exception('Error send email: ' . $e->getMessage());
+        if(config('app.debug')) {
+            \App\Core\Support\Log::error('Error send email: ' . $e->getMessage(), 'Helpers.sendEmail');
+        }
+        return false;
+    }
+    // } else {
+    //     $from = explode(",", $from);
+    //     $to = explode(",", $to);
+
+    //     if(count($from)) {
+    //         $from = $from[0];
+    //     }
+
+    //     if(count($to)) {
+    //         $to = $to[0];
+    //     }
+
+    //     $headers = 'From: '. $from . "\r\n" .
+    //                'Reply-To: '. $from . "\r\n" .
+    //                'X-Mailer: PHP/' . phpversion();
+
+    //     if (mail($to, $subject, $bodyText, $headers)) {
+    //         $status = true;
+    //     } else {
+    //         $status = false;
+    //         $msg = 'Gagal mengirim email.';
+    //         \App\Core\Support\Log::error([
+    //             'msg' => $msg,
+    //             'to' => $to,
+    //             'subject' => $subject,
+    //             'headers' => $headers,
+    //         ], 'Helpers.sendEmail.mail');
+    //     }
+
+    //     return $status;
+    // }
 }
 
 /**
@@ -810,7 +861,7 @@ function readJson($key = null, $payload = null, $default = null)
         return null;
     }
 
-    $keys = explode('.', $key);
+    $keys = explode('.', (string) $key);
     foreach ($keys as $key) {
         if (isset($payload[$key])) {
             $payload = $payload[$key];
@@ -837,7 +888,7 @@ function slug($title, $separator = '-', $language = 'en', $dictionary = ['@' => 
     // Convert all dashes/underscores into separator
     $flip = $separator === '-' ? '_' : '-';
 
-    $title = preg_replace('![' . preg_quote($flip) . ']+!u', $separator, $title);
+    $title = preg_replace('![' . preg_quote($flip) . ']+!u', $separator, (string) $title);
 
     // Replace dictionary words
     foreach ($dictionary as $key => $value) {
@@ -850,20 +901,20 @@ function slug($title, $separator = '-', $language = 'en', $dictionary = ['@' => 
     $title = preg_replace('![^' . preg_quote($separator) . '\pL\pN\s]+!u', '', strtolower($title));
 
     // Replace all separator characters and whitespace by a single separator
-    $title = preg_replace('![' . preg_quote($separator) . '\s]+!u', $separator, $title);
+    $title = preg_replace('![' . preg_quote($separator) . '\s]+!u', $separator, (string) $title);
 
-    return trim($title, $separator);
+    return trim((string) $title, $separator);
 }
 
 function formatPhoneSnapshot($phoneNumber)
 {
-    $phone_number = str_replace('62', '0', trim($phoneNumber));
+    $phone_number = str_replace('62', '0', trim((string) $phoneNumber));
     return substr($phone_number, 0, 4).'****'.substr($phone_number, 8, strlen($phone_number));
 }
 
 function base64ToWebP($base64_string, $output_file, $quality = 80) {
     // Remove the "data:image/webp;base64," prefix if present
-    $data = explode(',', $base64_string);
+    $data = explode(',', (string) $base64_string);
     $decoded_data = base64_decode(end($data));
 
     // Create an image resource from the decoded data
@@ -889,7 +940,7 @@ function base64ToWebP($base64_string, $output_file, $quality = 80) {
 
 function base64ToImage($base64_string, $output_file) {
     // Separate the metadata from the base64 string
-    $parts = explode(',', $base64_string);
+    $parts = explode(',', (string) $base64_string);
     $imageData = base64_decode($parts[1]);
 
     // Save the decoded data to a file
@@ -904,8 +955,8 @@ function base64ToImage($base64_string, $output_file) {
 
 // Function to save any image to Webp
 function webpImage($source, $quality = 80, $removeOld = false) {
-    $dir = pathinfo($source, PATHINFO_DIRNAME);
-    $name = pathinfo($source, PATHINFO_FILENAME);
+    $dir = pathinfo((string) $source, PATHINFO_DIRNAME);
+    $name = pathinfo((string) $source, PATHINFO_FILENAME);
     $destination = $dir . DIRECTORY_SEPARATOR . $name . '.webp';
     $info = getimagesize($source);
     $isAlpha = false;

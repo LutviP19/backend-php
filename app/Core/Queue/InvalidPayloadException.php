@@ -7,12 +7,12 @@ use InvalidArgumentException;
 
 class InvalidPayloadException extends InvalidArgumentException
 {
-    /**
-     * The value that failed to decode.
-     *
-     * @var mixed
-     */
-    public $value;
+    // /**
+    //  * The value that failed to decode.
+    //  *
+    //  * @var mixed
+    //  */
+    // public $value;
 
     /**
      * Create a new exception instance.
@@ -21,10 +21,17 @@ class InvalidPayloadException extends InvalidArgumentException
      * @param  mixed  $value
      * @return void
      */
-    public function __construct($message = null, $value = null)
+    public function __construct(
+        $message = null, 
+        /**
+        * The value that failed to decode.
+        *
+        * @var mixed
+        */
+        public $value = null
+    )
     {
         parent::__construct($message ?: json_last_error());
-
         $this->value = $value;
     }
 }

@@ -40,7 +40,7 @@ class InfoCommand extends Command
         $this->id = $input->getArgument('userid');
 
         if ($input->getOption('groups')) {
-            $groups = explode(",", $input->getOption('groups'));
+            $groups = explode(",", (string) $input->getOption('groups'));
             $progressBar = new ProgressBar($output, count($groups));
 
             $progressBar->start();

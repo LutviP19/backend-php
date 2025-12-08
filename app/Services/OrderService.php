@@ -11,16 +11,16 @@ use App\Events\OrderPlacedEvent;
  */
 class OrderService
 {
-    protected $dispatcher;
+    // protected $dispatcher;
 
     /**
      * Constructor to initialize the event dispatcher.
      *
      * @param EventDispatcher $dispatcher The event dispatcher.
      */
-    public function __construct($dispatcher)
+    public function __construct(protected $dispatcher)
     {
-        $this->dispatcher = $dispatcher;
+        // $this->dispatcher = $dispatcher;
     }
 
     /**

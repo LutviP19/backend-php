@@ -79,7 +79,7 @@ class Request
     public static function uri()
     {
         return trim(
-            parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH),
+            parse_url((string) $_SERVER['REQUEST_URI'], PHP_URL_PATH),
             '/'
         );
     }
@@ -150,7 +150,7 @@ class Request
 
         if (! empty($content) && checkValidJSON($content)) {
 
-            $content = json_decode($content, true, 512, \JSON_BIGINT_AS_STRING | \JSON_THROW_ON_ERROR);
+            $content = json_decode((string) $content, true, 512, \JSON_BIGINT_AS_STRING | \JSON_THROW_ON_ERROR);
             // \App\Core\Support\Log::debug($content, 'Request.getPayload.content.'.time());
             foreach ($content as $key => $value) {
                 if (is_array($value)) {
@@ -325,7 +325,7 @@ class Request
             return;
         }
 
-        $strings = explode('&', $_SERVER['QUERY_STRING']);
+        $strings = explode('&', (string) $_SERVER['QUERY_STRING']);
         $query = [];
 
         foreach ($strings as $string) {
@@ -334,7 +334,8 @@ class Request
             //we will check if we don't have something like
             //url/key instead of url/key=value or else we will
             //get an error.
-            $query[$val[0]] = isset($val[1]) ? $val[1] : '';
+            // $query[$val[0]] = isset($val[1]) ? $val[1] : '';
+            $query[$val[0]] = $val[1] ?? '';
         }
 
         $this->query = $query;
@@ -366,8 +367,10 @@ class Request
             'HTTP_HOST'            => $_SERVER['HTTP_HOST'],
             'HTTP_ACCEPT'          => $_SERVER['HTTP_ACCEPT'],
             'HTTP_USER_AGENT'      => $_SERVER['HTTP_USER_AGENT'],
-            'HTTP_ACCEPT_ENCODING' =>  isset($_SERVER['HTTP_ACCEPT_ENCODING']) ? $_SERVER['HTTP_ACCEPT_ENCODING'] : null,
-            'QUERY_STRING'         => isset($_SERVER['QUERY_STRING']) ? $_SERVER['QUERY_STRING'] : null,
+            // 'HTTP_ACCEPT_ENCODING' =>  isset($_SERVER['HTTP_ACCEPT_ENCODING']) ? $_SERVER['HTTP_ACCEPT_ENCODING'] : null,
+            // 'QUERY_STRING'         => isset($_SERVER['QUERY_STRING']) ? $_SERVER['QUERY_STRING'] : null,
+            'HTTP_ACCEPT_ENCODING' =>  $_SERVER['HTTP_ACCEPT_ENCODING'] ?? null,
+            'QUERY_STRING'         => $_SERVER['QUERY_STRING'] ?? null,
             'PHP_SELF'             => $_SERVER['PHP_SELF'],
             'SCRIPT_NAME'          => $_SERVER['SCRIPT_NAME'],
             'SCRIPT_FILENAME'      => $_SERVER['SCRIPT_FILENAME'],

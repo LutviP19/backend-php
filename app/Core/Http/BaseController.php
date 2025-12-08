@@ -110,9 +110,10 @@ class BaseController
         $requestMethod = Request::method();
 
         //uppercase all the methods.
-        array_map(function ($method) {
-            return strtoupper($method);
-        }, $methods);
+        // array_map(function ($method) {
+        //     return strtoupper($method);
+        // }, $methods);
+        array_map(strtoupper(...), $methods);
 
         if (!in_array($requestMethod, $methods)) {
             return false;

@@ -15,16 +15,16 @@ use RuntimeException;
  */
 class ValidateClient
 {
-    protected $clientId;
-    protected $columnId;
+    // protected $clientId;
+    // protected $columnId;
     protected $minutes_to_expire;
     protected $hash;
     protected $redis;
 
-    public function __construct($clientId, $columnId = 'ulid')
+    public function __construct(protected $clientId, protected $columnId = 'ulid')
     {
-        $this->clientId = $clientId;
-        $this->columnId = $columnId;
+        // $this->clientId = $clientId;
+        // $this->columnId = $columnId;
         $this->minutes_to_expire = (env('SESSION_LIFETIME', 120) * 60);
         $this->hash = new Hash();
 
@@ -62,7 +62,7 @@ class ValidateClient
 
             // cache to redis
             $key = 'client_token:'.$this->clientId;
-            $this->redis->mset([$key => base64_encode($user->client_token)]);
+            $this->redis->mset([$key => base64_encode((string) $user->client_token)]);
             $this->redis->expire($key, $this->minutes_to_expire);
 
             return $user->client_token;
@@ -116,7 +116,8 @@ class ValidateClient
      */
     public function matchToken($clientToken): bool
     {
-        $token = $this->getToken($this->columnId);
+        // $token = $this->getToken($this->columnId);
+        $token = $this->getToken();
 
         if (is_null($token) ||
             false === $clientToken ||

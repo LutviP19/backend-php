@@ -68,7 +68,8 @@ class Email
      * @param array $image Set message images.
      *
      */
-    public function prepareData(string $from = '', string $to, string $subject, $bodyText = '', $bodyHtml = '', array $attachment = [], array $image = [])
+    // public function prepareData(string $from = '', string $to, string $subject, $bodyText = '', $bodyHtml = '', array $attachment = [], array $image = [])
+    public function prepareData(string $from = '', string $to = '', string $subject = '', $bodyText = '', $bodyHtml = '', array $attachment = [], array $image = [])
     {
         $email = new SymfonyEmail();
 

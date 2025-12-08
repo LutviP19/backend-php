@@ -23,9 +23,9 @@ class Hash
         $key = str_replace('base64:', '', (string) $key ?: Config::get('app.hash_key'));
 
         if($mode === 'string')
-        return hash_hmac('sha256', $value, $key);
+        return hash_hmac('sha256', (string) $value, $key);
 
-        return base64_encode(hash_hmac('sha256', $value, $key));
+        return base64_encode(hash_hmac('sha256', (string) $value, $key));
     }
 
     /**

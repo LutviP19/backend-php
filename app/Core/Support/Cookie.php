@@ -28,7 +28,8 @@ class Cookie
      */
     public static function set($key, $value, $expires = 0, $httpOnly = false, $path = '/', $domain = null, $secure = false)
     {
-        setcookie($key, $value, $expires, $path, $domain, $secure, $httpOnly);
+        // setcookie($key, $value, $expires, $path, $domain, $secure, $httpOnly);
+        setcookie($key, $value, ['expires' => $expires, 'path' => $path, 'domain' => $domain, 'secure' => $secure, 'httponly' => $httpOnly]);
     }
 
     /**

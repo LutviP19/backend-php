@@ -34,7 +34,7 @@ class ApiController extends BaseController
 
         parent::__construct();
 
-        $this->isDev = $this->isDev ?? false;
+        $this->isDev ??= false;
         $this->rateLimit = false;
         $this->filter = new \App\Core\Validation\Filter();
         $this->requestServer = $requestServer;
@@ -46,7 +46,7 @@ class ApiController extends BaseController
 
             // Format Headers
             foreach($this->requestServer->header as $key => $value) {
-                $this->headers[ucwords($key, "-")] = $value;
+                $this->headers[ucwords((string) $key, "-")] = $value;
             }
 
             $rawBody = $this->requestServer->rawContent();
@@ -118,7 +118,7 @@ class ApiController extends BaseController
                 406
             );
         }
-        $validBody = json_decode(trim($rawBody), true);
+        $validBody = json_decode(trim((string) $rawBody), true);
     
         if (json_last_error() !== JSON_ERROR_NONE) {
         
@@ -168,7 +168,6 @@ class ApiController extends BaseController
             // return endResponse(
             //     $this->getOutput(false, 401, [
             //       'auth' => 'Client not found!',
-               
             //     ], 'Invalid Client!'), 401);
         }
 
@@ -423,7 +422,6 @@ class ApiController extends BaseController
         //         } else {
         //             $value = null;
         //         }
-    
         //         $output[$key] = $value;
         //     }
         // }        

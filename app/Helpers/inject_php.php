@@ -46,8 +46,9 @@ if (! function_exists('getallheaders')) {
     {
         $headers = [];
         foreach ($_SERVER as $name => $value) {
-            if (substr($name, 0, 5) == 'HTTP_') {
-                $headers[str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($name, 5)))))] = $value;
+            // if (substr($name, 0, 5) == 'HTTP_') {
+            if (str_starts_with((string) $name, 'HTTP_')) {
+                $headers[str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr((string) $name, 5)))))] = $value;
             }
         }
         return $headers;
@@ -85,7 +86,7 @@ function addPadIfShort(string $inputString, int $minLength = 50, $stringPad = ' 
 
 function formatMapAddress($addressMap, $sort = false) {
     $pattern = '/[a-z0-9]+\+[a-z0-9]+/i';
-    $address = explode("||", $addressMap);
+    $address = explode("||", (string) $addressMap);
     // $output = $addressMap;
 
     // Check if the format is found within the input string
@@ -150,7 +151,7 @@ function convertMinutesToHoursAndMinutes($totalMinutes, $simpleText = true) {
  */
 function polyfill_filter_var_string($value)
 {
-    $str = preg_replace('/\x00|<[^>]*>?/', '', $value);
+    $str = preg_replace('/\x00|<[^>]*>?/', '', (string) $value);
     return (string)str_replace(["'", '"'], ['&#39;', '&#34;'], $str);
 }
 
@@ -167,7 +168,7 @@ function polyfill_filter_var_string($value)
  */
 function camelCaseToUnderscore($inputString) {
     // Add an underscore before each uppercase letter, unless it's at the beginning of the string
-    $snakeCaseString = preg_replace('/(?<!^)[A-Z]/', '_$0', $inputString);
+    $snakeCaseString = preg_replace('/(?<!^)[A-Z]/', '_$0', (string) $inputString);
     // Convert the entire string to lowercase
     $snakeCaseString = strtolower($snakeCaseString);
     return $snakeCaseString;
@@ -205,7 +206,8 @@ function str_replace_multi(array $replace, string $subject) {
 }
 
 function is_float_string($value) {
-    return is_numeric($value) && strpos($value, '.') !== false;
+    // return is_numeric($value) && strpos($value, '.') !== false;
+    return is_numeric($value) && str_contains($value, '.');
 }
 
 function is_decimal($n) {
@@ -363,7 +365,7 @@ function limitStr($value, $limit = 100, $end = '...', $preserveWords = false)
         return rtrim(mb_strimwidth($value, 0, $limit, '', 'UTF-8')).$end;
     }
 
-    $value = trim(preg_replace('/[\n\r]+/', ' ', strip_tags($value)));
+    $value = trim((string) preg_replace('/[\n\r]+/', ' ', strip_tags($value)));
 
     $trimmed = rtrim(mb_strimwidth($value, 0, $limit, '', 'UTF-8'));
 

@@ -490,7 +490,7 @@ class Router
         // Middleware - Rate limiter
         $identifier = 'notFound-'.\clientIP();
         $perSeconds = 6000;
-        if ($rateLimit && false === checkRateLimit($identifier, 5, $perSeconds)) {
+        if (env('APP_ENV') !== 'local' && $rateLimit && false === checkRateLimit($identifier, 5, $perSeconds)) {
             $after = $perSeconds / 60;
             $afteText = $after > 1 ? "{$after} minutes" : "{$after} minute";
             $message = "Too many requests. Please try again after {$afteText}.";

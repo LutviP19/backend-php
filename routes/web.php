@@ -8,11 +8,40 @@
  * Available router methods : get(), post(), put(), delete().
  */
 
-// WEB
+// // WEB
+// $router->get('', 'PagesHtmlController@index');
+// $router->get('/', 'PagesHtmlController@index');
+$router->get('/contact', 'PagesHtmlController@contact');
+$router->get('/about', 'PagesHtmlController@about');
+$router->get('/notification', 'PagesHtmlController@notification');
+$router->get('/dashboard', 'PagesHtmlController@dashboard');
+$router->get('/extra', 'PagesHtmlController@extra');
+
+// SPA
 $router->get('', 'PagesController@index');
 $router->get('/', 'PagesController@index');
-$router->get('/contact', 'PagesController@contact');
-$router->get('/about', 'PagesController@about');
-$router->get('/notification', 'PagesController@notification');
-$router->get('/dashboard', 'PagesController@dashboard');
-$router->get('/extra', 'PagesController@extra');
+$router->post('/subscribe', 'PagesController@demoSpa');
+$router->get('/demo/inventory', 'PagesController@demoSpa');
+$router->get('/demo/prediction', 'PagesController@demoSpa');
+$router->get('/demo/suppliers', 'PagesController@demoSpa');
+
+
+// HTMX
+$router->get('/login', 'DashboardController@login');
+$router->post('/login/auth', 'DashboardController@loginAuth');
+
+$router->get('/htmx', 'DashboardController@index');
+$router->get('/htmx/dashboard', 'DashboardController@dashboard');
+$router->get('/htmx/inventory', 'DashboardController@inventory');
+$router->get('/htmx/assets', 'DashboardController@assets');
+$router->get('/htmx/rental', 'DashboardController@rental');
+$router->get('/htmx/rental-drone', 'DashboardController@rental2');
+
+// HTMX-CRUD Data
+$router->get('/data/inventory-list', 'DashboardController@inventory_list');
+$router->post('/data/save-product', 'DashboardController@save_product');
+$router->get('/data/edit-product', 'DashboardController@edit_product');
+
+$router->get('/data/get-products', 'DashboardController@inventory_list');
+$router->post('/data/update-product', 'DashboardController@update_product');
+$router->delete('/data/delete-product', 'DashboardController@delete_product');

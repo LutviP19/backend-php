@@ -440,10 +440,17 @@ class Request
         foreach ($inputs as $key => $value) {
             if (is_array($value)) {
                 foreach ($value as $i => $val) {
-                    $request[e($key)][e($i)] = gettype($val) === 'boolean' ? $val : e($val);
+                    $request[e($key)][e($i)] = gettype($val) === 'string' ? e($val) : $val;
                 }
             } else {
-                $request[e($key)] = gettype($value) === 'boolean' ? $value : e($value);
+                // $type = gettype($value);
+                // switch($type) {
+                //     case 'string' :
+                //     $request[e($key)] = e($value);
+                //     default:
+                //     $request[e($key)] = $value;
+                // }
+                $request[e($key)] = gettype($value) === 'string' ? e($value) : $value;
             }
         }
 

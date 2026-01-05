@@ -35,14 +35,23 @@ class BaseController
      * @param array|[] $data
      * @return void
      */
-    public function view($view, $data = [])
+    public function view($view, $data = [], $trim = false)
     {
         if (!$this->exists($view)) {
             throw new Exception("View not Found");
         }
 
         extract($data);
-        require $this->name($view);
+        if($trim) {
+            ob_start();
+            require $this->name($view);
+            $output = ob_get_clean();
+            $output = trim(preg_replace('/\\s+/', ' ', strval($output)));
+            echo $output;
+        } else {
+            require $this->name($view);
+        }
+
         return $this;
     }
 
@@ -52,14 +61,24 @@ class BaseController
      * @param string $view
      * @return void
      */
-    public function include($view, $dataExtra = [])
+    public function include($view, $dataExtra = [], $trim = false)
     {
         if (!$this->exists($view)) {
             throw new Exception("Include not found");
         }
 
         extract($dataExtra);
-        include $this->name($view);
+        
+        
+        if($trim) {
+            ob_start();
+            include $this->name($view);
+            $output = ob_get_clean();
+            $output = trim(preg_replace('/\\s+/', ' ', $output));
+            echo trim($output);
+        } else {
+            include $this->name($view);
+        }
     }
 
     /**

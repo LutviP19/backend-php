@@ -11,7 +11,7 @@ function array_keys_exists(array $keys, array $array): bool
     return count($diff) === 0;
 }
 
-function recursive_unset(&$array, $unwanted_key) 
+function recursive_unset(&$array, $unwanted_key = '') 
 {
     // Check if the unwanted key exists at the current level and unset it
     if (array_key_exists($unwanted_key, $array)) {

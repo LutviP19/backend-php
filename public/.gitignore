@@ -1,4 +1,6 @@
 /assets/js
 *-sw*.js
+/assets/fontawesome-web/scss**
+/assets/fontawesome-web/less**
 !.htaccess
 !.gitignore

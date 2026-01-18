@@ -46,7 +46,7 @@ class BaseController
             ob_start();
             require $this->name($view);
             $output = ob_get_clean();
-            $output = trim(preg_replace('/\\s+/', ' ', strval($output)));
+            $output = trim((string) preg_replace('/\\s+/', ' ', strval($output)));
             echo $output;
         } else {
             require $this->name($view);
@@ -74,7 +74,7 @@ class BaseController
             ob_start();
             include $this->name($view);
             $output = ob_get_clean();
-            $output = trim(preg_replace('/\\s+/', ' ', $output));
+            $output = trim((string) preg_replace('/\\s+/', ' ', $output));
             echo trim($output);
         } else {
             include $this->name($view);

@@ -16,3 +16,4 @@ SNIP.txt
 /.vscode
 /.zed
 rector.php
+*.log

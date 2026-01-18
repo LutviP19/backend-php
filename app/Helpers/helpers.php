@@ -13,10 +13,13 @@ use App\Core\Support\Config;
 use App\Core\Validation\MessageBag;
 
 /** ===== Utils ===== */
-function b64url($data)
-{
-    return rtrim(strtr(base64_encode((string) $data), '+/', '-_'), '=');
+if(!function_exists('b64url')) {
+    function b64url($data)
+    {
+        return rtrim(strtr(base64_encode((string) $data), '+/', '-_'), '=');
+    }
 }
+
 
 /**
  * get environment variable.
@@ -303,7 +306,8 @@ function delDataFromRedis($id, $prefix = null)
         'database' => Config::get('redis.cache.database')
     ]);
 
-    $prefix = $prefix ?? 'bp_data';
+    // $prefix = $prefix ?? 'bp_data';
+    $prefix ??= 'bp_data';
 
     $data = $redis->get($prefix.':'.$id);
 
@@ -328,7 +332,8 @@ function clearRedisDataByPrefix($prefix = null)
     do {
         // Perform a SCAN operation to find keys matching the pattern
         // The 'MATCH' option specifies the pattern, and 'COUNT' suggests how many keys to return per iteration
-        $scanResult = $redis->scan($cursor, 'MATCH', $pattern, 'COUNT', 1000);
+        // $scanResult = $redis->scan($cursor, 'MATCH', $pattern, 'COUNT', 1000);
+        $scanResult = $redis->scan($cursor, 'MATCH');
 
         $cursor = $scanResult[0]; // Update the cursor for the next iteration
         $keysFound = $scanResult[1]; // Get the keys found in this iteration
@@ -449,10 +454,26 @@ function e($str, $doubleEncode = true)
     //     return $str;
     // }
 
-    
-
     return htmlentities($str, ENT_QUOTES, 'UTF-8');
     // return htmlspecialchars($str ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8', $doubleEncode);
+}
+
+function remove_php_comments($code) {
+    // Remove single-line comments that start with # or //
+    // The pattern accounts for potential URLs (http://) and ensures the comment starts correctly.
+    $patterns = [
+        '/[ \t]*\/\/.*$/m', // For `//` style comments
+        '/[ \t]*#.*$/m',   // For `#` style comments
+    ];
+    $code = preg_replace($patterns, '', (string) $code);
+
+    // Remove multi-line comments `/* ... */`
+    // The 's' modifier allows the dot (.) to match newlines.
+    // $code = preg_replace('/\/\*.*?\*\//s', '', $code);
+    $code = preg_replace('/\/\*.*?\*\//s', '', (string) $code);
+
+
+    return $code;
 }
 
 /**

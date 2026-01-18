@@ -26,8 +26,7 @@ class TestingController extends ApiController
 {
     public function __construct()
     {
-        parent::__construct();
-        
+        parent::__construct();        
         // State DEV environment
         $this->isDev = true;
 

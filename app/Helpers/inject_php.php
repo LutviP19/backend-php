@@ -70,7 +70,7 @@ function format_with_rounding($number, $precision = 0, $mode = PHP_ROUND_HALF_UP
 
 function format_without_rounding($number, $decimals = 2, $decimal_separator = ',', $thousands_separator = '.') {
     // Truncate the number to the desired number of decimal places without rounding
-    $truncated_number = bcdiv($number, 1, $decimals);
+    $truncated_number = bcdiv((string) $number, 1, $decimals);
 
     // Format the truncated number using number_format for display
     return number_format($truncated_number, $decimals, $decimal_separator, $thousands_separator);
@@ -114,9 +114,8 @@ function formatMapAddress($addressMap, $sort = false) {
 
 function setArrivedTime($dateTimeStr, $minutesToAdd = 30, $formated = 'H:i A') {
     $dateTime = new DateTime($dateTimeStr); 
-    
     $dateTime->modify("+{$minutesToAdd} minutes");
-    
+
     return $dateTime->format($formated);
 }
 
@@ -132,14 +131,12 @@ function convertMinutesToHoursAndMinutes($totalMinutes, $simpleText = true) {
     if(!$simpleText) {
         $plurals = $hours > 1 ? "Hours" : "Hour";
         if($hours > 0)
-            return sprintf("%d %d and %d Minutes", $hours, $plurals, $minutes);
-        
+            return sprintf("%d %d and %d Minutes", $hours, $plurals, $minutes);        
         return sprintf("%d Minutes", $minutes);
     }
 
     if($hours > 0)
-        return sprintf("%d H, %d Min", $hours, $minutes);
-    
+        return sprintf("%d H, %d Min", $hours, $minutes);    
     return sprintf("%d Min", $minutes);
 }
 
@@ -170,7 +167,7 @@ function camelCaseToUnderscore($inputString) {
     // Add an underscore before each uppercase letter, unless it's at the beginning of the string
     $snakeCaseString = preg_replace('/(?<!^)[A-Z]/', '_$0', (string) $inputString);
     // Convert the entire string to lowercase
-    $snakeCaseString = strtolower($snakeCaseString);
+    $snakeCaseString = strtolower((string) $snakeCaseString);
     return $snakeCaseString;
 }
 
@@ -441,7 +438,6 @@ function squishStr($value)
 //     $commaPos = strrpos($num, ',');
 //     $sep = (($dotPos > $commaPos) && $dotPos) ? $dotPos : 
 //         ((($commaPos > $dotPos) && $commaPos) ? $commaPos : false);
-   
 //     if (!$sep) {
 //         return floatval(preg_replace("/[^0-9]/", "", $num));
 //     } 

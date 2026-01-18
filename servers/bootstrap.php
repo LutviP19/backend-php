@@ -65,14 +65,17 @@ function initializeServerConstant($request): void
     $_SERVER['SERVER_NAME'] = $serverip;
     $_SERVER['DOCUMENT_ROOT'] = __DIR__ . '/../public/';
     $_SERVER['SERVER_SOFTWARE'] = "Backend PHP";
-    $_SERVER['PHP_SELF'] = isset($request->server['php_self']) ? $request->server['php_self'] : 'index';
-    $_SERVER['SCRIPT_NAME'] = isset($request->server['script_name']) ? $request->server['script_name'] : 'php';
-    $_SERVER['SCRIPT_FILENAME'] = isset($request->server['script_filename']) ? $request->server['script_filename'] : 'index.php';
+    // $_SERVER['PHP_SELF'] = isset($request->server['php_self']) ? $request->server['php_self'] : 'index';
+    // $_SERVER['SCRIPT_NAME'] = isset($request->server['script_name']) ? $request->server['script_name'] : 'php';
+    // $_SERVER['SCRIPT_FILENAME'] = isset($request->server['script_filename']) ? $request->server['script_filename'] : 'index.php';
+    $_SERVER['PHP_SELF'] = $request->server['php_self'] ?? 'index';
+    $_SERVER['SCRIPT_NAME'] = $request->server['script_name'] ?? 'php';
+    $_SERVER['SCRIPT_FILENAME'] = $request->server['script_filename'] ?? 'index.php';
 
     $reqData = is_array($request) ? $request : ($request->server ?? []);
     $servers = array_merge($reqData, (new \Swoole\Http\Request)->server ?? [], $request->server ?? []);
     foreach ($servers as $key => $value) {
-        $_SERVER[strtoupper($key)] = $value;
+        $_SERVER[strtoupper((string) $key)] = $value;
     }
 
     $headers = array_merge((new \Swoole\Http\Request)->header ?? [], $request->header ?? [], getallheaders() ?? [], $reqData);

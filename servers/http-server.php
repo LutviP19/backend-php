@@ -239,7 +239,7 @@ $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse 
             // \App\Core\Support\Log::debug(\App\Core\Support\Session::all(), 'HttpServer.fetchDataAsynchronously.first.Session::all()');
 
             // \App\Core\Support\Log::debug( $_COOKIE[$sessionName], 'HttpServer.request.$_COOKIE[$sessionName]');
-            $getSessionId = explode("-", $_COOKIE[$sessionName]);
+            $getSessionId = explode("-", (string) $_COOKIE[$sessionName]);
             if (count($getSessionId) == 2) {
                 $sessionId = $_COOKIE[$sessionName];
             } else {
@@ -279,14 +279,15 @@ $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse 
 
 $server->on('Task', function (Swoole\Server $server, $task_id, $reactorId, $data) {
     echo "Task Worker Process received data";
-    echo "#{$server->worker_id}\tonTask: [PID={$server->worker_pid}]: task_id=$task_id, data_len=" . strlen($data) . "." . PHP_EOL;
+    echo "#{$server->worker_id}\tonTask: [PID={$server->worker_pid}]: task_id=$task_id, data_len=" . strlen((string) $data) . "." . PHP_EOL;
     $server->finish($data);
 });
 
 $server->start();
 
 // Simulated asynchronous function to fetch data from a database
-function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse $response, $returned = 'response', &$sessionData)
+// function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse $response, $returned = 'response', &$sessionData)
+function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse $response, $returned = 'response', &$sessionData = null)
 {
     global $server, $clientInfo, $ignoredUri, $requestServer, $sessionId, $sessionName;
 
@@ -431,7 +432,7 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
         cacheContent('set', $_COOKIE[$sessionName], 'bp_session', $_SESSION);
 
         // Delete old session_id()
-        $getSessionId = explode("-", $_COOKIE[$sessionName]);
+        $getSessionId = explode("-", (string) $_COOKIE[$sessionName]);
         if (count($getSessionId) == 2) {
             delCache($getSessionId[1], 'bp_session');
         }

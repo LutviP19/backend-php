@@ -232,7 +232,7 @@ $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse 
             // \App\Core\Support\Log::debug(\App\Core\Support\Session::all(), 'HttpServer.fetchDataAsynchronously.first.Session::all()');
 
             // \App\Core\Support\Log::debug( $_COOKIE[$sessionName], 'HttpServer.request.$_COOKIE[$sessionName]');
-            $getSessionId = explode("-", $_COOKIE[$sessionName]);
+            $getSessionId = explode("-", (string) $_COOKIE[$sessionName]);
             if (count($getSessionId) == 2) {
                 $sessionId = $_COOKIE[$sessionName];
             } else {
@@ -269,14 +269,15 @@ $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse 
 
 $server->on('Task', function (Swoole\Server $server, $task_id, $reactorId, $data) {
     echo "Task Worker Process received data";
-    echo "#{$server->worker_id}\tonTask: [PID={$server->worker_pid}]: task_id=$task_id, data_len=" . strlen($data) . "." . PHP_EOL;
+    echo "#{$server->worker_id}\tonTask: [PID={$server->worker_pid}]: task_id=$task_id, data_len=" . strlen((string) $data) . "." . PHP_EOL;
     $server->finish($data);
 });
 
 $server->start();
 
 // Simulated asynchronous function to fetch data from a database
-function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse $response, $returned = 'response', &$sessionData)
+// function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse $response, $returned = 'response', &$sessionData)
+function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse $response, $returned = 'response', &$sessionData = null)
 {
     global $server, $clientInfo, $ignoredUri, $requestServer, $sessionId, $sessionName;
 
@@ -324,8 +325,10 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
 
     if (file_exists($filePath)) {
         $fileInfo = pathinfo($filePath);
-        $extension = isset($fileInfo['extension']) ? $fileInfo['extension'] : '';
-        $fileName = isset($fileInfo['basename']) ? $fileInfo['basename'] : '';
+        // $extension = isset($fileInfo['extension']) ? $fileInfo['extension'] : '';
+        // $fileName = isset($fileInfo['basename']) ? $fileInfo['basename'] : '';
+        $extension = $fileInfo['extension'] ?? '';
+        $fileName = $fileInfo['basename'] ?? '';
 
         switch ($extension) {
             case 'htnl':
@@ -514,7 +517,7 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
         cacheContent('set', $_COOKIE[$sessionName], 'bp_web_session', $_SESSION);
 
         // Delete old session_id()
-        $getSessionId = explode("-", $_COOKIE[$sessionName]);
+        $getSessionId = explode("-", (string) $_COOKIE[$sessionName]);
         if (count($getSessionId) == 2) {
             delCache($getSessionId[1], 'bp_web_session');
         }
@@ -549,7 +552,7 @@ function createTmp($fd, $fileName, $setHeaders, $content)
 
     $fileContents = "<?php " . PHP_EOL;
     foreach ($setHeaders as $header) {
-        $value = explode(",", $header);
+        $value = explode(",", (string) $header);
         if (is_numeric($value[1])) {
             $fileContents .= '$response->header("'.$value[0].'", '.$value[1].');' . PHP_EOL;
         } else {
@@ -557,7 +560,7 @@ function createTmp($fd, $fileName, $setHeaders, $content)
         }
     }
 
-    $content = base64_encode($content);
+    $content = base64_encode((string) $content);
     $fileContents .= '$content=\''.($content).'\';' . PHP_EOL;
     $fileContents .= '$response->end(base64_decode($content));' . PHP_EOL;
 

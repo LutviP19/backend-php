@@ -104,7 +104,7 @@ $server->on("Start", function (Server $server) {
 
 $server->on('Task', function (Swoole\Server $server, $task_id, $reactorId, $data) {
     echo "Task Worker Process received data";
-    echo "#{$server->worker_id}\tonTask: [PID={$server->worker_pid}]: task_id=$task_id, data_len=" . strlen($data) . "." . PHP_EOL;
+    echo "#{$server->worker_id}\tonTask: [PID={$server->worker_pid}]: task_id=$task_id, data_len=" . strlen((string) $data) . "." . PHP_EOL;
     $server->finish($data);
 });
 
@@ -241,11 +241,16 @@ $dispatcher = include __DIR__ .'/../routes/api-server.php';
 
 class RouteMiddleware implements MiddlewareInterface
 {
-    private $dispatcher;
+    // private $dispatcher;
 
-    public function __construct($dispatcher)
+    // public function __construct($dispatcher)
+    // {
+    //     $this->dispatcher = $dispatcher;
+    // }
+
+    public function __construct(private $dispatcher)
     {
-        $this->dispatcher = $dispatcher;
+        
     }
 
     //\OpenSwoole\Core\Psr\ServerRequest ServerRequestInterface

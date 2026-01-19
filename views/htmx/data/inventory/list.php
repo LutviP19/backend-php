@@ -45,7 +45,7 @@
                      x-transition:leave="transition ease-in duration-75"
                      x-transition:leave-start="transform opacity-100 scale-100"
                      x-transition:leave-end="transform opacity-0 scale-95"
-                     class="absolute right-0 mt-2 w-32 origin-top-right bg-white border border-slate-200 rounded-xl shadow-xl z-[70] overflow-hidden focus:outline-none"
+                     class="absolute top-0 right-2 mt-2 w-32 origin-top-right bg-white border border-slate-200 rounded-xl shadow-xl z-[70] overflow-hidden focus:outline-none"
                      style="display: none;">
                     
                     <div class="py-1">
@@ -96,9 +96,9 @@
                     <button hx-get="<?= url('/data/get-products?page=' . max(1, $currentPage - 1) .'&category='. urlencode($category) .'&search='. urlencode($search)) ?>"
                             hx-target="#inventory-table-body"
                             hx-include="[name='search'], [name='filter_kategori']"
-                            class="p-2 rounded-lg border border-slate-200 text-slate-400 hover:text-indigo-600 disabled:opacity-30"
+                            class="w-9 h-9 flex items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all disabled:opacity-50"
                             <?= $currentPage == 1 ? 'disabled' : '' ?>>
-                        <i class="fas fa-chevron-left text-[10px]"></i>
+                        <i class="fas fa-chevron-left text-xs"></i>
                     </button>
 
                     <?php foreach ($paginationItems as $item): ?>
@@ -120,12 +120,16 @@
                     <button hx-get="<?= url('/data/get-products?page=' . min($totalPages, $currentPage + 1) .'&category='. urlencode($category) .'&search='. urlencode($search)) ?>"
                             hx-target="#inventory-table-body"
                             hx-include="[name='search'], [name='filter_kategori']"
-                            class="p-2 rounded-lg border border-slate-200 text-slate-400 hover:text-indigo-600 disabled:opacity-30"
+                            class="w-9 h-9 flex items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-indigo-600 hover:border-indigo-100 transition-all"
                             <?= $currentPage == $totalPages ? 'disabled' : '' ?>>
-                        <i class="fas fa-chevron-right text-[10px]"></i>
+                        <i class="fas fa-chevron-right text-xs"></i>
                     </button>
                 </div>
             </div>
         </div>
+
+        <script id="chart-data-json" type="application/json" hx-swap-oob="innerHTML">
+            <?= json_encode($stats) ?>
+        </script>
     </td>
 </tr>

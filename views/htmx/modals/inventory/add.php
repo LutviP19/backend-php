@@ -75,9 +75,7 @@
                             class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all text-sm">
 
                    <template x-if="errors.nama">
-                        <p x-text="errors.nama[0]" class="text-[10px] font-bold text-rose-600 mt-1.5 ml-1 flex items-center gap-1">
-                            <i class="fas fa-exclamation-circle"></i> <span x-text="errors.nama[0]"></span>
-                        </p>
+                        <p x-text="errors.nama[0]" class="text-[10px] font-bold text-rose-600 mt-1.5 ml-1 flex items-center gap-1"></p>
                     </template>
                 </div>
 

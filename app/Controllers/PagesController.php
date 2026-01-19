@@ -20,7 +20,7 @@ class PagesController extends Controller
     //controller constructor.
     public function __construct()
     {
-        $this->csrf();
+        // $this->csrf();
     }
 
     /**

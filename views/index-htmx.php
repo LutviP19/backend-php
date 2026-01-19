@@ -3,20 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<?= token() ?>">
     <title>SmartStock AI - Koperasi Desa</title>
     
     <!-- <script src="https://cdn.tailwindcss.com"></script>    
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script> -->
 
-    <script src="<?= assets('/js/cdn-tailwindcss.js') ?>"></script>
+    <script src="<?= assets('js/htmx.min.js') ?>"></script> 
     <script defer src="<?= assets('/js/alpinejs3.min.js') ?>"></script>
-    <script src="<?= assets('js/htmx.min.js') ?>"></script>
+    <!-- <script src="<?= assets('/js/cdn-tailwindcss.js') ?>"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class', 
+        }
+    </script> -->
+
+    <link rel="stylesheet" href="<?= assets('/assets/css/app.css') ?>">
 
     <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"> -->
     <link rel="stylesheet" href="<?= assets('/assets/fontawesome-web/css/all.min.css') ?>">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">    
 
     <script>
         document.addEventListener('alpine:init', () => {
@@ -178,10 +187,21 @@
             opacity: 0.5;
             transition: opacity 0.2s ease;
         }
+
+        /* Efek saat data sedang dimuat */
+        .htmx-adding {
+            opacity: 0;
+        }
+
+        #activity-table-body.htmx-request {
+            opacity: 0.5;
+            filter: blur(1px);
+            transition: all 200ms ease-in;
+        }
     </style>
 </head>
 
-<body class="bg-slate-50 font-[Inter]">
+<body class="bg-slate-50 font-[Inter] overflow-x-hidden">
 
     <div id="loading-bar" class="htmx-indicator progress-bar"></div>
 
@@ -252,7 +272,7 @@
                 </div>
             </div>
     
-            <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+            <nav class="flex-1 p-4 space-y-2 overflow-x-hidden overflow-y-auto">
                 <button @click="mobileMenuOpen = false" 
                         hx-get="<?= url('/htmx/dashboard') ?>" 
                         hx-target="#main-content" 
@@ -401,8 +421,18 @@
                     </template>
                 </nav>
 
-                <div id="main-content" hx-indicator="#loading-bar">                    
-                    <?php $this->include('htmx.dashboard'); ?>
+                <div id="main-content" hx-indicator="#loading-bar">
+                    <?php 
+                    // dd($paged_data);
+                    $this->include('htmx.dashboard', 
+                        [
+                        'isHome' => true, 
+                        'total_items' => $total_items, 
+                        'total_pages' => $total_pages, 
+                        'page' => $page, 
+                        'offset' => $offset, 
+                        'paged_data' => $paged_data, 
+                    ]); ?>
                 </div>
             </main>
 

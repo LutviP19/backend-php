@@ -13,15 +13,18 @@
     <script defer src="<?= assets('/js/persist@3.min.js') ?>"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script defer src="<?= assets('/js/alpinejs3.min.js') ?>"></script>
-    <script src="<?= assets('/js/cdn-tailwindcss.js') ?>"></script>
+    <!-- <script src="<?= assets('/js/cdn-tailwindcss.js') ?>"></script>
     <script>
         tailwind.config = {
             darkMode: 'class', 
         }
-    </script>
+    </script> -->
+
+    <link rel="stylesheet" href="<?= assets('/assets/css/app.css') ?>">
 
     <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> -->
     <link rel="stylesheet" href="<?= assets('/assets/fontawesome-web/css/all.min.css') ?>">
+    
     <style>
         /* Letakkan di dalam <style> di index.html */
         .htmx-indicator {
@@ -146,7 +149,7 @@
 
                                 <template x-if="openVideo">
                                     <iframe class="w-full h-full" 
-                                            src="https://www.youtube.com/embed/0ZUQy8vepns?autoplay=0" 
+                                            src="https://www.youtube.com/embed/wgn32fooZEs?autoplay=0" 
                                             frameborder="0" 
                                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                                             allowfullscreen>

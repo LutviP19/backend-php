@@ -64,8 +64,8 @@ class DashboardController extends Controller
 
     public function loginAuth(Request $request, Response $response)
     {
-        $user = $_POST['username'] ?? '';
-        $pass = $_POST['password'] ?? '';
+        $user = $request->username ?? '';
+        $pass = $request->password ?? '';
 
         // Simulasi Cek Login
         if ($user === 'admin' && $pass === 'desa2026') {
@@ -121,10 +121,8 @@ class DashboardController extends Controller
     }
 
     // ===== GET DATA
-    protected function inventory_stats($category) 
+    protected function inventory_stats($category = 'all') 
     {
-        $category = $_GET['category'] ?? 'all';
-
         // Logika Query: Ambil data produk sorting berdasarkan terbaru/terakhir diupdate
         $query = "SELECT nama, stok FROM products ";
 
@@ -144,7 +142,6 @@ class DashboardController extends Controller
 
         foreach ($result as $row) {
             // Potong nama jika terlalu panjang untuk label chart
-            // $labels[] = strlen($row->nama) > 12 ? substr((string) $row->nama, 0, 10) . '..' : $row->nama;
             $labels[] = strlen((string) $row->nama) > 12 ? substr((string) $row->nama, 0, 10) . '..' : $row->nama;
             $values[] = (int)$row->stok;
             $totalStok += $row->stok;
@@ -174,43 +171,6 @@ class DashboardController extends Controller
             $totalStokCat += $row->ttl_stok;
         }
 
-        
-
-        /*
-
-'datasets' => [
-        [
-            'label' => 'Pupuk',
-            'data' => $resultData['pupuk'],
-            'borderColor' => '#6366f1', // Indigo
-            'backgroundColor' => '#6366f1',
-        ],
-        [
-            'label' => 'Benih',
-            'data' => $resultData['benih'],
-            'borderColor' => '#10b981', // Emerald
-            'backgroundColor' => '#10b981',
-        ],
-        [
-            'label' => 'Pestisida',
-            'data' => $resultData['pestisida'],
-            'borderColor' => '#f59e0b', // Amber
-            'backgroundColor' => '#f59e0b',
-        ],
-        [
-            'label' => 'Alat',
-            'data' => $resultData['alat'],
-            'borderColor' => '#f43f5e', // Rose
-            'backgroundColor' => '#f43f5e',
-        ]
-    ]
-        */
-
-
-        // // Balik urutan agar yang paling baru ada di kanan chart
-        // $labels = array_reverse($labels);
-        // $values = array_reverse($values);
-
         // Logika AI Insight sederhana
         $avgStok = count($values) > 0 ? $totalStok / count($values) : 0;
         $isKritis = $avgStok < 20; // Contoh: rata-rata stok di bawah 20 dianggap kritis
@@ -239,9 +199,9 @@ class DashboardController extends Controller
 
         // 1. Ambil Parameter
         // $page     = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-        $search   = $_GET['search'] ?? '';
-        $kategori = $_GET['category'] ?? 'all';
-        $currentPage = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        $search   = $request->search ?? '';
+        $kategori = $request->category ?? 'all';
+        $currentPage = isset($request->page) ? (int) $request->page : 1;
 
         $stats = $this->inventory_stats($kategori);
         $data = $this->getProductsAll($search, $kategori, $currentPage);
@@ -310,7 +270,7 @@ class DashboardController extends Controller
 
     public function edit_product(Request $request, Response $response) 
     {
-        $id = e($_GET['id']);
+        $id = $request->id ?? null;
 
         if (!is_numeric($id)) {
             header('Content-Type: text/html', true, 422);
@@ -486,10 +446,10 @@ class DashboardController extends Controller
         // Set header agar browser tahu ini konten dinamis
         // header('Content-Type: text/html; charset=utf-8');
 
-        $search = isset($_GET['search']) ? strtolower((string) $_GET['search']) : '';
-        $category = $_GET['category'] ?? '';
+        $search = isset($request->search) ? strtolower((string) $request->search) : '';
+        $category = $request->category ?? '';
 
-        $page     = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        $page     = isset($request->page) ? (int) $request->page : 1;
         $limit    = 5; // Jumlah data per halaman
         $offset   = ($page - 1) * $limit;
 
@@ -542,7 +502,7 @@ class DashboardController extends Controller
         ];
 
         // Hanya mengambil data tabelnya saja
-        if(!isset($_GET['search']) && !isset($_GET['category'])) {
+        if(!isset($request->search) && !isset($request->category)) {
             return $dataViews;
         }
 
@@ -558,14 +518,12 @@ class DashboardController extends Controller
         if ($endpoint === 'stats') {
             header('Content-Type: application/json');
 
-            // $lastIncome = rand(30000000, 90000000);
             $lastIncome = random_int(30000000, 90000000);
 
             // Tanpa Filter
             $data = [
                 'last_income' => number_format($lastIncome, 0, '', '.') ,
                 'income' => [15000000, 22000000, 18000000, 28000000, 24000000, 32000000, $lastIncome], // Data dalam juta
-                // 'stock_critical' => [3, 5, 2, 8, 4, 2, rand(1, 6)],
                 'stock_critical' => [3, 5, 2, 8, 4, 2, random_int(1, 6)],
                 'utility' => [88, 12]
             ];
@@ -575,7 +533,6 @@ class DashboardController extends Controller
                 $data = [
                             'last_income' => number_format($lastIncome, 0, '', '.') ,
                             'income' => [15000000, 22000000, 18000000, 28000000, 24000000, 32000000, $lastIncome], // Data dalam juta
-                            // 'stock_critical' => [3, 5, 2, 8, 4, 2, rand(1, 6)],
                             'stock_critical' => [3, 5, 2, 8, 4, 2, random_int(1, 6)],
                             'utility' => [88, 12]
                         ];
@@ -586,7 +543,6 @@ class DashboardController extends Controller
                 $data = [
                             'last_income' => number_format($lastIncome, 0, '', '.') ,
                             'income' => [15000000, 22000000, 18000000, 28000000, 24000000, 32000000, $lastIncome], // Data dalam juta
-                            // 'stock_critical' => [3, 5, 2, 8, 4, 2, rand(1, 6)],
                             'stock_critical' => [3, 5, 2, 8, 4, 2, random_int(1, 6)],
                             'utility' => [88, 12]
                         ];
@@ -605,8 +561,8 @@ class DashboardController extends Controller
     public function data_dashboard_export(Request $request, Response $response) 
     {
         dd($request->all());
-        $search = $_GET['search'] ?? '';
-        $category = $_GET['category'] ?? '';
+        $search = $request->search ?? '';
+        $category = $request->category ?? '';
     
         // 1. Ambil data dari database berdasarkan filter yang sama dengan tabel
         // $data = $db->query("SELECT ... WHERE category = '$category' AND title LIKE '%$search%'");
@@ -638,11 +594,6 @@ class DashboardController extends Controller
     // ===== GET DATA ASSETS
     public function assets_render(Request $request, Response $response) 
     {
-        // dd($request->all());
-        // $search = $_GET['search'] ?? '';
-        // $status = $_GET['status_filter'] ?? '';
-        // $viewMode   = $_GET['view_mode'] ?? 'grid';
-
         $search = $request->search ?? '';
         $status = $request->status_filter ?? '';
         $viewMode   = $request->view_mode ?? 'grid';
@@ -650,75 +601,6 @@ class DashboardController extends Controller
         $page     = isset($request->page) ? (int)$request->page : 1;
         $limit    = 5; // Jumlah data per halaman
         $offset   = ($page - 1) * $limit;
-
-
-        // $categoryVisuals = [
-        //     'heavy-equipment' => [
-        //         'icon'  => 'fa-tractor',
-        //         'color' => 'emerald',
-        //         'label' => 'Alat Berat'
-        //     ],
-        //     'technology' => [
-        //         'icon'  => 'fa-plane-up',
-        //         'color' => 'indigo',
-        //         'label' => 'Teknologi'
-        //     ],
-        //     'support' => [
-        //         'icon'  => 'fa-faucet-drip',
-        //         'color' => 'blue',
-        //         'label' => 'Pendukung'
-        //     ],
-        //     'warehouse' => [
-        //         'icon'  => 'fa-dolly',
-        //         'color' => 'slate',
-        //         'label' => 'Gudang'
-        //     ],
-        //     'logistics' => [
-        //         'icon'  => 'fa-truck',
-        //         'color' => 'amber',
-        //         'label' => 'Logistik'
-        //     ]
-        // ];
-
-        // $statusMapping = [
-        //     'ready' => [
-        //         'label' => 'Tersedia',
-        //         'bg'    => 'bg-emerald-50',
-        //         'text'  => 'text-emerald-600',
-        //         'border'=> 'border-emerald-100',
-        //         'dot'   => 'bg-emerald-500'
-        //     ],
-        //     'working' => [
-        //         'label' => 'Beroperasi',
-        //         'bg'    => 'bg-blue-50',
-        //         'text'  => 'text-blue-600',
-        //         'border'=> 'border-blue-100',
-        //         'dot'   => 'bg-blue-500'
-        //     ],
-        //     'maintenance' => [
-        //         'label' => 'Perbaikan',
-        //         'bg'    => 'bg-rose-50',
-        //         'text'  => 'text-rose-600',
-        //         'border'=> 'border-rose-100',
-        //         'dot'   => 'bg-rose-500'
-        //     ]
-        // ];
-
-        // // Ambil visual berdasarkan kategori (Slug)
-        // $visual = $categoryVisuals[$asset['category_slug']] ?? $categoryVisuals['heavy-equipment'];
-
-        // // Ambil visual berdasarkan status
-        // $status = $statusMapping[$asset['status']] ?? $statusMapping['ready'];
-
-
-        // // Di dalam loop while($asset = mysqli_fetch_assoc($result))
-        // $cat    = AssetHelper::$categories[$asset['category_slug']] ?? AssetHelper::$categories['heavy-equipment'];
-        // $status = AssetHelper::$statuses[$asset['status']] ?? AssetHelper::$statuses['ready'];
-        // $health = AssetHelper::getHealthInfo($asset['health']);
-
-        // // Tambahkan efek kedip jika kesehatan kritis
-        // $blinkClass = $health['is_critical'] ? 'animate-pulse' : '';
-
 
         // $sql = "SELECT a.asset_id, a.name, a.status, a.health, a.icon, a.color, a.updated_at, c.category_name 
         //         FROM assets a 
@@ -766,7 +648,7 @@ class DashboardController extends Controller
         ];
 
         // Hanya mengambil data tabelnya saja
-        if($_SERVER['REQUEST_METHOD'] === 'POST' || (!isset($_GET['search']) && !isset($_GET['status_filter']) && !isset($_GET['view_mode']))) {
+        if($_SERVER['REQUEST_METHOD'] === 'POST' || (!isset($request->search) && !isset($request->status_filter) && !isset($request->view_mode))) {
             return $dataViews;
         }
 
@@ -796,16 +678,7 @@ class DashboardController extends Controller
 
         // Convert Object menjadi Array
         $json_string = json_encode($object_data);
-        $logs = json_decode($json_string, true);
-
-        // // Dummy data log - di proyek nyata, ini diambil dari database
-        // $logs = [
-        //     ['date' => '2025-12-10', 'task' => 'Ganti Oli Mesin', 'status' => 'Selesai'],
-        //     ['date' => '2025-11-25', 'task' => 'Pengecekan Hidrolik', 'status' => 'Selesai'],
-        //     ['date' => '2025-11-01', 'task' => 'Ganti Filter Udara', 'status' => 'Selesai'],
-        // ];
-
-        
+        $logs = json_decode($json_string, true);        
 
         // $logs = [];
         $unitId = $logs[0] ? $logs[0]['unit_id'] : '';
@@ -815,8 +688,6 @@ class DashboardController extends Controller
 
     public function assets_edit(Request $request, Response $response) 
     {
-        // $id = $_GET['id'] ?? '';
-
         $filter = new \App\Core\Validation\Filter();
         // Filter & Sanitize Input
         $postData = $filter->filter($request->all(), [
@@ -843,9 +714,6 @@ class DashboardController extends Controller
 
     public function assets_update(Request $request, Response $response) 
     {
-        // $id = $_POST['id'] ?? '';
-        // $action = $_POST['action'] ?? 'edit';
-
         // dd($request->all());
 
         // Validate Input
@@ -951,13 +819,13 @@ class DashboardController extends Controller
             'asset_id' => 'trim|sanitize_string',
             'name'  => 'trim|sanitize_string',
             'category_id'  => 'trim|sanitize_numbers',
-            'status'  => 'trim|sanitize_string',
-            'health'  => 'trim|sanitize_numbers',
+            'status'  => 'trim|sanitize_string',            
             'icon'  => 'trim|sanitize_string',
             'color'  => 'trim|sanitize_string',
-            'view_mode'  => 'trim|sanitize_string',
+            'health'  => 'trim|sanitize_numbers',            
             'action'  => 'trim|sanitize_string',
             'status_kritis'  => 'trim|sanitize_string',
+            'view_mode'  => 'trim|sanitize_string',
         ]);
         $payload = $filter->sanitize($postData);
         // dd($payload);
@@ -970,7 +838,7 @@ class DashboardController extends Controller
 
         // 3. Insert Data Baru
         $lastId = QueryBuilder::table('assets')
-                    ->execQuery('INSERT INTO assets (asset_id, name, category_id, color, icon, status, health) 
+                    ->execQuery('INSERT INTO assets (asset_id, name, category_id, status, icon, color, health) 
                                 VALUES (?, ?, ?, ?, ?, ?, ?)', array_values($payload), true);
 
         // dd($lastId);

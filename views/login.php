@@ -4,13 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <script src="<?= assets('js/htmx.min.js') ?>"></script>    
     <script defer src="<?= assets('/js/persist@3.min.js') ?>"></script>
-    <script src="<?= assets('/js/cdn-tailwindcss.js') ?>"></script>
-    <script>
-        tailwind.config = { darkMode: 'class' }
-    </script>
     <script defer src="<?= assets('/js/alpinejs3.min.js') ?>"></script>
-    <script src="<?= assets('js/htmx.min.js') ?>"></script>
+    <!-- <script src="<?= assets('/js/cdn-tailwindcss.js') ?>"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class', 
+        }
+    </script> -->
+
+    <link rel="stylesheet" href="<?= assets('/assets/css/app.css') ?>">
 
     <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"> -->
     <link rel="stylesheet" href="<?= assets('/assets/fontawesome-web/css/all.min.css') ?>">
@@ -93,6 +97,26 @@
     <button @click="isDark = !isDark" class="fixed top-6 right-6 w-10 h-10 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-slate-500 flex items-center justify-center">
         <i class="fas" :class="isDark ? 'fa-sun' : 'fa-moon'"></i>
     </button>
+    
+    <script>
+        document.body.addEventListener("play-error-sound", function(evt) {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
 
+            oscillator.type = 'sawtooth'; // Suara agak kasar khas error
+            oscillator.frequency.setValueAtTime(150, audioCtx.currentTime); // Nada rendah
+            oscillator.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.3);
+            
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.3);
+        });
+    </script>
 </body>
 </html>

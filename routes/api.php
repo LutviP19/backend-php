@@ -20,7 +20,8 @@ $router->post('/api/queue', 'Api\TestingController@queue');
 // Testing - FCM
 $router->post('/api/save-fcm-token/{regId}', 'Api\TestingController@saveFcmToken');
 $router->post('/api/test-fcm-token/{regId}', 'Api\TestingController@testFcmToken');
-
+// Testing - AI
+$router->post('/api/test-neuronai/prompt', 'Api\TestingController@neuronAi');
 
 // // FCM - Setup Notification
 // $router->post('/api/save-fcm-token/{regId}', 'Api\v1\Registration\FcmController@saveFcmToken');

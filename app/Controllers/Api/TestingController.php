@@ -22,11 +22,17 @@ use Amp\MultiReasonException;
 use Amp\Http\Client\HttpClientBuilder;
 use Amp\Http\Client\Request as clientRequest;
 
+// AI
+use App\Neuron\BpAgent;
+use App\Neuron\Output\Person;
+use NeuronAI\Chat\Messages\UserMessage;
+use NeuronAI\Observability\AgentMonitoring;
+
 class TestingController extends ApiController
 {
     public function __construct()
     {
-        parent::__construct();        
+        parent::__construct();
         // State DEV environment
         $this->isDev = true;
 
@@ -55,6 +61,49 @@ class TestingController extends ApiController
             ], 'TestingController'), 
             200
         );
+    }
+
+    public function neuronAi(Request $request, Response $response)    
+    {
+        try {
+            if($request->has('prompt') && $request->prompt !== '') {
+                $responseAi = BpAgent::make()->chat(
+                    new UserMessage($request->prompt ?? "Hi, Who are you?")
+                );
+        
+                echo $responseAi->getContent();
+                // I'm a friendly AI Agent built with Neuron, how can I help you today?
+            } else {
+                // Talk to the agent requiring the structured output
+                $person = BpAgent::make()->structured(
+                    new UserMessage("I'm John and I want a pizza at st. James Street 00560!, Tags: jhon, james street, pizza"),
+                    Person::class
+                );
+
+                echo $person->name.' like '.$person->preference.'. Address: '.$person->address->street . PHP_EOL;
+                // John like pizza. Address: st.James Street
+                echo \json_encode($person->tags);
+            }
+            
+        } catch (\Exception $e) {
+            echo "Error: " . $e->getMessage() . "\n";
+            echo "File: " . $e->getFile() . "\n";
+            echo "Line: " . $e->getLine() . "\n";
+            echo "Stack trace:\n" . $e->getTraceAsString();
+        }
+        
+        exit;
+
+        // dd([$responseAi], true);
+
+        // \App\Core\Support\Log::debug($request->all(), 'TestingController.index.request');
+        // return endResponse(
+        //     $this->getOutput(true, 200, [
+        //         'info' => 'This index path',
+        //         'request'=> $request->all(),
+        //     ], 'TestingController'), 
+        //     200
+        // );
     }
 
     public function queue()

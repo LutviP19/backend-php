@@ -10,21 +10,27 @@ use NeuronAI\SystemPrompt;
 use NeuronAI\Tools\ToolInterface;
 use NeuronAI\Tools\Toolkits\ToolkitInterface;
 use NeuronAI\Providers\HttpClientOptions;
-use NeuronAI\Providers\Gemini\Gemini;
-
+// use NeuronAI\Providers\Gemini\Gemini;
+use NeuronAI\Providers\Ollama\Ollama;
 
 class BpAgent extends Agent
 {
     protected function provider(): AIProviderInterface
     {
         try {
-            // return an instance of Anthropic, OpenAI, Gemini, Ollama, etc...
-            // https://docs.neuron-ai.dev/the-basics/ai-provider
-            return new Gemini(
-                key: env('GEMINI_API_KEY'),
-                model: env('GEMINI_MODEL'),
-                parameters: [], // Add custom params (temperature, logprobs, etc)
-                httpOptions: new HttpClientOptions(timeout: 30),
+            // // return an instance of Anthropic, OpenAI, Gemini, Ollama, etc...
+            // // https://docs.neuron-ai.dev/the-basics/ai-provider
+            // return new Gemini(
+            //     key: env('GEMINI_API_KEY'),
+            //     model: env('GEMINI_MODEL'),
+            //     parameters: [], // Add custom params (temperature, logprobs, etc)
+            //     httpOptions: new HttpClientOptions(timeout: 30),
+            // );
+
+            return new Ollama(
+                url: 'http://localhost:11434/api/',
+                model: 'default-chat', // or other installed models
+                // parameters: ['temperature' => 0.4]
             );
 
         } catch (\Exception $e) {

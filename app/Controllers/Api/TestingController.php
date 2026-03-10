@@ -2,7 +2,6 @@
 
 namespace App\Controllers\Api;
 
-
 use App\Core\Http\{Request, Response};
 use App\Core\Message\FirebaseCloudMessaging;
 use App\Core\Validation\Validator;
@@ -12,21 +11,24 @@ use App\Models\User;
 use App\Models\Role;
 use Exception;
 
-// Queue
-use Amp;
-use Amp\Future;
-use function Amp\Future\awaitAnyN;
-use function Amp\async;
-use Amp\CompositeException;
-use Amp\MultiReasonException;
-use Amp\Http\Client\HttpClientBuilder;
-use Amp\Http\Client\Request as clientRequest;
+// // Queue
+// use Amp;
+// use Amp\Future;
+// use function Amp\Future\awaitAnyN;
+// use function Amp\async;
+// use Amp\CompositeException;
+// use Amp\MultiReasonException;
+// use Amp\Http\Client\HttpClientBuilder;
+// use Amp\Http\Client\Request as clientRequest;
 
 // AI
 use App\Neuron\BpAgent;
 use App\Neuron\Output\Person;
 use NeuronAI\Chat\Messages\UserMessage;
 use NeuronAI\Observability\AgentMonitoring;
+
+// Ollama
+use App\Neuron\OllamaExec;
 
 class TestingController extends ApiController
 {
@@ -39,7 +41,7 @@ class TestingController extends ApiController
         // dd($this->isDev);
     }
 
-    public function index(Request $request, Response $response)    
+    public function index(Request $request, Response $response)
     {
 
         // Validate token and CSRF
@@ -67,12 +69,36 @@ class TestingController extends ApiController
     {
         try {
             if($request->has('prompt') && $request->prompt !== '') {
-                $responseAi = BpAgent::make()->chat(
-                    new UserMessage($request->prompt ?? "Hi, Who are you?")
-                );
+
+                // // Menggunakan Neuon AI
+                // $responseAi = BpAgent::make()->chat(
+                //     new UserMessage($request->prompt ?? "Hi, Who are you?")
+                // );
         
-                echo $responseAi->getContent();
-                // I'm a friendly AI Agent built with Neuron, how can I help you today?
+                // echo $responseAi->getContent();
+                // // I'm a friendly AI Agent built with Neuron, how can I help you today?
+
+
+                // Using OllamaExec
+                $selectedModel = 'default-chat';
+                $model = new OllamaExec($selectedModel);
+                if (!$model->checkModelExists()) {
+                    echo "Error: Model belum terpasang di sistem.";
+                    exit;
+                }
+
+                // Calling the Wrapper class we created earlier
+                $prompt = trim($request->prompt);
+                $response = $model->ask($prompt, $selectedModel);
+
+                // If the response is an array (error from cURL)
+                if (is_array($response)) {
+                    echo "There is an error: " . $response['message'];
+                } else {
+                    // Returns the AI's answer text
+                    echo $response;
+                }
+
             } else {
                 // Talk to the agent requiring the structured output
                 $person = BpAgent::make()->structured(

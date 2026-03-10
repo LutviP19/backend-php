@@ -29,8 +29,9 @@ class BpAgent extends Agent
 
             return new Ollama(
                 url: 'http://localhost:11434/api/',
-                model: 'default-chat', // or other installed models
-                // parameters: ['temperature' => 0.4]
+                model: env('OLLAMA_MODEL', 'gemma3'), // or other installed models
+                parameters: [],
+                httpOptions: new HttpClientOptions(timeout: 0),
             );
 
         } catch (\Exception $e) {
@@ -39,12 +40,12 @@ class BpAgent extends Agent
         }
     }
 
-    public function instructions(): string
-    {
-        return (string) new SystemPrompt(
-            background: ["You are a friendly AI Agent created with NeuronAI framework."],
-        );
-    }
+    // public function instructions(): string
+    // {
+    //     return (string) new SystemPrompt(
+    //         background: ["You are a friendly AI Agent created with NeuronAI framework."],
+    //     );
+    // }
 
     /**
      * @return ToolInterface[]|ToolkitInterface[]

@@ -228,4 +228,7 @@ class BaseController
         return new Request();
     }
 
+    protected function __isHtmxRequest() {
+        return isset($_SERVER['HTTP_HX_REQUEST']) && $_SERVER['HTTP_HX_REQUEST'] === 'true';
+    }
 }

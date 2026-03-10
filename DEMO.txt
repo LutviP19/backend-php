@@ -199,3 +199,11 @@ Parse key contents: [key:contents, value:The default interactive shell is now zs
 simulateConcurrent-output: {"id":"1 counter: 10000x","title":"Title A counter: 2000x","contents":"The default interactive shell is now zsh. counter: 15000x"}
 
 
+Generator:
+----------
+chmod +x generator
+./generator DashboardModel && 
+./generator DashboardController && 
+./generator ProductApiController App/Controllers/Api/v1 && 
+./generator dashboard views/index
+

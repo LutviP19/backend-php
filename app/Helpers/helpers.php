@@ -20,7 +20,6 @@ if(!function_exists('b64url')) {
     }
 }
 
-
 /**
  * get environment variable.
  *
@@ -43,6 +42,61 @@ function config($key)
 {
     return Config::get($key);
 }
+
+/**
+ * Converts selected environment variables to JSON format for Frontend.
+ */
+function env_to_json(array $keys) {
+    $output = [];
+    foreach ($keys as $key) {
+        $output[$key] = env($key);
+    }
+    return json_encode($output);
+}
+
+// To handle CORS (Cross-Origin Resource Sharing)
+// Specify allowed origins (from .env file)
+function handle_cors() {
+    if(!isset($_SERVER['HTTP_ORIGIN']) || !isset($_SERVER['HTTP_REFERER']))
+    return;
+
+    // 1. Take string from .env, defaults to '*' if empty
+    $envOrigins = env('ALLOWED_ORIGINS', '*');
+    
+    $allowedOrigins = ($envOrigins !== '*') 
+        ? explode(',', $envOrigins) 
+        : ['*'];
+
+    $currentOrigin = $_SERVER['HTTP_ORIGIN'] ?? $_SERVER['HTTP_REFERER'];
+    // dd($currentOrigin);
+    
+    $cleanOrigin = parse_url($currentOrigin, PHP_URL_HOST);
+    // dd($cleanOrigin);
+
+    if (in_array('*', $allowedOrigins) || in_array($cleanOrigin, $allowedOrigins)) {
+        header("Access-Control-Allow-Origin: $currentOrigin");
+    }
+
+    // Set output header ke browser
+    header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+    header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, hx-request, hx-target, hx-current-url, hx-trigger, hx-trigger-name");
+    header("Access-Control-Allow-Credentials: true");
+
+    // Handle "Preflight" requests (browser sends OPTIONS method before POST/PUT)
+    if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+        http_response_code(204); // No Content
+        exit();
+    }
+}
+
+/**
+ * Simple helper log system with category levels.
+ */
+function write_log($level = 'info', $logs = '', $moduleName = '', $single = true) {
+
+    \App\Core\Support\Log::saveLog($level, $logs, $moduleName, $single);
+}
+
 
 /**
  * sort request function
@@ -215,6 +269,19 @@ function assets_path($filePath)
 {
     return BASE_PATH . 'public/assets/' . $filePath;
 }
+
+/**
+ * default log path
+ *
+ * @param  string $log_name
+ *
+ * @return string
+ */
+function logs_path($log_name)
+{
+    return BASEPATH . 'storage/logs/' . $log_name;
+}
+
 
 /**
  * dump the data and kill the page.

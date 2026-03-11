@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Core\Database\Model;
 use App\Core\Database\QueryBuilder; // import the class.
+// use App\Core\Database\Connection; // Uncomment to build new Custom connection.
+use PDO; // new PDO object
 
 class Role extends Model
 {
@@ -13,6 +15,25 @@ class Role extends Model
      * @var string
      */
     protected static $tableM = "roles";
+
+    public function __construct(PDO $pdo = null)
+    {
+        // // Custom connection
+        // $driver = '';
+        // $name = '';
+        // $host = '';
+        // $port = '';
+        // $username = '';
+        // $password = '';
+        // $options = [];
+        // $conn = $pdo ?: Connection::custom($driver, $name, $host, $port, $username, $password, $options);
+        // parent::__construct($conn);
+
+        // Default connection
+        parent::__construct($pdo);
+        
+        $this->table = self::$tableM;
+    }
 
 
     public static function getRoleById($id, $cols = false) {

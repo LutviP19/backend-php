@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Database\Model;
 use App\Models\User;
+use App\Models\Role;
 use App\Core\Events\Event;
 use App\Core\Http\{Request, Response};
 use App\Core\Message\Broker;
@@ -32,9 +33,11 @@ class PagesController extends Controller
      */
     public function index(Request $request, Response $response)
     {
-        $users = Model::table('users')->select(['*'])->get();
+        // // $users = User::select()->get();
+        // $users = User::getAllUser();
         // dd($users);
-        // Session::set('users', generateUlid());
+
+        Session::set('users', generateUlid());
         $server = \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port')) ? "OpenSwoole" : "PHP FPM";
 
         $this->view('spa.index', ['users' => $users, 'server' => $server]);

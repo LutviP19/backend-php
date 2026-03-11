@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Core\Database\Model;
 use App\Core\Database\QueryBuilder; // import the class.
+// use App\Core\Database\Connection; // Uncomment to build new Custom connection.
+use PDO; // new PDO object
 
 class User extends Model
 {
@@ -14,8 +16,23 @@ class User extends Model
      */
     protected static $tableM = "users";
 
+    public function __construct(PDO $pdo = null)
+    {
+        // Default connection
+        parent::__construct($pdo);
+        
+        $this->table = self::$tableM;
+    }
+
 
     //user model code....
+    public static function getAllUser()
+    {
+        $data = self::table(self::$tableM)->select()->get();
+        if($data) return $data;
+
+        return null;
+    }
 
     public static function getUserByEmail($email)
     {

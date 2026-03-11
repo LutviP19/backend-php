@@ -8,7 +8,8 @@ namespace App\Models;
 
 use App\Core\Database\Model;
 use App\Core\Database\QueryBuilder; // import the class.
-// use PDO; // Uncomment to build new PDO object
+// use App\Core\Database\Connection; // Uncomment to build new Custom connection.
+use PDO; // new PDO object
 
 
 class MyModel extends Model
@@ -20,12 +21,34 @@ class MyModel extends Model
      */
     protected static $tableM = "users";
 
-    public function index(?array $request = [])
+
+    public function __construct(PDO $pdo = null)
+    {
+        // // Custom connection
+        // $driver = ''; // sqlite || mysql || mariadb || pgsql || sqlsrv
+        // $name = '';
+        // $host = '';
+        // $port = '';
+        // $username = '';
+        // $password = '';
+        // $options = [];
+        // $conn = $pdo ?: Connection::custom($driver, $name, $host, $port, $username, $password, $options);
+        // parent::__construct($conn);
+
+        // Default connection
+        parent::__construct($pdo);
+        
+        $this->table = self::$tableM;
+    }
+
+    public function index(?array $params = [])
     {
         // $data = self::table(self::$tableM)->select([ '*'])
-        //         ->where('email', '=', $email)
+        //         ->where('role', '=', $params['role'])
         //         ->whereAnd('status', '=', 1)
-        //         ->first();
+        //         ->get();
+
+        // $data = self::table(self::$tableM)->select(['*'])->get();
 
         // if($data) return $data;
 

@@ -38,7 +38,9 @@ APP COMMANDS :
 - Run Server
 $ php -S localhost:8000 -t public/
 
-- Get app info (param: userid)
+
+Get app info (param: userid)
+------------------------------
 $ php bin/console app:info 1
 Output:
 App Name: Backend PHP
@@ -197,6 +199,35 @@ Parse key title: [key:title, value:Title A]
 Parse key contents: [key:contents, value:The default interactive shell is now zsh.]
 
 simulateConcurrent-output: {"id":"1 counter: 10000x","title":"Title A counter: 2000x","contents":"The default interactive shell is now zsh. counter: 15000x"}
+
+
+FFI:
+---
+go build -buildmode=c-shared -o ./bin/ffi/lib/concurrency.so ./bin/ffi/source/concurrency.go
+go build -buildmode=c-shared -o ./bin/ffi/lib/fibonacci.so ./bin/ffi/source/fibonacci.go 
+go build -buildmode=c-shared -o ./bin/ffi/lib/hello.so ./bin/ffi/source/hello.go 
+
+modify : bin/ffi/lib/concurrency.h
+extern void ResizeImages(char** input, int count, char*** failedOut, int* failedCount);
+
+php cron/test.php 
+
+
+CronJob Server:
+---------------
+php servers/phpstream-server.php start
+
+
+Ollama API:
+-----------
+curl --request POST \
+  --url http://localhost:8000/api/test-neuronai/prompt \
+  --header 'Accept: application/json' \
+  --header 'Content-Type: application/json' \
+  --header 'X-Api-Token: [REPLACE_WITH_YOUR_OWN_SETUP] \
+  --data '{
+	"prompt":  "halo"
+}'
 
 
 Generator:

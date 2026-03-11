@@ -50,10 +50,7 @@ class ValidateClient
         }
 
         $this->__checkColumnId($this->columnId);
-        $user = User::select(['client_token'])
-            ->where($this->columnId, '=', $this->clientId)
-            ->whereAnd('status', '=', 1)
-            ->first();
+        $user = User::getClientId($this->clientId, $this->columnId);
 
 
         if ($user &&

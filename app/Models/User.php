@@ -40,6 +40,21 @@ class User extends Model
         return null;
     }
 
+    public static function getClientId($id, $columnId = 'id')
+    {
+        $data = self::table(self::$tableM)->select(['client_token'])
+                ->where($columnId, '=', $id)
+                ->whereAnd('status', '=', 1)
+                ->first();
+        // \App\Core\Support\Log::debug($data, 'UserModel.getClientId');
+
+        if ($data) {
+            return $data->client_token;
+        }
+
+        return false;
+    }
+
     public static function getUlid($id)
     {
         $data = self::table(self::$tableM)->select(['ulid'])->where('id', '=', $id)->first();

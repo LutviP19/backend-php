@@ -42,7 +42,7 @@ class PagesController extends Controller
         // $headers = bp_session_regenerate_id($oldSessionId);
         // setHeaders($headers);
 
-        // Session::set('jwtId', generateUlid());
+        // // Session::set('jwtId', generateUlid());
         // dd(Session::get('jwtId'));
         $server = \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port')) ? "OpenSwoole" : "PHP FPM";
 

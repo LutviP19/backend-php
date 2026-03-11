@@ -224,8 +224,10 @@ function setHeaders($headers = [])
 {
     if(count($headers)) {
         foreach ($headers as $header) {
-            foreach ($header as $key => $value)
-            header("{$key}: {$value}");
+            if(is_array($header)) {
+                foreach ($header as $key => $value)
+                header("{$key}: {$value}");
+            }
         }
     }
 }

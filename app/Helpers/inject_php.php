@@ -533,7 +533,10 @@ function bp_session_regenerate_id($oldSessionId)
     // Start session with new session ID
     ini_set('session.use_strict_mode', 0);
     session_id($new_session_id);
-    session_destroy();
+
+    if (session_status() == PHP_SESSION_ACTIVE) {
+        session_destroy();
+    }
 
     $sessionName = session_name();
     $cookie = session_get_cookie_params();
@@ -548,17 +551,22 @@ function bp_session_regenerate_id($oldSessionId)
     // Write and close current session;
     session_commit();
 
-    // Delete Old session file
-    $sessionSavePath = session_save_path();
-    $fileSessionOld = $sessionSavePath.'/sess_'.$oldSessionId;
+    $saveHandler = ini_get('session.save_handler');
 
-    if (\file_exists($fileSessionOld)) {
-        $status = unlink($fileSessionOld);
-        // \App\Core\Support\Log::debug($status, 'Helpers.inject_php.bp_session_regenerate_id.unlink-$fileSessionOld');
+    if($saveHandler === 'files') {
+        // Delete Old session file
+        $sessionSavePath = session_save_path();
+        $fileSessionOld = $sessionSavePath.'/sess_'.$oldSessionId;
+
+        if (\file_exists($fileSessionOld)) {
+            $status = unlink($fileSessionOld);
+            // \App\Core\Support\Log::debug($status, 'Helpers.inject_php.bp_session_regenerate_id.unlink-$fileSessionOld');
+        }
+    } else {
+        // Delete data redis PHPREDIS_SESSION
+        if($saveHandler === 'redis')
+        delDataFromRedis($oldSessionId, 'PHPREDIS_SESSION', '0', true);
     }
-
-    // Delete data redis PHPREDIS_SESSION
-    delDataFromRedis($oldSessionId, 'PHPREDIS_SESSION', '0', true);
 
     return $setcookie;
 }

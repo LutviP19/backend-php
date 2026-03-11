@@ -34,10 +34,16 @@ class PagesController extends Controller
     public function index(Request $request, Response $response)
     {
         // // $users = User::select()->get();
-        // $users = User::getAllUser();
+        $users = User::getAllUser();
         // dd($users);
 
-        Session::set('users', generateUlid());
+        // // Testing Regenerate SessioId
+        // $oldSessionId = session_id();
+        // $headers = bp_session_regenerate_id($oldSessionId);
+        // setHeaders($headers);
+
+        // Session::set('jwtId', generateUlid());
+        // dd(Session::get('jwtId'));
         $server = \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port')) ? "OpenSwoole" : "PHP FPM";
 
         $this->view('spa.index', ['users' => $users, 'server' => $server]);

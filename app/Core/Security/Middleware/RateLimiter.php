@@ -50,7 +50,7 @@ class RateLimiter
 
     public function __construct($rateLimitName)
     {
-        $this->rateLimitName = (string) $rateLimitName ?: 'request_'.clientIP().'_'.date('Ymd');
+        $this->rateLimitName = (string) $rateLimitName ?: 'request_'.format_array_key(clientIP()).'_'.date('Ymd');
 
         $this->redisClient = new PredisClient([
                                 'host' => Config::get('redis.cache.host'),
@@ -113,6 +113,9 @@ class RateLimiter
 
         $id = $id ?: clientIP();
 
+        // Formated Id
+        $idString = format_array_key($id);
+
         $this->rateLimitName = (string) 'credentials_'.$this->rateLimitName;
 
         $rateLimitProvider = new RateLimitProvider();
@@ -129,7 +132,7 @@ class RateLimiter
         try {
             // we must increase error count in-advance before even checking credentials
             // this avoids race-conditions with lots of requests
-            $credentialsResult = $throttler->checkAndIncrease($this->rateLimitName, $id);
+            $credentialsResult = $throttler->checkAndIncrease($this->rateLimitName, $idString);
 
         } catch (RateLimitReachedException $exception) {
 

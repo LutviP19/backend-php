@@ -77,6 +77,11 @@ class DashboardController extends Controller
             // 2. Tunggu 1.5 detik (simulasi proses) lalu redirect
             // Catatan: Redirect HTMX dilakukan via header
             header('HX-Redirect: /htmx');
+
+            // Regenerate SessioId
+            $oldSessionId = session_id();
+            $headers = bp_session_regenerate_id($oldSessionId);
+            setHeaders($headers);
             
             exit();
 
@@ -886,10 +891,6 @@ class DashboardController extends Controller
         }
     
         return $rangeWithDots;
-    }
-
-    private function __isHtmxRequest() {
-        return isset($_SERVER['HTTP_HX_REQUEST']) && $_SERVER['HTTP_HX_REQUEST'] === 'true';
     }
 }
 

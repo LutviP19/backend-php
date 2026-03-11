@@ -198,6 +198,17 @@ function underscoreToCamelCase($inputString, $prefix = '') {
     return $inputString;
 }
 
+function format_array_key($string) {
+    // Lowercase all letters
+    $string = strtolower($string);
+    // Replace spaces, non-alphanumeric characters, and \u00a0 with underscores
+    $string = preg_replace('/[\s\x{00a0}-]+/u', '_', $string);
+    // Remove any other characters that are not letters, numbers, or underscores
+    $string = preg_replace('/[^a-z0-9_]/', '', $string);
+    // Clean double underscores or at the ends of strings
+    return trim(preg_replace('/_+/', '_', $string), '_');
+}
+
 function str_replace_multi(array $replace, string $subject) {
     return str_replace(array_keys($replace), array_values($replace), $subject); 
 }
@@ -454,33 +465,54 @@ function squishStr($value)
 //     return $o[1].sprintf('%d',$o[2]).($o[3]!='.'?$o[3]:'');
 // }
 
+function checkSession()
+{
+    try {
+
+        // if(!is_numeric($_SESSION['user_id']))
+        //     throw new Exception('No session started.');
+
+        if ($_SESSION['IPaddress'] != $_SERVER['REMOTE_ADDR']) {
+            throw new Exception('IP Address mixmatch (possible session hijacking attempt).');
+        }
+
+        if ($_SESSION['userAgent'] != $_SERVER['HTTP_USER_AGENT']) {
+            throw new Exception('Useragent mixmatch (possible session hijacking attempt).');
+        }
+
+        // if(!$this->loadUser($_SESSION['user_id']))
+        //     throw new Exception('Attempted to log in user that does not exist with ID: ' . $_SESSION['user_id']);
+
+        return true;
+
+    } catch (Exception $e) {
+        return false;
+    }
+}
+
 function bp_session_start()
 {
-    session_start();
+    ini_set('session.use_strict_mode', 1);
+    @session_start();
     if (isset($_SESSION['destroyed'])) {
-        if ($_SESSION['destroyed'] < time() - 300) {
-            // // Should not happen usually. This could be attack or due to unstable network.
-            // // Remove all authentication status of this users session.
-            // remove_all_authentication_flag_from_active_sessions($_SESSION['userid']);
-            // throw(new DestroyedSessionAccessException);
-        }
-        if (isset($_SESSION['new_session_id'])) {
-            // Not fully expired yet. Could be lost cookie by unstable network.
-            // Try again to set proper session ID cookie.
-            // NOTE: Do not try to set session ID again if you would like to remove
-            // authentication flag.
-            session_commit();
-            session_id($_SESSION['new_session_id']);
 
-            // use_strict_mode is mandatory for security reasons.
-            // ini_set('session.use_strict_mode', 1);
-            // New session ID should exist
-            session_start();
-            return;
+        $ttl = (int)env('SESSION_REGENERATE', 300);
+
+        // $valid = (bool)($_SESSION['destroyed'] < time() - $ttl);
+        // // dd($ttl);
+        // dd($valid);
+
+        // Do not allow to use too old session ID
+        if (!empty($_SESSION['destroyed']) && $_SESSION['destroyed'] < time() - $ttl) {
+
+            // Regenerate SessioId
+            $oldSessionId = session_id();
+            $headers = bp_session_regenerate_id($oldSessionId);
+            setHeaders($headers);
         }
     }
 
-    $sessionStrictMode = ini_get('session.use_strict_mode');
+    // $sessionStrictMode = ini_get('session.use_strict_mode');
     // \App\Core\Support\Log::debug($sessionStrictMode, 'Helpers.inject_php.bp_session_start.$sessionStrictMode');
 }
 
@@ -488,23 +520,21 @@ function bp_session_regenerate_id($oldSessionId)
 {
     $new_session_id = session_create_id();
 
-    // backup session variables
-    $keepSession = $_SESSION ;
-
     // add info for users with bad connection not receiving the new session id
     $_SESSION['new_session_id'] = $new_session_id;
     // Set destroy timestamp
     $_SESSION['destroyed'] = time();
-
     // Write and close current session;
-    session_commit() ;
+    session_commit();
+
+    // backup session variables
+    $keepSession = $_SESSION;
 
     // Start session with new session ID
     ini_set('session.use_strict_mode', 0);
     session_id($new_session_id);
+    session_destroy();
 
-    $sessionStrictMode = ini_get('session.use_strict_mode');
-    // \App\Core\Support\Log::debug($sessionStrictMode, 'Helpers.inject_php.bp_session_regenerate_id.before-$sessionStrictMode');
     $sessionName = session_name();
     $cookie = session_get_cookie_params();
     $sessionExp = (env('SESSION_LIFETIME', 120) * 60);
@@ -513,23 +543,28 @@ function bp_session_regenerate_id($oldSessionId)
     // use_strict_mode is mandatory for security reasons.
     ini_set('session.use_strict_mode', 1);
 
-    session_start();
-    $_SESSION = $keepSession ;
+    @session_start();
+    $_SESSION = $keepSession;
+    // Write and close current session;
+    session_commit();
 
     // Delete Old session file
     $sessionSavePath = session_save_path();
     $fileSessionOld = $sessionSavePath.'/sess_'.$oldSessionId;
-    $sessionStrictMode = ini_get('session.use_strict_mode');
-    // \App\Core\Support\Log::debug($sessionSavePath, 'Helpers.inject_php.bp_session_regenerate_id.$sessionSavePath');
-    // \App\Core\Support\Log::debug($fileSessionOld, 'Helpers.inject_php.bp_session_regenerate_id.$fileSessionOld');
-    // \App\Core\Support\Log::debug($sessionStrictMode, 'Helpers.inject_php.bp_session_regenerate_id.$sessionStrictMode');
+
     if (\file_exists($fileSessionOld)) {
         $status = unlink($fileSessionOld);
         // \App\Core\Support\Log::debug($status, 'Helpers.inject_php.bp_session_regenerate_id.unlink-$fileSessionOld');
     }
 
+    // Delete data redis PHPREDIS_SESSION
+    delDataFromRedis($oldSessionId, 'PHPREDIS_SESSION', '0', true);
+
     return $setcookie;
 }
+
+
+
 
 // function regenerateSession($reload = false)
 // {
@@ -568,37 +603,6 @@ function bp_session_regenerate_id($oldSessionId)
 //     unset($_SESSION['EXPIRES']);
 // }
 
-// function checkSession()
-// {
-//     try {
-//         if ($_SESSION['OBSOLETE'] && ($_SESSION['EXPIRES'] < time())) {
-//             throw new Exception('Attempt to use expired session.');
-//         }
-
-//         // if(!is_numeric($_SESSION['user_id']))
-//         //     throw new Exception('No session started.');
-
-//         if ($_SESSION['IPaddress'] != $_SERVER['REMOTE_ADDR']) {
-//             throw new Exception('IP Address mixmatch (possible session hijacking attempt).');
-//         }
-
-//         if ($_SESSION['userAgent'] != $_SERVER['HTTP_USER_AGENT']) {
-//             throw new Exception('Useragent mixmatch (possible session hijacking attempt).');
-//         }
-
-//         // if(!$this->loadUser($_SESSION['user_id']))
-//         //     throw new Exception('Attempted to log in user that does not exist with ID: ' . $_SESSION['user_id']);
-
-//         if (!$_SESSION['OBSOLETE'] && mt_rand(1, 100) == 1) {
-//             $this->regenerateSession();
-//         }
-
-//         return true;
-
-//     } catch (Exception $e) {
-//         return false;
-//     }
-// }
 
 // // Backend PHP custom session start function support timestamp management
 // function custom_session_start()

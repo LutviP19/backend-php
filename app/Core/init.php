@@ -54,7 +54,8 @@ if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // Ignore
         }
 
         session_name('BACKENDPHPSESSID'); // Set a custom session name
-        @session_start();
+        // @session_start();
+        bp_session_start();
     }
 
 } else {

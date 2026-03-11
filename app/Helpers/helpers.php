@@ -214,6 +214,23 @@ function endResponse($response, $status = 200, $headers = [])
 }
 
 /**
+ * setHeaders function, to add header response
+ *
+ * @param  array $headers
+ *
+ * @return bool
+ */
+function setHeaders($headers = [])
+{
+    if(count($headers)) {
+        foreach ($headers as $header) {
+            foreach ($header as $key => $value)
+            header("{$key}: {$value}");
+        }
+    }
+}
+
+/**
  * checkValidJSON function, to Check valid JSON format
  *
  * @param  string $rawBody
@@ -361,7 +378,7 @@ function getDataFromRedis($id, $prefix = null)
     return [];
 }
 
-function delDataFromRedis($id, $prefix = null)
+function delDataFromRedis($id, $prefix = null, $db = null, $force = false)
 {
     if(empty($id))
         return;
@@ -370,7 +387,7 @@ function delDataFromRedis($id, $prefix = null)
     $redis = new \Predis\Client([
         'host' => Config::get('redis.cache.host'),
         'port' => Config::get('redis.cache.port'),
-        'database' => Config::get('redis.cache.database')
+        'database' => $db ?? Config::get('redis.cache.database')
     ]);
 
     // $prefix = $prefix ?? 'bp_data';
@@ -378,7 +395,7 @@ function delDataFromRedis($id, $prefix = null)
 
     $data = $redis->get($prefix.':'.$id);
 
-    if (! is_null($data) && isset($data[0]))
+    if ((! is_null($data) && isset($data[0])) || $force)
         $redis->del($prefix.':'.$id);
 }
 

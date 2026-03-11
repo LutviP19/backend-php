@@ -90,6 +90,9 @@ class AuthController extends ApiController
                         $errors
                    ]), $statusCode);
             } else {
+                // Regenerate SessioId
+                $oldSessionId = session_id();
+                $headers = bp_session_regenerate_id($oldSessionId);
                 
                 // Set Session and generate new JwtToken
                 $tokenJwt = $this->setLoginSession($user);
@@ -102,9 +105,10 @@ class AuthController extends ApiController
                         ], 'Invalid Client!'), 401);
                 }
 
-                // Set cookie
-                $sessionExp = (env('SESSION_LIFETIME', 120) * 60);
-                $headers = ['Set-Cookie' => "{$this->sessionName}={$this->sessionId}; Max-Age={$sessionExp}; Path=/;"];
+                // // Set cookie
+                // $sessionExp = (env('SESSION_LIFETIME', 120) * 60);
+                // $headers = ['Set-Cookie' => "{$this->sessionName}={$this->sessionId}; Max-Age={$sessionExp}; Path=/;"];
+                
                 // \App\Core\Support\Log::debug($headers, 'AuthController.login.$headers');
 
                 // Cache session data by uid

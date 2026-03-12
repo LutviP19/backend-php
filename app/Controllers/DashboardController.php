@@ -481,7 +481,7 @@ class DashboardController extends Controller
         $page        = max(1, min($page, $total_pages ?: 1)); // Proteksi range halaman
 
         // 4. Ambil Data dengan Limit
-        $sql = "SELECT  a.id, a.title, a.member, c.display_name AS category_name, a.time, a.status, COALESCE(a.icon, c.default_icon) AS icon, COALESCE(a.color, c.default_color) AS color $queryStr LIMIT $limit OFFSET $offset";
+        $sql = "SELECT  a.id, a.title, a.member, c.display_name AS category_name, a.time, a.status, c.slug AS cat, COALESCE(a.icon, c.default_icon) AS icon, COALESCE(a.color, c.default_color) AS color $queryStr LIMIT $limit OFFSET $offset";
         $object_data = QueryBuilder::table('activities')->execQuery($sql, array_values($params), false, false, true);
 
         // Convert Object menjadi Array

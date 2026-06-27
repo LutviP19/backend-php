@@ -19,3 +19,8 @@ SNIP.txt
 /.zed
 rector.php
 *.log
+# macOS Thumbnail Files
+.DS_Store
+**/.DS_Store
+._*
+**/._*

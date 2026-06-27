@@ -6,9 +6,6 @@ namespace App\Controllers\ServerApi;
 
 use App\Core\Http\BaseController;
 use OpenSwoole\Core\Psr\Response as OpenSwooleResponse;
-use App\Core\Security\Encryption;
-use App\Core\Security\Middleware\JwtToken;
-use App\Core\Support\Config;
 use App\Core\Support\Session;
 use App\Core\Security\Hash;
 use Exception;
@@ -70,18 +67,13 @@ class ServerApiController extends BaseController
         // Set login session
         $validateClient = new \App\Core\Security\Middleware\ValidateClient($userId);
         $clientToken = $validateClient->getToken();
-        \App\Core\Support\Log::debug($clientToken, 'Auth.Login.clientToken');
         $clientTokenGen = $validateClient->generateToken();
         Session::set('client_token', $clientTokenGen);
-        \App\Core\Support\Log::debug($clientTokenGen, 'Auth.Login.clientTokenGen');
 
         if (false === $validateClient->matchToken($clientTokenGen)) {
-
             Session::destroy();
             return false;
         }
-
-        // \App\Core\Support\Log::debug($clientToken, 'Auth.Login.clientToken');
 
         // initJwtToken
         Session::set('secret', encryptData($clientToken, $gnr));
@@ -92,9 +84,7 @@ class ServerApiController extends BaseController
         $info = 'Api jwt-'.$userId;
         $subject = 'Access API for user:'.$userId;
         $tokenJwt =  $jwtToken->createToken($userId, $info, $subject);
-        Session::set('tokenJwt', $tokenJwt);
-        //  \App\Core\Support\Log::debug($tokenJwt, 'Auth.Login.tokenJwt');
-        
+        Session::set('tokenJwt', $tokenJwt);        
 
         return $tokenJwt;
     }

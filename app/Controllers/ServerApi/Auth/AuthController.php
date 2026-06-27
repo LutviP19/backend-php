@@ -6,7 +6,6 @@ namespace App\Controllers\ServerApi\Auth;
 
 use App\Models\User;
 use App\Controllers\ServerApi\ServerApiController;
-use App\Core\Security\Middleware\ValidateClient;
 use App\Core\Validation\Validator;
 use App\Core\Support\Session;
 use Exception;

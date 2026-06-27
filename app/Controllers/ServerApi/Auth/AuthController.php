@@ -96,6 +96,7 @@ class AuthController extends ServerApiController
             } else {
 
                 // Set Session and generate new JwtToken
+                // dd($user, true);
                 $tokenJwt = $this->setLoginSession($user);
                 if (false === $tokenJwt) {
 

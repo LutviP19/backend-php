@@ -6,8 +6,6 @@ namespace App\Core\Security\Middleware;
 use App\Models\User;
 use App\Core\Support\Config;
 use App\Core\Security\Hash;
-use Exception;
-use RuntimeException;
 
 /**
  * ValidateClient class
@@ -21,11 +19,14 @@ class ValidateClient
     protected $hash;
     protected $redis;
 
-    public function __construct(protected $clientId, protected $columnId = 'ulid')
+    public function __construct(protected ?string $clientId, protected string $columnId = 'ulid')
     {
-        // $this->clientId = $clientId;
-        // $this->columnId = $columnId;
-        $this->minutes_to_expire = (env('SESSION_LIFETIME', 120) * 60);
+        $this->clientId = $clientId;
+        $this->columnId = $columnId;
+        // $this->minutes_to_expire = (env('SESSION_LIFETIME', 120) * 60);
+        // 1. Simpan nilai ini dalam satuan DETIK murni (120 menit * 60 = 7200 detik)
+        $this->minutes_to_expire = (int)env('SESSION_LIFETIME', 120) * 60;
+        
         $this->hash = new Hash();
 
         $this->redis = new \Predis\Client([
@@ -42,27 +43,21 @@ class ValidateClient
      */
     public function getToken()
     {
-        // get cache from redis
-        $token = $this->redis->mget(['client_token:'.$this->clientId]);
-
-        if (! is_null($token) && isset($token[0])) {
-            return base64_decode($token[0]);
+        $key = 'client_token:' . $this->clientId;
+        $token = $this->redis->get($key);
+        
+        if ($token !== false && !is_null($token) && $token !== '') {
+            return base64_decode($token);
         }
 
+        // Populate token
         $this->__checkColumnId($this->columnId);
-        $user = User::getClientId($this->clientId, $this->columnId);
+        $token = User::getClientId($this->clientId, $this->columnId);        
 
+        if ($token != '') {
+            $this->redis->setex($key, $this->minutes_to_expire, base64_encode($token));
 
-        if ($user &&
-           isset($user->client_token) &&
-           $user->client_token != '') {
-
-            // cache to redis
-            $key = 'client_token:'.$this->clientId;
-            $this->redis->mset([$key => base64_encode((string) $user->client_token)]);
-            $this->redis->expire($key, $this->minutes_to_expire);
-
-            return $user->client_token;
+            return $token;
         }
 
         return null;

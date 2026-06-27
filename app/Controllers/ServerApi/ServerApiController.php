@@ -60,6 +60,8 @@ class ServerApiController extends BaseController
 
             Session::set($key, $value);
         }
+        // dd(Session::all(), true);
+        
 
         Session::set('gnr', generateRandomString(32, true));
         $userId =  Session::get('uid');
@@ -68,14 +70,18 @@ class ServerApiController extends BaseController
         // Set login session
         $validateClient = new \App\Core\Security\Middleware\ValidateClient($userId);
         $clientToken = $validateClient->getToken();
+        \App\Core\Support\Log::debug($clientToken, 'Auth.Login.clientToken');
         $clientTokenGen = $validateClient->generateToken();
         Session::set('client_token', $clientTokenGen);
+        \App\Core\Support\Log::debug($clientTokenGen, 'Auth.Login.clientTokenGen');
 
         if (false === $validateClient->matchToken($clientTokenGen)) {
 
             Session::destroy();
             return false;
         }
+
+        // \App\Core\Support\Log::debug($clientToken, 'Auth.Login.clientToken');
 
         // initJwtToken
         Session::set('secret', encryptData($clientToken, $gnr));
@@ -87,6 +93,8 @@ class ServerApiController extends BaseController
         $subject = 'Access API for user:'.$userId;
         $tokenJwt =  $jwtToken->createToken($userId, $info, $subject);
         Session::set('tokenJwt', $tokenJwt);
+        //  \App\Core\Support\Log::debug($tokenJwt, 'Auth.Login.tokenJwt');
+        
 
         return $tokenJwt;
     }

@@ -15,6 +15,11 @@ if (!defined('BASEPATH')) {
 
 /* ----------------------------- Default settings START -------------------------------- */
 
+// only level Deprecated & User Deprecated
+// error_reporting(E_DEPRECATED | E_USER_DEPRECATED);
+error_reporting(E_ALL);
+ini_set("display_errors", 1);
+
 // prettify the errors.
 ini_set("html_errors", 1);
 ini_set("error_prepend_string", "<pre style='color: #333; font-face:monospace; font-size:14px;'>");

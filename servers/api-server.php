@@ -22,17 +22,17 @@ use OpenSwoole\HTTP\Server;
 use OpenSwoole\Http\Request as OpenSwooleRequest;
 use OpenSwoole\Http\Response as OpenSwooleResponse;
 
-$table = new Swoole\Table(1024);
-$table->column('name', Swoole\Table::TYPE_STRING, 64);
-$table->column('id', Swoole\Table::TYPE_INT, 4);       //1,2,4,8
-$table->column('num', Swoole\Table::TYPE_FLOAT);
-$table->create();
+// $table = new Swoole\Table(1024);
+// $table->column('name', Swoole\Table::TYPE_STRING, 64);
+// $table->column('id', Swoole\Table::TYPE_INT, 4);       //1,2,4,8
+// $table->column('num', Swoole\Table::TYPE_FLOAT);
+// $table->create();
 
-$table1 = new Swoole\Table(1024);
-$table1->column('name', Swoole\Table::TYPE_STRING, 64);
-$table1->column('id', Swoole\Table::TYPE_INT, 4);       //1,2,4,8
-$table1->column('num', Swoole\Table::TYPE_FLOAT);
-$table1->create();
+// $table1 = new Swoole\Table(1024);
+// $table1->column('name', Swoole\Table::TYPE_STRING, 64);
+// $table1->column('id', Swoole\Table::TYPE_INT, 4);       //1,2,4,8
+// $table1->column('num', Swoole\Table::TYPE_FLOAT);
+// $table1->create();
 
 $serverip = "0.0.0.0";
 $serverport = 8080;

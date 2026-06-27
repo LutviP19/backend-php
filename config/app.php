@@ -24,7 +24,7 @@ return [
         'env' => env('APP_ENV', 'production'),
         'debug' => (bool) env('APP_DEBUG', false),
         'logdir' => __DIR__ . '/../storage/logs/',
-        'ignore_port' => [8080, 9501, 8008], // OpenSwoole Server port
+        'ignore_port' => [8080, 9501, 8009], // OpenSwoole Server port
     ],
 
     'trusted_ips' => [
@@ -73,9 +73,18 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                // Deteksi otomatis konstanta SSL CA (Mendukung PHP < 8.5 & 8.5+)
+                (defined('\Pdo\Mysql::ATTR_SSL_CA') ? \Pdo\Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
+
+                // Konstanta standar PDO (Tidak berubah di 8.5)
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ,
+
+                // Tambahan: Jika Anda menggunakan fitur Unbuffered (Optional)
+                // (defined('\Pdo\Mysql::ATTR_USE_BUFFERED_QUERY') ? \Pdo\Mysql::ATTR_USE_BUFFERED_QUERY : PDO::MYSQL_ATTR_USE_BUFFERED_QUERY)
+                //    => true,
+                // Gunakan 1001 langsung untuk menjamin kompatibilitas di PHP 8.3 - 8.5
+                1001 => true,
             ]) : [],
         ],
 
@@ -95,7 +104,8 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                // Deteksi otomatis konstanta SSL CA (Mendukung PHP < 8.5 & 8.5+)
+                (defined('\Pdo\Mysql::ATTR_SSL_CA') ? \Pdo\Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
         ],
 

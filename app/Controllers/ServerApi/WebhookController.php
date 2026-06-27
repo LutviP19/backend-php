@@ -83,7 +83,7 @@ class WebhookController extends ServerApiController
                 $order = ['id' => random_int(0, 2), 'items' => ['item1', 'item2']];
                 if(false !== $orderService->placeOrder($order)) {
                     $status = true;
-                }                    
+                }
                 break;
             default:
                 $status = false;

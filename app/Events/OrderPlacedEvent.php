@@ -22,7 +22,7 @@ class OrderPlacedEvent extends Event
      */
     public function __construct(protected $order)
     {
-        // $this->order = $order;
+        $this->order = $order;
     }
 
     /**

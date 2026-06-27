@@ -102,6 +102,16 @@ $server->on("Start", function (Server $server) {
     echo "Swoole api server is started at http://" . $serverip . ":" . $serverport . "\n";
 });
 
+// WORKER PROCESS: Dijalankan 4 kali (sekali untuk setiap worker)
+$server->on('WorkerStart', function (Server $server, int $workerId) {
+    // SANGAT AMAN UNTUK AUTO-REFRESH:
+    // File di bawah ini akan dimuat ulang setiap kali worker di-reload
+    require_once __DIR__ . '/bootstrap.php';
+    require_once __DIR__ . '/../routes/api-server.php';
+    
+    echo "Worker #{$workerId} is ready.\n";
+});
+
 $server->on('Task', function (Swoole\Server $server, $task_id, $reactorId, $data) {
     echo "Task Worker Process received data";
     echo "#{$server->worker_id}\tonTask: [PID={$server->worker_pid}]: task_id=$task_id, data_len=" . strlen((string) $data) . "." . PHP_EOL;

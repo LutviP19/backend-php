@@ -3,8 +3,7 @@
 namespace App\Core\Database;
 
 
-use Exception;
-use PDOException;
+use PDO;
 
 /**
  * Model class
@@ -29,7 +28,7 @@ class Model extends QueryBuilder
      */
     protected static $tableM;
 
-    public function __construct(PDO $pdo = null)
+    public function __construct(?PDO $pdo = null)
     {
         parent::__construct($pdo);
     }

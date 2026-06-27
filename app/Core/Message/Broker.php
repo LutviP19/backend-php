@@ -3,9 +3,11 @@
 namespace App\Core\Message;
 
 use App\Core\Support\Config;
-use PhpAmqpLib\Connection\AMQPStreamConnection;
-use PhpAmqpLib\Message\AMQPMessage;
 use Exception;
+use PhpAmqpLib\Connection\AMQPStreamConnection;
+use PhpAmqpLib\Exception\AMQPIOException;
+use PhpAmqpLib\Exception\AMQPRuntimeException;
+use PhpAmqpLib\Message\AMQPMessage;
 
 /**
  * Broker class
@@ -23,30 +25,42 @@ class Broker
     /**
      * sendMessage function
      *
-     * @param  [string] $message
-     * @param  [typstringe] $method
+     * @param  string|null $message
+     * @param  string|null $method
      *
-     * @return void
+     * @return bool Mengembalikan true jika berhasil, false jika gagal koneksi
      */
     public static function sendMessage($message = null, $method = null)
     {
         if (is_null($message)) {
-            return;
+            return false;
         }
 
         if (self::$driver === 'rabbitmq') {
-
-            if (is_null($message)) {
-                throw new Exception('Message is empty.');
-            }
-
-            if (is_null($method)) {
-                self::sendMessageRabbitMq($message);
-            } else {
-                self::sendMessageRabbitMq($message, $method);
+            try {
+                if (is_null($method)) {
+                    self::sendMessageRabbitMq($message);
+                } else {
+                    self::sendMessageRabbitMq($message, $method);
+                }
+                return true;
+            } catch (AMQPIOException $e) {
+                // Tangkap jika terjadi kegagalan soket jaringan/koneksi putus
+                self::logError("RabbitMQ Connection Error (IO): " . $e->getMessage());
+                // Anda bisa menambahkan logika fallback ke sini, misal disimpan ke database lokal dulu
+                return false;
+            } catch (AMQPRuntimeException $e) {
+                // Tangkap jika ada error runtime dari RabbitMQ lainnya
+                self::logError("RabbitMQ Runtime Error: " . $e->getMessage());
+                return false;
+            } catch (\Throwable $e) {
+                // Tangkap error tidak terduga lainnya agar aplikasi tidak Fatal Error
+                self::logError("RabbitMQ Unexpected Error: " . $e->getMessage());
+                return false;
             }
         }
 
+        return false;
     }
 
     /**
@@ -142,5 +156,13 @@ class Broker
 
         $channel->close();
         $connection->close();
+    }
+
+    protected static function logError($message)
+    {
+        if (config("app.debug")) {
+            \write_log("error", ["message" => $message], "Message.Broker");
+        }
+        echo "[!] " . $message . PHP_EOL;
     }
 }

@@ -149,7 +149,8 @@ function endResponse($response, $status = 200, $headers = [])
             }
         }
         
-        die(response()->json($response, $status));
+        // die(response()->json($response, $status));
+        response()->json($response, $status);
     }
 
     // // Get output response

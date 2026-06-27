@@ -117,6 +117,7 @@ class Response
             $this->header("Content-Type", "application/json; charset=utf-8", $code);
 
             print json_encode($data, JSON_UNESCAPED_SLASHES);
+            exit;
         }
         else {
 

@@ -85,10 +85,10 @@ class QueryBuilder
      *
      * @param PDO|null $pdo
      */
-    public function __construct(PDO $pdo = null)
+    public function __construct(?PDO $pdo = null)
     {
         //if we have a different db connection.
-        $conn = $pdo ?: Connection::make();
+        $conn = $pdo ?? Connection::make();
 
         $this->setPDO($conn);
     }

@@ -36,7 +36,7 @@ $ bin/ffi/*
 APP COMMANDS :
 --------------
 - Run Server
-$ php -S localhost:8000 -t public/
+$ php -S localhost:8008 -t public/
 
 
 Get app info (param: userid)

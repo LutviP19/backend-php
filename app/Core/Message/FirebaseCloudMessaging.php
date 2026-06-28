@@ -68,7 +68,7 @@ class FirebaseCloudMessaging
         $res = curl_exec($ch);
         if ($res === false) {
             $err = curl_error($ch);
-            curl_close($ch);
+            bp_curl_close($ch);
             // http_response_code(500);
             // die("OAuth token error: $err");
 
@@ -78,7 +78,7 @@ class FirebaseCloudMessaging
 
             return null;
         }
-        curl_close($ch);
+        bp_curl_close($ch);
 
 
         $json = json_decode($res, true);
@@ -157,7 +157,7 @@ class FirebaseCloudMessaging
         }
 
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
+        bp_curl_close($ch);
         
         return [$code, $res];
     }

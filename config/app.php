@@ -15,6 +15,7 @@ return [
      * Application config details.
      */
     'app' => [
+        'php_version' => env('PHP_VERSION', '8.3.0'),
         'name' => env('APP_NAME', 'Backend PHP'),
         'key' => env('ENCRYPTION_KEY'),
         'hash_key' => env('HASH_KEY'),

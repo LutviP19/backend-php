@@ -32,6 +32,9 @@ $dotenv->load();
 //register configuration to the app.
 App::register('config', require __DIR__ . '/../../config/app.php');
 
+// Min php version
+bp_minimum_php_version(config('app.php_version'));
+
 date_default_timezone_set(env('APP_TIMEZONE', 'Asia/Jakarta'));
 
 // dd(config('app.ignore_port'), true);
@@ -43,8 +46,19 @@ if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // Ignore
             ini_set('session.save_handler', env('SESSION_DRIVER', 'files'));
             
             if (env('SESSION_DRIVER') === "redis") {
-                ini_set('session.save_path', "tcp://" . env('REDIS_HOST') . ":" . env('REDIS_PORT') . "?auth" . env('REDIS_PASSWORD'));
-                ini_set('session.gc_maxlifetime', (env('SESSION_LIFETIME', 120) * 60)); // Set default to 2 hours
+                // ini_set('session.save_path', "tcp://" . env('REDIS_HOST') . ":" . env('REDIS_PORT') . "?auth" . env('REDIS_PASSWORD'));
+                // ini_set('session.gc_maxlifetime', (env('SESSION_LIFETIME', 120) * 60)); // Set default to 2 hours
+
+                ini_set(
+                    "session.save_path",
+                    "tcp://" .
+                        config("redis.default.host") .
+                        ":" .
+                        config("redis.default.port") .
+                        "?auth" .
+                        config("redis.default.password"),
+                );
+                ini_set("session.gc_maxlifetime", (int) (config("session.lifetime") * 60)); // Set default to 2 hours                
             } else {
                 ini_set('session.save_handler', 'files');
                 ini_set('session.save_path', __DIR__ . '/../../storage/framework/sessions');

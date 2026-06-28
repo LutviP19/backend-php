@@ -6,12 +6,10 @@ namespace App\Controllers\ServerApi;
 
 use App\Core\Validation\Validator;
 use App\Core\Support\Session;
-use App\Core\Support\Config;
 use App\Models\User;
 // Events
 use App\Dispatchers\EventDispatcher;
 use App\Services\OrderService;
-use OpenSwoole\Core\Psr\Response as OpenSwooleResponse;
 
 class WebhookController extends ServerApiController
 {
@@ -26,6 +24,11 @@ class WebhookController extends ServerApiController
 
 
     public function indexAction($request, array $data) {
+
+        // Validate header X-Client-Token + JWT
+        $validateOutput = $this->useMiddleware();
+        if($validateOutput) return $validateOutput;
+
         $event = $request->getAttribute('event');
         $event = $data['attributes']['event'] ?: 'users.get';
 

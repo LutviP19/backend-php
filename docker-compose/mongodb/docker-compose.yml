@@ -1,48 +1,57 @@
 services:
   mongodb:
-    image: mongo:8.0.12
-    container_name: mongodb
-    hostname: mongodb
-    volumes:
-      - mongodb-data:/data/db/
-      - mongodb-log:/var/log/mongodb/
-    env_file:
-      - .env
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+    image: mongo:latest
+    pull_policy: if_not_present
+    container_name: mongodb_container
+    restart: unless-stopped
+    # Security Rule: Optimization for local development only. 
+    # Remove ports array in production to isolate data behind the proxy network layer.
     ports:
       - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+    volumes:
+      - mongo_data:/data/db
     networks:
-      - mongodb_network
+      - mongo_network
+    # Fixed & Optimized: Passes clean routing parameters to ensure local auth sweeps don't lag
+    healthcheck:
+      test: ["CMD", "mongosh", "--username", "admin", "--password", "password123", "--authenticationDatabase", "admin", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
   mongo-express:
-    image: mongo-express:1.0.2-18-alpine3.18
-    container_name: mongo-express
-    restart: always
-    environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_INITDB_ROOT_USERNAME}
-      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
-      ME_CONFIG_MONGODB_PORT: 27017
-      ME_CONFIG_MONGODB_SERVER: 'mongodb'
-      ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_EXPRESS_USERNAME}
-      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_EXPRESS_PASSWORD}
+    image: mongo-express:latest
+    pull_policy: if_not_present
+    container_name: express_container
+    restart: unless-stopped
     ports:
-      - 8081:8081
+      - "8282:8081"
+    environment:
+      # Connection parameters to find MongoDB via internal container aliases
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: password123
+      ME_CONFIG_MONGODB_SERVER: mongodb_container
+      
+      # Fixed: Correct format required by the underlying Mongo Express Node runtime
+      ME_CONFIG_MONGODB_AUTH_DATABASE: admin
+      
+      # Web UI Dashboard basic auth credentials
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: password123
     networks:
-      - mongodb_network
+      - mongo_network
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
 
 volumes:
-  mongodb-data:
+  mongo_data:
     driver: local
-    name: mongo-data
-  mongodb-log:
-    driver: local
-    name: mongo-log
 
 networks:
-  mongodb_network:
+  mongo_network:
     driver: bridge
-    name: mongo-network

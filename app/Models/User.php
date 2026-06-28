@@ -16,7 +16,7 @@ class User extends Model
      */
     protected static $tableM = "users";
 
-    public function __construct(PDO $pdo = null)
+    public function __construct(?PDO $pdo = null)
     {
         // Default connection
         parent::__construct($pdo);

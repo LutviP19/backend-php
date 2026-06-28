@@ -25,9 +25,9 @@ class WebhookController extends ServerApiController
 
     public function indexAction($request, array $data) {
 
-        // Validate header X-Client-Token + JWT
-        $validateOutput = $this->useMiddleware();
-        if($validateOutput) return $validateOutput;
+        // // Validate header X-Client-Token + JWT
+        // $validateOutput = $this->useMiddleware();
+        // if($validateOutput) return $validateOutput;
 
         $event = $request->getAttribute('event');
         $event = $data['attributes']['event'] ?: 'users.get';

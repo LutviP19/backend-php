@@ -24,13 +24,7 @@ $sessionId = '';
 
 use OpenSwoole\Http\Request as OpenSwooleRequest;
 use OpenSwoole\Http\Response as OpenSwooleResponse;
-use OpenSwoole\Core\Psr\Middleware\StackHandler;
-use OpenSwoole\Core\Psr\Response as PsrResponse;
 use OpenSwoole\HTTP\Server;
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
-use Psr\Http\Server\MiddlewareInterface;
-use Psr\Http\Server\RequestHandlerInterface;
 
 $serverip = "127.0.0.1";
 $serverport = 9501;

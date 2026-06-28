@@ -1,29 +1,21 @@
-version: '2.4'
-
 services:
   mailpit:
-    image: axllent/mailpit
+    image: axllent/mailpit:v1.22.1  # Locked version to prevent unexpected dashboard breaks
     container_name: mailpit
     restart: unless-stopped
-    volumes:
-      - ./data:/data
+    pull_policy: if_not_present     # Freeze your local image and avoid auto-downloading updates
     ports:
-      - 8025:8025
-      - 1025:1025
+      - "8025:8025"                 # Web UI Dashboard interface port
+      - "1025:1025"                 # SMTP Server inbound port
     environment:
       MP_MAX_MESSAGES: 5000
       MP_DATABASE: /data/mailpit.db
       MP_SMTP_AUTH_ACCEPT_ANY: 1
       MP_SMTP_AUTH_ALLOW_INSECURE: 1
-      MP_SMTP_DISABLE_RDNS: true
-    # labels:
-    #   - "traefik.enable=true"
-    #   - "traefik.http.routers.mailhog.entrypoints=mailhog-web"
-    #   - "traefik.http.services.mailhog.loadbalancer.server.port=8025"
-    #   - "traefik.http.services.mailhog.loadbalancer.server.scheme=http"
-    networks:
-      - public
-networks:
-  public:
-    name: traefik_default
-    external: true
+      MP_SMTP_DISABLE_RDNS: "true"  # Formatted as a string to prevent yaml syntax parsing errors
+    volumes:
+      - mailpit_data:/data          # Swapped to a named volume to fix filesystem permission errors
+
+volumes:
+  mailpit_data:                     # Root-level named volume declaration for stable persistence
+    driver: local

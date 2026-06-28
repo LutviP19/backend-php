@@ -1,33 +1,17 @@
-version: "3.8"
-
 services:
-  redis:
-    image: redis:7.4.1
-    container_name: redis
+  redis-stack:
+    image: redis/redis-stack:latest
+    pull_policy: if_not_present
+    container_name: redis-stack
     restart: unless-stopped
-    # labels:
-    #   - "traefik.enable=true"
-    #   - "traefik.tcp.routers.db.entrypoints=postgres"
-    #   - "traefik.tcp.services.db.loadbalancer.server.port=6379"
-    #   - "traefik.tcp.routers.db.rule=HostSNI(`*`)"
-    volumes:
-      - ./redis:/data
     ports:
-      - 6379:6379
-    networks:
-      - public
-    healthcheck:
-      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "1m"
-        max-file: "1"
+      - "6379:6379"   # Core Redis database port
+      - "8001:8001"   # RedisInsight Web UI port
+    environment:
+      - REDIS_ARGS=--protected-mode no --appendonly yes
+    volumes:
+      - redis_data:/data
 
-networks:
-  public:
-    name: traefik_default
-    external: true
+volumes:
+  redis_data:
+    driver: local

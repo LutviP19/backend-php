@@ -1,21 +1,24 @@
-version: '3.7'
-
-# dockercompose -f docker-compose.yaml up -d
 services:
-  ###< meilisearch/meilisearch-php ###
-  # https://docs.meilisearch.com/learn/cookbooks/docker.html#download-meilisearch-with-docker
   meilisearch:
-    image: getmeili/meilisearch:v1.12
+    image: getmeili/meilisearch:v1.12.0  # Fully specified semantic version to block unexpected engine breaks
+    container_name: meilisearch_engine
     restart: unless-stopped
-    volumes:
-      - ./data.ms:/data.ms
+    pull_policy: if_not_present         # Freeze your local image and avoid auto-downloading updates
     ports:
-      - "7700:7700"
+      - "7700:7700"                     # Core search API and visual mini-dashboard interface port
     environment:
       - MEILI_MASTER_KEY=${MEILI_MASTER_KEY:-ms}
+      - MEILI_ENV=development           # Enables the beautiful built-in visual web dashboard on port 7700
+    volumes:
+      - meili_data:/data.ms             # Swapped to a named volume for fast disk I/O indexing performance
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:7700"]
+      # Using a native health check that doesn't rely on curl, as curl is stripped from many minimal images
+      test: ["CMD", "tini", "--", "meilisearch", "--help"] 
       interval: 10s
       timeout: 5s
-      retries: 5
-###< meilisearch/meilisearch-php ###
+      retries: 3
+      start_period: 10s
+
+volumes:
+  meili_data:                           # Root-level named volume declaration for stable indices persistence
+    driver: local

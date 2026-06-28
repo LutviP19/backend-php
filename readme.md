@@ -46,8 +46,8 @@ The framework boots up multiple isolated server instances simultaneously. Ensure
 | :--- | :--- | :--- | :--- |
 | **Web Application** | `8009` | HTTP | Local web asset rendering and user frontend router |
 | **API Router** | `8080` | HTTP | Asynchronous API router and long-lived HTTP traffic handler |
-| **OpenSwoole Engine 1** | `9501` | TCP / HTTP | Socket connections and long-lived HTTP traffic handler |
-| **OpenSwoole Engine 2** | `9502` | WebSocket | Live streaming bidirectional socket connections and relays |
+| **WebSocket Engine** | `9501` | WebSocket | Socket connections and long-lived HTTP traffic handler |
+| **Socket Engine** | `9502` | TCP / HTTP | Live streaming bidirectional socket connections and relays |
 
 > 💡 **Troubleshooting Tip:** If you get a `Bind address already in use` error when starting up the servers, run `lsof -i :<port>` (macOS/Linux) or `netstat -ano | findstr <port>` (Windows) to identify and stop the blocking application.
 

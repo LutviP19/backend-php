@@ -2,6 +2,8 @@
 /*
 .*
 !/lib*
+!/source*
+!/proto*
 !*.h
 !*.so
 !.gitignore

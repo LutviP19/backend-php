@@ -124,7 +124,7 @@ class ServerApiController extends BaseController
     /** 
      * validateClientToken function
      *
-     * @return OpenSwooleResponseon $status === false, or void
+     * @return \OpenSwooleResponseon $status === false, or void
      */
     public function validateClientToken()
     {

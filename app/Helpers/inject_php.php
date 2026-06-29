@@ -5,13 +5,25 @@
  * @author Lutvi <lutvip19@gmail.com>
  */
 
+
+// --- Base64URL Encoding/Decoding Functions ---
+function base64url_encode($data)
+{
+    return rtrim(strtr(base64_encode((string) $data), '+/', '-_'), '=');
+}
+
+function base64url_decode($data)
+{
+    return base64_decode(strtr($data, '-_', '+/'));
+}
+
 function array_keys_exists(array $keys, array $array): bool
 {
     $diff = array_diff_key(array_flip($keys), $array);
     return count($diff) === 0;
 }
 
-function recursive_unset(&$array, $unwanted_key = '') 
+function recursive_unset(&$array, $unwanted_key = '')
 {
     // Check if the unwanted key exists at the current level and unset it
     if (array_key_exists($unwanted_key, $array)) {
@@ -27,7 +39,8 @@ function recursive_unset(&$array, $unwanted_key = '')
     }
 }
 
-function mergeObjectsRecursively($obj1, $obj2) {
+function mergeObjectsRecursively($obj1, $obj2)
+{
     $merged = clone $obj1;
     foreach ($obj2 as $key => $value) {
         if (is_object($value) && isset($merged->$key) && is_object($merged->$key)) {
@@ -41,26 +54,13 @@ function mergeObjectsRecursively($obj1, $obj2) {
     return $merged;
 }
 
-if (! function_exists('getallheaders')) {
-    function getallheaders()
-    {
-        $headers = [];
-        foreach ($_SERVER as $name => $value) {
-            // if (substr($name, 0, 5) == 'HTTP_') {
-            if (str_starts_with((string) $name, 'HTTP_')) {
-                $headers[str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr((string) $name, 5)))))] = $value;
-            }
-        }
-        return $headers;
-    }
-}
-
 function numberFormatIndo($num, $decimal = 0)
 {
     return number_format($num, $decimal, ",", ".");
 }
 
-function format_with_rounding($number, $precision = 0, $mode = PHP_ROUND_HALF_UP, $decimal_separator = ',', $thousands_separator = '.') {
+function format_with_rounding($number, $precision = 0, $mode = PHP_ROUND_HALF_UP, $decimal_separator = ',', $thousands_separator = '.')
+{
     // Truncate the number to the desired number of decimal places without rounding
     $truncated_number = round($number, $precision, $mode);
 
@@ -68,7 +68,8 @@ function format_with_rounding($number, $precision = 0, $mode = PHP_ROUND_HALF_UP
     return number_format($truncated_number, $decimals, $decimal_separator, $thousands_separator);
 }
 
-function format_without_rounding($number, $decimals = 2, $decimal_separator = ',', $thousands_separator = '.') {
+function format_without_rounding($number, $decimals = 2, $decimal_separator = ',', $thousands_separator = '.')
+{
     // Truncate the number to the desired number of decimal places without rounding
     $truncated_number = bcdiv((string) $number, 1, $decimals);
 
@@ -84,27 +85,31 @@ function addPadIfShort(string $inputString, int $minLength = 50, $stringPad = ' 
     return $inputString;
 }
 
-function formatMapAddress($addressMap, $sort = false) {
+function formatMapAddress($addressMap, $sort = false)
+{
     $pattern = '/[a-z0-9]+\+[a-z0-9]+/i';
     $address = explode("||", (string) $addressMap);
     // $output = $addressMap;
 
     // Check if the format is found within the input string
     if (isset($address[1]) && preg_match($pattern, $address[1], $matches)) {
-        if(isset($matches[0])) 
+        if (isset($matches[0])) {
             $output = trim(str_replace($matches[0], "", $address[1]), ",");
-        else
+        } else {
             $output = $address[1];
+        }
 
-        if($sort)
-        return trim(explode(",", $output)[0]);
+        if ($sort) {
+            return trim(explode(",", $output)[0]);
+        }
 
         return $output;
     }
 
     if (isset($address[1])) {
-        if($sort)
-        return trim(explode(",", $address[0])[0]);
+        if ($sort) {
+            return trim(explode(",", $address[0])[0]);
+        }
 
         return $address[1];
     }
@@ -112,14 +117,16 @@ function formatMapAddress($addressMap, $sort = false) {
     return $addressMap;
 }
 
-function setArrivedTime($dateTimeStr, $minutesToAdd = 30, $formated = 'H:i A') {
-    $dateTime = new DateTime($dateTimeStr); 
+function setArrivedTime($dateTimeStr, $minutesToAdd = 30, $formated = 'H:i A')
+{
+    $dateTime = new DateTime($dateTimeStr);
     $dateTime->modify("+{$minutesToAdd} minutes");
 
     return $dateTime->format($formated);
 }
 
-function convertMinutesToHoursAndMinutes($totalMinutes, $simpleText = true) {
+function convertMinutesToHoursAndMinutes($totalMinutes, $simpleText = true)
+{
     if (!is_numeric($totalMinutes) || $totalMinutes < 0) {
         // return "Invalid input. Please provide a non-negative number of minutes.";
         return sprintf("%d Min", 0);
@@ -128,15 +135,17 @@ function convertMinutesToHoursAndMinutes($totalMinutes, $simpleText = true) {
     $hours = floor($totalMinutes / 60); // Get the whole number of hours
     $minutes = $totalMinutes % 60;    // Get the remaining minutes
 
-    if(!$simpleText) {
+    if (!$simpleText) {
         $plurals = $hours > 1 ? "Hours" : "Hour";
-        if($hours > 0)
-            return sprintf("%d %d and %d Minutes", $hours, $plurals, $minutes);        
+        if ($hours > 0) {
+            return sprintf("%d %d and %d Minutes", $hours, $plurals, $minutes);
+        }
         return sprintf("%d Minutes", $minutes);
     }
 
-    if($hours > 0)
-        return sprintf("%d H, %d Min", $hours, $minutes);    
+    if ($hours > 0) {
+        return sprintf("%d H, %d Min", $hours, $minutes);
+    }
     return sprintf("%d Min", $minutes);
 }
 
@@ -158,12 +167,13 @@ function polyfill_filter_var_string($value)
  * @param  [string] $inputString
  *
  * @return string
- * 
+ *
  * example:
  * $camelCaseString = "thisIsACamelCaseString";
  * echo camelCaseToUnderscore($camelCaseString); // Output: this_is_a_camel_case_string
  */
-function camelCaseToUnderscore($inputString) {
+function camelCaseToUnderscore($inputString)
+{
     // Add an underscore before each uppercase letter, unless it's at the beginning of the string
     $snakeCaseString = preg_replace('/(?<!^)[A-Z]/', '_$0', (string) $inputString);
     // Convert the entire string to lowercase
@@ -177,14 +187,16 @@ function camelCaseToUnderscore($inputString) {
  * @param  [string] $inputString
  *
  * @return string
- * 
+ *
  * example:
  * $underscoreString = "this_is_a_snake_case_string";
  * echo underscoreToCamelCase($underscoreString); // Output: thisIsASnakeCaseString
  */
-function underscoreToCamelCase($inputString, $prefix = '') {
-    if($prefix !== '')
+function underscoreToCamelCase($inputString, $prefix = '')
+{
+    if ($prefix !== '') {
         $inputString = $prefx . '_' . $inputString;
+    }
 
     // Replace underscores with spaces
     $inputString = str_replace('_', ' ', $inputString);
@@ -198,7 +210,8 @@ function underscoreToCamelCase($inputString, $prefix = '') {
     return $inputString;
 }
 
-function format_array_key($string) {
+function format_array_key($string)
+{
     // Lowercase all letters
     $string = strtolower($string);
     // Replace spaces, non-alphanumeric characters, and \u00a0 with underscores
@@ -209,17 +222,20 @@ function format_array_key($string) {
     return trim(preg_replace('/_+/', '_', $string), '_');
 }
 
-function str_replace_multi(array $replace, string $subject) {
-    return str_replace(array_keys($replace), array_values($replace), $subject); 
+function str_replace_multi(array $replace, string $subject)
+{
+    return str_replace(array_keys($replace), array_values($replace), $subject);
 }
 
-function is_float_string($value) {
+function is_float_string($value)
+{
     // return is_numeric($value) && strpos($value, '.') !== false;
     return is_numeric($value) && str_contains($value, '.');
 }
 
-function is_decimal($n) {
-    // Note that floor returns a float 
+function is_decimal($n)
+{
+    // Note that floor returns a float
     return is_numeric($n) && floor($n) != $n;
 }
 
@@ -229,7 +245,8 @@ function is_decimal($n) {
  * @param  array  $array
  * @return array
  */
-function divideArray($array) {
+function divideArray($array)
+{
     return [array_keys($array), array_values($array)];
 }
 
@@ -240,7 +257,8 @@ function divideArray($array) {
  * @param  string  $prepend
  * @return array
  */
-function dotArray($array, $prepend = '') {
+function dotArray($array, $prepend = '')
+{
     $results = [];
 
     foreach ($array as $key => $value) {
@@ -323,7 +341,7 @@ function flattenArray($array, $depth = INF)
     $result = [];
 
     foreach ($array as $item) {
-        $item = $item instanceof Collection ? $item->all() : $item;
+        $item = $item instanceof \Collection ? $item->all() : $item;
 
         if (! is_array($item)) {
             $result[] = $item;
@@ -417,20 +435,22 @@ function trimStr($value, $mode = 'both', $charlist = null)
     if ($charlist === null) {
         $trimDefaultCharacters = " \n\r\t\v\0";
 
-        if($mode === 'ltrim')
+        if ($mode === 'ltrim') {
             return preg_replace('~^[\s\x{FEFF}\x{200B}\x{200E}'.$ltrimDefaultCharacters.']+~u', '', $value) ?? ltrim($value);
-        elseif($mode === 'rtrim')
+        } elseif ($mode === 'rtrim') {
             return preg_replace('~[\s\x{FEFF}\x{200B}\x{200E}'.$rtrimDefaultCharacters.']+$~u', '', $value) ?? rtrim($value);
-        else
+        } else {
             return preg_replace('~^[\s\x{FEFF}\x{200B}\x{200E}'.$trimDefaultCharacters.']+|[\s\x{FEFF}\x{200B}\x{200E}'.$trimDefaultCharacters.']+$~u', '', $value) ?? trim($value);
+        }
     }
 
-    if($mode === 'ltrim')
+    if ($mode === 'ltrim') {
         return ltrim($value, $charlist);
-    elseif($mode === 'rtrim')
+    } elseif ($mode === 'rtrim') {
         return rtrim($value, $charlist);
-    else
+    } else {
         return trim($value, $charlist);
+    }
 }
 
 /**
@@ -447,11 +467,11 @@ function squishStr($value)
 // function tofloat($num) {
 //     $dotPos = strrpos($num, '.');
 //     $commaPos = strrpos($num, ',');
-//     $sep = (($dotPos > $commaPos) && $dotPos) ? $dotPos : 
+//     $sep = (($dotPos > $commaPos) && $dotPos) ? $dotPos :
 //         ((($commaPos > $dotPos) && $commaPos) ? $commaPos : false);
 //     if (!$sep) {
 //         return floatval(preg_replace("/[^0-9]/", "", $num));
-//     } 
+//     }
 
 //     return floatval(
 //         preg_replace("/[^0-9]/", "", substr($num, 0, $sep)) . '.' .
@@ -490,85 +510,190 @@ function checkSession()
     }
 }
 
+// function bp_session_start()
+// {
+//     ini_set("session.use_strict_mode", 1);
+//     @session_start();
+//     if (isset($_SESSION["destroyed"])) {
+//         // $ttl = (int)env('SESSION_REGENERATE', 300);
+//         $ttl = config("session.regenerate");
+
+//         // $valid = (bool)($_SESSION['destroyed'] < time() - $ttl);
+//         // // dd($ttl);
+//         // dd($valid);
+
+//         // Do not allow to use too old session ID
+//         if (!empty($_SESSION["destroyed"]) && $_SESSION["destroyed"] < time() - $ttl) {
+//             // Regenerate SessioId
+//             $oldSessionId = session_id();
+//             $headers = bp_session_regenerate_id($oldSessionId);
+//             setHeaders($headers);
+//         }
+//     }
+
+//     // $sessionStrictMode = ini_get('session.use_strict_mode');
+//     // write_log($sessionStrictMode, 'Helpers.inject_php.bp_session_start.$sessionStrictMode', 'debug');
+// }
+
+// function bp_session_regenerate_id($oldSessionId)
+// {
+//     $new_session_id = session_create_id();
+
+//     // add info for users with bad connection not receiving the new session id
+//     $_SESSION["new_session_id"] = $new_session_id;
+//     // Set destroy timestamp
+//     $_SESSION["destroyed"] = time();
+//     // Write and close current session;
+//     session_commit();
+
+//     // backup session variables
+//     $keepSession = $_SESSION;
+
+//     // Start session with new session ID
+//     ini_set("session.use_strict_mode", 0);
+//     session_id($new_session_id);
+
+//     if (session_status() == PHP_SESSION_ACTIVE) {
+//         session_destroy();
+//     }
+
+//     $sessionName = session_name();
+//     $cookie = session_get_cookie_params();
+//     // $sessionExp = (env('SESSION_LIFETIME', 120) * 60);
+//     $sessionExp = config("session.lifetime") * 60;
+//     $setcookie = [
+//         "Set-Cookie" => "{$sessionName}={$new_session_id}; Max-Age={$sessionExp}; Path={$cookie["path"]};",
+//     ];
+
+//     // use_strict_mode is mandatory for security reasons.
+//     ini_set("session.use_strict_mode", 1);
+
+//     @session_start();
+//     $_SESSION = $keepSession;
+//     // Write and close current session;
+//     session_commit();
+
+//     $saveHandler = ini_get("session.save_handler");
+
+//     if ($saveHandler === "files") {
+//         // Delete Old session file
+//         $sessionSavePath = session_save_path();
+//         $fileSessionOld = $sessionSavePath . "/sess_" . $oldSessionId;
+
+//         if (\file_exists($fileSessionOld)) {
+//             $status = unlink($fileSessionOld);
+//             // write_log($status, 'Helpers.inject_php.bp_session_regenerate_id.unlink-$fileSessionOld', 'debug');
+//         }
+//     } else {
+//         // Delete data redis PHPREDIS_SESSION
+//         if ($saveHandler === "redis") {
+//             delDataFromRedis($oldSessionId, "PHPREDIS_SESSION", config("redis.default.database"), true);
+//         }
+//     }
+
+//     return $setcookie;
+// }
+
 function bp_session_start()
 {
-    ini_set('session.use_strict_mode', 1);
-    @session_start();
-    if (isset($_SESSION['destroyed'])) {
+    // Pastikan session belum aktif sebelum mengubah konfigurasi ini
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+        ini_set('session.use_strict_mode', 1);
+        @session_start();
+    }
 
+    if (isset($_SESSION['destroyed'])) {
         $ttl = (int)env('SESSION_REGENERATE', 300);
 
-        // $valid = (bool)($_SESSION['destroyed'] < time() - $ttl);
-        // // dd($ttl);
-        // dd($valid);
-
-        // Do not allow to use too old session ID
+        // Jika session lama sudah melewati batas toleransi TTL, regenerasi ID baru
         if (!empty($_SESSION['destroyed']) && $_SESSION['destroyed'] < time() - $ttl) {
-
-            // Regenerate SessioId
             $oldSessionId = session_id();
+            
+            // Lakukan rotasi ID session
             $headers = bp_session_regenerate_id($oldSessionId);
-            setHeaders($headers);
+            
+            // Pastikan fungsi setHeaders ada sebelum dipanggil (khusus OpenSwoole)
+            if (function_exists('setHeaders')) {
+                setHeaders($headers);
+            }
         }
     }
-
-    // $sessionStrictMode = ini_get('session.use_strict_mode');
-    // \App\Core\Support\Log::debug($sessionStrictMode, 'Helpers.inject_php.bp_session_start.$sessionStrictMode');
 }
 
-function bp_session_regenerate_id($oldSessionId)
+function bp_session_regenerate_id($oldSessionId = null)
 {
-    $new_session_id = session_create_id();
-
-    // add info for users with bad connection not receiving the new session id
-    $_SESSION['new_session_id'] = $new_session_id;
-    // Set destroy timestamp
-    $_SESSION['destroyed'] = time();
-    // Write and close current session;
-    session_commit();
-
-    // backup session variables
-    $keepSession = $_SESSION;
-
-    // Start session with new session ID
-    ini_set('session.use_strict_mode', 0);
-    session_id($new_session_id);
-
-    if (session_status() == PHP_SESSION_ACTIVE) {
-        session_destroy();
+    $oldSessionId = $oldSessionId ?: session_id();
+    
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+        @session_start();
     }
 
-    $sessionName = session_name();
-    $cookie = session_get_cookie_params();
-    $sessionExp = (env('SESSION_LIFETIME', 120) * 60);
-    $setcookie = ['Set-Cookie' => "{$sessionName}={$new_session_id}; Max-Age={$sessionExp}; Path={$cookie['path']};"];
+    // 1. Ambil data session saat ini sebelum dicommit/ditutup
+    $keepSession = $_SESSION;
 
-    // use_strict_mode is mandatory for security reasons.
+    // 2. Buat ID baru menggunakan fungsi internal PHP yang aman
+    $new_session_id = session_create_id();
+
+    // 3. Tandai session lama sebagai hancur dan berikan info ID baru untuk toleransi koneksi tidak stabil
+    $_SESSION['new_session_id'] = $new_session_id;
+    $_SESSION['destroyed'] = time();
+    
+    // Simpan penanda hancur ini ke session ID lama terlebih dahulu
+    session_commit();
+
+    // 4. Mulai session baru dengan ID baru yang telah dibuat
+    ini_set('session.use_strict_mode', 0);
+    session_id($new_session_id);
     ini_set('session.use_strict_mode', 1);
 
     @session_start();
+    
+    // Salin kembali semua data dari session lama ke session ID baru
     $_SESSION = $keepSession;
-    // Write and close current session;
+    
+    // Hapus penanda hancur di session baru agar tidak terjadi perulangan tanpa akhir (infinite loop)
+    unset($_SESSION['destroyed'], $_SESSION['new_session_id']);
+    
+    // Tulis data ke session baru dan kunci/tutup sementara
     session_commit();
 
+    // 5. Bersihkan data dari session ID lama di storage (Files / Redis)
     $saveHandler = ini_get('session.save_handler');
 
-    if($saveHandler === 'files') {
-        // Delete Old session file
-        $sessionSavePath = session_save_path();
-        $fileSessionOld = $sessionSavePath.'/sess_'.$oldSessionId;
+    if ($saveHandler === 'files') {
+        $sessionSavePath = session_save_path() ?: sys_get_temp_dir();
+        $fileSessionOld = rtrim($sessionSavePath, '/\\') . '/sess_' . $oldSessionId;
 
         if (\file_exists($fileSessionOld)) {
-            $status = unlink($fileSessionOld);
-            // \App\Core\Support\Log::debug($status, 'Helpers.inject_php.bp_session_regenerate_id.unlink-$fileSessionOld');
+            @unlink($fileSessionOld);
         }
-    } else {
-        // Delete data redis PHPREDIS_SESSION
-        if($saveHandler === 'redis')
+    } elseif ($saveHandler === 'redis' && function_exists('delDataFromRedis')) {
+        // Hapus data session lama dari redis
         delDataFromRedis($oldSessionId, 'PHPREDIS_SESSION', '0', true);
     }
 
-    return $setcookie;
+    // 6. Siapkan Header Cookie Baru yang Aman (Sesuai parameter bawaan PHP/aplikasi)
+    $sessionName = session_name();
+    $cookie = session_get_cookie_params();
+    $sessionExp = (int)env('SESSION_LIFETIME', 120) * 60;
+
+    // Mulai susun string cookie
+    $cookieString = "{$sessionName}={$new_session_id}; Max-Age={$sessionExp}; Path={$cookie['path']};";
+    
+    // 1. JANGAN gunakan Domain jika menembak ke localhost/127.0.0.1 agar cookie tidak ditolak client
+    if (!empty($cookie['domain']) && !in_array($cookie['domain'], ['localhost', '127.0.0.1'])) {
+        $cookieString .= " Domain={$cookie['domain']};";
+    }
+    
+    // 2. KRUSIAL: Hanya gunakan Secure jika URL menggunakan HTTPS!
+    // Jika di localhost (http://localhost:8008), pastikan 'Secure;' TIDAK MASUK.
+    if (!empty($cookie['secure']) && env('APP_ENV') !== 'local') {
+        $cookieString .= " Secure;";
+    }
+    
+    $cookieString .= " HttpOnly; SameSite=Lax;";
+
+    return ['Set-Cookie' => $cookieString];
 }
 
 function bp_minimum_php_version(string $version = "8.4.0")
@@ -586,8 +711,122 @@ function bp_minimum_php_version(string $version = "8.4.0")
     }
 }
 
-function bp_curl_close($ch) {
+function bp_curl_close($ch)
+{
     if (version_compare(PHP_VERSION, "8.5.0", "<")) {
         curl_close($ch);
     }
+}
+
+/**
+ * slug function
+ *
+ * @param  [string] $title
+ * @param  string $separator
+ * @param  string $language
+ * @param  array  $dictionary
+ *
+ * @return void
+ */
+function slug($title, $separator = '-', $language = 'en', $dictionary = ['@' => 'at'])
+{
+    // Convert all dashes/underscores into separator
+    $flip = $separator === '-' ? '_' : '-';
+
+    $title = preg_replace('![' . preg_quote($flip) . ']+!u', $separator, (string) $title);
+
+    // Replace dictionary words
+    foreach ($dictionary as $key => $value) {
+        $dictionary[$key] = $separator . $value . $separator;
+    }
+
+    $title = str_replace(array_keys($dictionary), array_values($dictionary), $title);
+
+    // Remove all characters that are not the separator, letters, numbers, or whitespace
+    $title = preg_replace('![^' . preg_quote($separator) . '\pL\pN\s]+!u', '', strtolower($title));
+
+    // Replace all separator characters and whitespace by a single separator
+    $title = preg_replace('![' . preg_quote($separator) . '\s]+!u', $separator, (string) $title);
+
+    return trim((string) $title, $separator);
+}
+
+function formatPhoneSnapshot($phoneNumber)
+{
+    $phone_number = str_replace('62', '0', trim((string) $phoneNumber));
+    return substr($phone_number, 0, 4).'****'.substr($phone_number, 8, strlen($phone_number));
+}
+
+function base64ToWebP($base64_string, $output_file, $quality = 80)
+{
+    // Remove the "data:image/webp;base64," prefix if present
+    $data = explode(',', (string) $base64_string);
+    $decoded_data = base64_decode(end($data));
+
+    // Create an image resource from the decoded data
+    $image = imagecreatefromstring($decoded_data);
+
+    if ($image === false) {
+        return false; // Error creating image resource
+    }
+
+    // 3. Handle Transparency (Optional but Recommended for PNG/GIF)
+    imagepalettetotruecolor($image);
+    imagealphablending($image, true);
+    imagesavealpha($image, true);
+
+    // Save the image as a WebP file
+    $success = imagewebp($image, $output_file, $quality);
+
+    // Free up memory
+    imagedestroy($image);
+
+    return $success;
+}
+
+function base64ToImage($base64_string, $output_file)
+{
+    // Separate the metadata from the base64 string
+    $parts = explode(',', (string) $base64_string);
+    $imageData = base64_decode($parts[1]);
+
+    // Save the decoded data to a file
+    if (file_put_contents($output_file, $imageData)) {
+        // return 'Image successfully saved to: ' . $output_file;
+        return true;
+    } else {
+        // return 'Failed to save image.';
+        return false;
+    }
+}
+
+// Function to save any image to Webp
+function webpImage($source, $quality = 80, $removeOld = false)
+{
+    $dir = pathinfo((string) $source, PATHINFO_DIRNAME);
+    $name = pathinfo((string) $source, PATHINFO_FILENAME);
+    $destination = $dir . DIRECTORY_SEPARATOR . $name . '.webp';
+    $info = getimagesize($source);
+    $isAlpha = false;
+    if ($info['mime'] == 'image/jpeg') {
+        $image = imagecreatefromjpeg($source);
+    } elseif ($isAlpha = $info['mime'] == 'image/gif') {
+        $image = imagecreatefromgif($source);
+    } elseif ($isAlpha = $info['mime'] == 'image/png') {
+        $image = imagecreatefrompng($source);
+    } else {
+        return $source;
+    }
+    if ($isAlpha) {
+        imagepalettetotruecolor($image);
+        imagealphablending($image, true);
+        imagesavealpha($image, true);
+    }
+    imagewebp($image, $destination, $quality);
+
+    if ($removeOld) {
+        unlink($source);
+    }
+
+    return $destination;
 }

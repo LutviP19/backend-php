@@ -2,17 +2,20 @@
 
 namespace App\Controllers\Api\v1\Auth;
 
-use OpenSwoole\Http\Request as OpenSwooleRequest;
+
 use App\Core\Support\Session;
 use App\Core\Security\Middleware\ValidateClient;
-use App\Core\Security\Middleware\JwtToken;
-use App\Core\Support\Config;
 use App\Models\User;
-use App\Core\Security\Hash;
 use App\Core\Validation\Validator;
 use App\Controllers\Api\ApiController;
 use App\Core\Http\{Request,Response};
 use Exception;
+
+// use OpenSwoole\Http\Request as OpenSwooleRequest;
+// use App\Core\Security\Middleware\JwtToken;
+// use App\Core\Support\Config;
+// use App\Core\Security\Hash;
+
 
 /**
  * AuthController class
@@ -41,7 +44,7 @@ class AuthController extends ApiController
     public function login(Request $request, Response $response)
     {
         try {
-
+            $headers = [];
             $validator = new Validator();
             $validator->validate($this->jsonData, [
                 'email' => 'required|email',
@@ -73,15 +76,16 @@ class AuthController extends ApiController
 
                 $user = User::getUserByEmail($email);
                 // \App\Core\Support\Log::debug($user, 'WebAuth.login.$user');
+                // dd($user, true);
                 $callback = $this->checkCredentials($user, $password);
                 // \App\Core\Support\Log::debug($callback, 'WebAuth.login.$callback');
             }
 
-            // Middleware
-            if($this->rateLimit) {
-                (new \App\Core\Security\Middleware\RateLimiter('login_request'))
-                ->setupForm(clientIP(), $callback, 5, 10, 1200);
-            }
+            // // Middleware
+            // if($this->rateLimit) {
+            //     (new \App\Core\Security\Middleware\RateLimiter('login_request'))
+            //     ->setupForm(clientIP(), $callback, 5, 10, 1200);
+            // }
             
             if (false == $callback || empty($user)) {
 
@@ -90,14 +94,19 @@ class AuthController extends ApiController
                         $errors
                    ]), $statusCode);
             } else {
-                // Regenerate SessioId
-                $oldSessionId = session_id();
-                $headers = bp_session_regenerate_id($oldSessionId);
-                
-                // Set Session and generate new JwtToken
-                $tokenJwt = $this->setLoginSession($user);
-                if (false === $tokenJwt) {
+                // // Regenerate SessionId
+                // $oldSessionId = session_id();
+                // $headers = bp_session_regenerate_id($oldSessionId);
+                // setHeaders($headers);                
 
+                // if (session_status() !== PHP_SESSION_ACTIVE) {
+                //     bp_session_start();
+                // }
+
+                // bp_session_regenerate_id();
+                $tokenJwt = $this->setLoginSession($user);
+
+                if (false === $tokenJwt) {
                     return endResponse(
                         $this->getOutput(false, 401, [
                           'auth' => 'Client not found!',
@@ -108,6 +117,12 @@ class AuthController extends ApiController
                 // // Set cookie
                 // $sessionExp = (env('SESSION_LIFETIME', 120) * 60);
                 // $headers = ['Set-Cookie' => "{$this->sessionName}={$this->sessionId}; Max-Age={$sessionExp}; Path=/;"];
+
+                // // Set cookie
+                // $sessionName = session_name();
+                // $sessionId = session_create_id('bp-');
+                // $sessionExp = (env('SESSION_LIFETIME', 120) * 60);
+                // $headers = ['Set-Cookie' => "{$sessionName}={$sessionId}; Max-Age={$sessionExp}; Path=/; SameSite=Lax;"];
                 
                 // \App\Core\Support\Log::debug($headers, 'AuthController.login.$headers');
 

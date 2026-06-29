@@ -8,6 +8,11 @@
  * Available router methods : get(), post(), put(), delete().
  */
 
+//========== API - Auth
+$router->post('/api/auth/login', 'Api\v1\Auth\AuthController@login');
+
+
+
 //========== API - v1
 $router->get('/api/v1/webhook', 'Api\v1\WebhookController@index');
 $router->post('/api/v1/webhook', 'Api\v1\WebhookController@index');

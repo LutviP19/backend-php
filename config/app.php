@@ -164,8 +164,8 @@ return [
         'default' => [
             'url' => env('REDIS_URL'),
             'host' => env('REDIS_HOST', '127.0.0.1'),
-            'username' => env('REDIS_USERNAME'),
-            'password' => env('REDIS_PASSWORD'),
+            'username' => env('REDIS_USERNAME', 'default'),
+            'password' => env('REDIS_PASSWORD', null),
             'port' => env('REDIS_PORT', '6379'),
             'database' => env('REDIS_DB', '0'),
         ],
@@ -173,8 +173,8 @@ return [
         'cache' => [
             'url' => env('REDIS_URL'),
             'host' => env('REDIS_HOST', '127.0.0.1'),
-            'username' => env('REDIS_USERNAME'),
-            'password' => env('REDIS_PASSWORD'),
+            'username' => env('REDIS_USERNAME', 'default'),
+            'password' => env('REDIS_PASSWORD', null),
             'port' => env('REDIS_PORT', '6379'),
             'database' => env('REDIS_CACHE_DB', '1'),
         ],
@@ -193,6 +193,7 @@ return [
             'username' => env('MB_USERNAME', 'guest'),
             'password' => env('MB_PASSWORD', 'guest'),
             'queue_name' => env('MB_QUEUE_NAME', 'backend_php-queue'),
+            'vhost' => env('MB_VHOST', '/'),
         ],
     ],
 
@@ -255,7 +256,8 @@ return [
     'session' => [
         'csrf_token' => 'csrf_token',
         'lifetime' => (int) env('SESSION_LIFETIME', 120),
-        'encrypt' => env('SESSION_ENCRYPT', false),
+        'regenerate' => (int) env('SESSION_REGENERATE', 300), // in secoonds
+        'encrypt' => (bool) env('SESSION_ENCRYPT', false),
     ],
 
 ];

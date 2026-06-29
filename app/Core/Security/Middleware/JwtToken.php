@@ -3,6 +3,7 @@
 namespace App\Core\Security\Middleware;
 
 use App\Core\Support\Config;
+use App\Core\Support\Session;
 use ReallySimpleJWT\Jwt;
 use ReallySimpleJWT\Build;
 use ReallySimpleJWT\Parse as ParseJwt;
@@ -26,7 +27,7 @@ class JwtToken
     /**
      * Defines the expiration JWT payload.
      */
-    protected $expiration;
+    protected $expirationTime;
 
     /**
      * Defines the identifier for the token.
@@ -84,7 +85,12 @@ class JwtToken
                 ->setPayloadClaim('uid', $userId)
                 ->build();
 
-        return $token->getToken();
+        $tokenJwt = $token->getToken();
+        if(Session::has('jwtId')) {
+            Session::set('tokenJwt', $tokenJwt);
+        }
+
+        return $tokenJwt;
     }
 
     /**

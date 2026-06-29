@@ -25,7 +25,7 @@ use Exception;
 use App\Neuron\BpAgent;
 use App\Neuron\Output\Person;
 use NeuronAI\Chat\Messages\UserMessage;
-use NeuronAI\Observability\AgentMonitoring;
+// use NeuronAI\Observability\AgentMonitoring;
 
 // Ollama
 use App\Neuron\OllamaExec;
@@ -43,9 +43,16 @@ class TestingController extends ApiController
 
     public function index(Request $request, Response $response)
     {
-
         // Validate token and CSRF
         $this->validateApiToken(true);
+
+        // dd(\App\Core\Support\Session::get('tokenJwt'));
+
+        // Validate Client Token
+        $this->validateClientToken();
+
+        // Validate JWT
+        $this->validateJwt();
 
 
         $user = Model::table('users')->select(['*'])->get();
@@ -53,12 +60,15 @@ class TestingController extends ApiController
         $role = Role::getRoleById(3);
         $userUlid = User::getUlid(3);
 
-        dd($role, true);
+        // dd($role, true);
+        $output = [$user, $roles, $role, $userUlid];
+        // dd($output, true);
 
-        // \App\Core\Support\Log::debug($request->all(), 'TestingController.index.request');
+        // \App\Core\Support\Log::debug($output, 'TestingController.index.request');
         return endResponse(
             $this->getOutput(true, 200, [
                 'info' => 'This index path',
+                'output' => $output,
                 'request'=> $request->all(),
             ], 'TestingController'), 
             200
@@ -136,9 +146,9 @@ class TestingController extends ApiController
     {
 
         // A helper function to simulate an asynchronous task that might succeed or fail
-        function simulatedAsyncRequest(string $url, bool $shouldSucceed): Future
+        function simulatedAsyncRequest(string $url, bool $shouldSucceed): \Future
         {
-            $httpClient = HttpClientBuilder::buildDefault();
+            $httpClient = \HttpClientBuilder::buildDefault();
 
             return async(function () use ($url, $shouldSucceed, $httpClient): string {
                 // In a real app, this would be an I/O operation (e.g., HTTP request)
@@ -155,7 +165,7 @@ class TestingController extends ApiController
                     $r->getStatus(),
                     $r->getReason()
                 );
-                \App\Core\Support\Log::debug([$url, $r->getProtocolVersion(), $r->getStatus(), $r->getReason()], 'TestingController.queue.simulatedAsyncRequest.r');
+                // \App\Core\Support\Log::debug([$url, $r->getProtocolVersion(), $r->getStatus(), $r->getReason()], 'TestingController.queue.simulatedAsyncRequest.r');
                 return $log;
             });
         }
@@ -163,10 +173,10 @@ class TestingController extends ApiController
         // Assume some functions that return Futures which might succeed or fail
         function createFutures(): array {
             return [
-                'future1' => Future::error(new Exception('Reason 1')),
-                'future2' => Future::complete('Success 2'),
-                'future3' => Future::error(new Exception('Reason 3')),
-                'future4' => Future::complete('Success 4'),
+                'future1' => \Future::error(new Exception('Reason 1')),
+                'future2' => \Future::complete('Success 2'),
+                'future3' => \Future::error(new Exception('Reason 3')),
+                'future4' => \Future::complete('Success 4'),
             ];
         }
 
@@ -194,7 +204,7 @@ class TestingController extends ApiController
             // This example will succeed and return an array with 'Success 2' and 'Success 4'.
             $results = Future\awaitAnyN($count, createFutures());
             print_r($results);
-        } catch (CompositeException $e) {
+        } catch (\CompositeException $e) {
             echo "Could not complete $count tasks successfully.\n";
             
             // Use getReasons() to retrieve an array of all specific exceptions that occurred
@@ -209,7 +219,7 @@ class TestingController extends ApiController
                 echo " - [$key]: " . $reason->getMessage() . "\n";
             }
         
-        } catch (MultiReasonException $e) {
+        } catch (\MultiReasonException $e) {
             echo "Caught a MultiReasonException: " . $e->getMessage() . "\n";
         
             // Retrieve the array of individual exceptions
@@ -229,7 +239,7 @@ class TestingController extends ApiController
 
     public function saveFcmToken()
     {
-        \App\Core\Support\Log::debug($this->jsonData, 'TestingController.saveFcmToken.$this->jsonData');
+        // \App\Core\Support\Log::debug($this->jsonData, 'TestingController.saveFcmToken.$this->jsonData');
         // return endResponse(
         //     $this->getOutput(true, 200, [
         //         'info' => 'This saveFcmToken path',
@@ -369,8 +379,8 @@ class TestingController extends ApiController
             }
 
             // Update Session key
-            Session::set('fcm_token', $fcmToken);
-            Session::set('fcm_token_expiry', $expiry);
+            \Session::set('fcm_token', $fcmToken);
+            \Session::set('fcm_token_expiry', $expiry);
         }
         
         
@@ -384,7 +394,7 @@ class TestingController extends ApiController
 
     public function testFcmToken()
     {
-        \App\Core\Support\Log::debug($this->jsonData, 'TestingController.testFcmToken.$this->jsonData');
+        // \App\Core\Support\Log::debug($this->jsonData, 'TestingController.testFcmToken.$this->jsonData');
 
         $firebaseCloudMessaging = new FirebaseCloudMessaging();
 
@@ -440,7 +450,7 @@ class TestingController extends ApiController
         [$code, $res] = $notification;
 
         $result = \is_string($res) ? json_decode($res, true) : $res;
-        \App\Core\Support\Log::debug($result, 'TestingController.testFcmToken.$result');
+        // \App\Core\Support\Log::debug($result, 'TestingController.testFcmToken.$result');
 
         return endResponse(
             $this->getOutput(true, $code, [

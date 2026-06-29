@@ -32,6 +32,8 @@ class ValidateClient
         $this->redis = new \Predis\Client([
                             'host' => Config::get('redis.cache.host'),
                             'port' => Config::get('redis.cache.port'),
+                            'username' => Config::get('redis.cache.username'),
+                            'password' => Config::get('redis.cache.password'),
                             'database' => Config::get('redis.cache.database')
                         ]);
     }

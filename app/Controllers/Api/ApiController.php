@@ -6,9 +6,6 @@ namespace App\Controllers\Api;
 use App\Core\Http\BaseController;
 use App\Core\Http\Request;
 use App\Core\Http\Response;
-use App\Core\Security\Encryption;
-use App\Core\Security\Middleware\JwtToken;
-use App\Core\Support\Config;
 use App\Core\Support\Session;
 use App\Core\Security\CSRF;
 
@@ -80,7 +77,7 @@ class ApiController extends BaseController
         (new \App\Core\Security\Middleware\EnsureIpIsValid())->handle();
         (new \App\Core\Security\Middleware\EnsureHeaderIsValid())->handle($this->headers);
 
-        // Validate token
+        // Validate token and CSRF
         $this->validateApiToken();
 
         // Validate with session data
@@ -142,6 +139,7 @@ class ApiController extends BaseController
      */
     protected function setLoginSession($user)
     {
+        // dd($user, true);
         foreach ($user as $key => $value) {
             if ($key === 'ulid') {
                 $key = 'uid';
@@ -159,7 +157,7 @@ class ApiController extends BaseController
         $clientToken = $validateClient->getToken();
         $clientTokenGen = $validateClient->generateToken();
         Session::set('client_token', $clientTokenGen);
-
+        
         if (false === $validateClient->matchToken($clientTokenGen)) {
 
             Session::destroy();
@@ -181,6 +179,9 @@ class ApiController extends BaseController
         $subject = 'Access API for user:'.$userId;
         $tokenJwt =  $jwtToken->createToken($userId, $info, $subject);
         Session::set('tokenJwt', $tokenJwt);
+
+        // dd(\App\Core\Support\Session::get('tokenJwt'));
+        // dd(\App\Core\Support\Session::all());
 
         return $tokenJwt;
     }
@@ -345,6 +346,7 @@ class ApiController extends BaseController
         $user = Session::all();
         $tokenJwt = Session::get('tokenJwt');
         $bearerToken = $this->getBearerToken();
+        // dd($tokenJwt, true);
 
         if (empty($user) ||
             is_null($this->jwtToken) ||

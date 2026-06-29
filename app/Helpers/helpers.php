@@ -10,10 +10,9 @@
 // use App\Core\Support\Session;
 use App\Core\Support\App;
 use App\Core\Support\Config;
-use App\Core\Validation\MessageBag;
 
 /** ===== Utils ===== */
-if(!function_exists('b64url')) {
+if (!function_exists('b64url')) {
     function b64url($data)
     {
         return rtrim(strtr(base64_encode((string) $data), '+/', '-_'), '=');
@@ -38,15 +37,16 @@ function env($key, $alt = '')
  *
  * @return string
  */
-function config($key)
+function config($key, $default = null)
 {
-    return Config::get($key);
+    return Config::get($key, $default);
 }
 
 /**
  * Converts selected environment variables to JSON format for Frontend.
  */
-function env_to_json(array $keys) {
+function env_to_json(array $keys)
+{
     $output = [];
     foreach ($keys as $key) {
         $output[$key] = env($key);
@@ -56,20 +56,22 @@ function env_to_json(array $keys) {
 
 // To handle CORS (Cross-Origin Resource Sharing)
 // Specify allowed origins (from .env file)
-function handle_cors() {
-    if(!isset($_SERVER['HTTP_ORIGIN']) || !isset($_SERVER['HTTP_REFERER']))
-    return;
+function handle_cors()
+{
+    if (!isset($_SERVER['HTTP_ORIGIN']) || !isset($_SERVER['HTTP_REFERER'])) {
+        return;
+    }
 
     // 1. Take string from .env, defaults to '*' if empty
     $envOrigins = env('ALLOWED_ORIGINS', '*');
-    
-    $allowedOrigins = ($envOrigins !== '*') 
-        ? explode(',', $envOrigins) 
+
+    $allowedOrigins = ($envOrigins !== '*')
+        ? explode(',', $envOrigins)
         : ['*'];
 
     $currentOrigin = $_SERVER['HTTP_ORIGIN'] ?? $_SERVER['HTTP_REFERER'];
     // dd($currentOrigin);
-    
+
     $cleanOrigin = parse_url($currentOrigin, PHP_URL_HOST);
     // dd($cleanOrigin);
 
@@ -90,9 +92,48 @@ function handle_cors() {
 }
 
 /**
+ * Get all REQUEST headers
+ * @return array
+ */
+if (! function_exists('getallheaders')) {
+    function getallheaders() : array
+    {
+        $headers = [];
+        foreach ($_SERVER as $name => $value) {
+            // if (substr($name, 0, 5) == 'HTTP_') {
+            if (str_starts_with((string) $name, 'HTTP_')) {
+                $headers[str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr((string) $name, 5)))))] = $value;
+            }
+        }
+        return $headers;
+    }
+}
+
+/**
+ * setHeaders function, to add header response
+ *
+ * @param  array $headers
+ *
+ * @return void
+ */
+function setHeaders($headers = [])
+{
+    if (count($headers)) {
+        foreach ($headers as $header) {
+            if (is_array($header)) {
+                foreach ($header as $key => $value) {
+                    header("{$key}: {$value}");
+                }
+            }
+        }
+    }
+}
+
+/**
  * Simple helper log system with category levels.
  */
-function write_log($level = 'info', $logs = '', $moduleName = '', $single = true) {
+function write_log($level = 'info', $logs = '', $moduleName = '', $single = true)
+{
 
     \App\Core\Support\Log::saveLog($level, $logs, $moduleName, $single);
 }
@@ -142,13 +183,16 @@ function endResponse($response, $status = 200, $headers = [])
     $headers = array_merge($csrfHeader, $headers);
 
     if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // non OpenSwoole Server
-        if(count($headers)) {
+        if (count($headers)) {
             foreach ($headers as $header) {
-                foreach ($header as $key => $value)
-                header("{$key}: {$value}");
+                if(!is_string($header)) {
+                    foreach ($header as $key => $value) {
+                        header("{$key}: {$value}");
+                    }
+                }                
             }
         }
-        
+
         // die(response()->json($response, $status));
         response()->json($response, $status);
     }
@@ -160,9 +204,9 @@ function endResponse($response, $status = 200, $headers = [])
     $cookieSessID = $_COOKIE[session_name()] ?? false;
     // get sessionId, then merged it to response
     $sessionId = $cookieSessID ?: session_id();
-    
 
-    // 
+
+    //
     if (isset($_SESSION['uid'])) {
         delCache($_SESSION['uid'].'*', 'bp_session');
         $sessionId = $_SESSION['uid'] . '-' . session_id();
@@ -214,24 +258,6 @@ function endResponse($response, $status = 200, $headers = [])
     return;
 }
 
-/**
- * setHeaders function, to add header response
- *
- * @param  array $headers
- *
- * @return bool
- */
-function setHeaders($headers = [])
-{
-    if(count($headers)) {
-        foreach ($headers as $header) {
-            if(is_array($header)) {
-                foreach ($header as $key => $value)
-                header("{$key}: {$value}");
-            }
-        }
-    }
-}
 
 /**
  * checkValidJSON function, to Check valid JSON format
@@ -311,10 +337,10 @@ function logs_path($log_name)
  */
 function dd($data = [], $json = false)
 {
-    if($json) {
+    if ($json) {
         die(json_encode($data, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
     }
-    
+
     echo "<pre>", var_dump($data), "</pre>";
     die();
 }
@@ -358,58 +384,120 @@ function delCache($id, $prefix = null)
     (new \App\Core\Support\Cache(null, null, $prefix))->deleteData($id);
 }
 
+// function setupRedisConnection()
+// {
+//     // Connect to Redis
+//     return new \Predis\Client([
+//         'host' => Config::get('redis.cache.host'),
+//         'port' => Config::get('redis.cache.port'),
+//         'username' => Config::get('redis.cache.username'),
+//         'password' => Config::get('redis.cache.password'),
+//         'database' => Config::get('redis.cache.database')
+//     ]);
+// }
+
+/**
+ * Setup Redis Connection Helper
+ *
+ * @return \Predis\Client|null Mengembalikan objek Predis jika sukses, atau null/exception jika gagal
+ * @throws \Exception
+ */
+function setupRedisConnection()
+{
+    // 1. Ambil config dan berikan tipe data yang aman (Mencegah null-offset error di PHP 8.1+)
+    $host     = (string) Config::get('redis.cache.host');
+    $port     = (int)    Config::get('redis.cache.port');
+    $username = Config::get('redis.cache.username'); // Boleh null jika Redis tanpa user (default)
+    $password = Config::get('redis.cache.password'); // Boleh null jika Redis tanpa password
+    $database = (int)    Config::get('redis.cache.database');
+
+    // Amankan parameter username/password agar tidak membawa string kosong yang mengganggu koneksi
+    $parameters = [
+        'host'     => $host,
+        'port'     => $port,
+        'database' => $database,
+    ];
+
+    if (!is_null($username) && $username !== '') $parameters['username'] = (string)$username;
+    if (!is_null($password) && $password !== '') $parameters['password'] = (string)$password;
+
+    // // 2. Muted E_DEPRECATED jika library Predis Anda belum versi terbaru
+    // $oldErrorReporting = error_reporting();
+    // error_reporting($oldErrorReporting & ~E_DEPRECATED);
+
+    try {
+        // Buat instance client Redis
+        $redis = new \Predis\Client($parameters);
+
+        // 3. TES KONEKSI NYATA: Karena Predis bersifat 'lazy', 
+        // kita panggil ping() di dalam try-catch untuk memastikan servernya hidup.
+        $redis->ping();
+
+        return $redis;
+
+    } catch (\Throwable $e) {
+        // Tulis log error internal agar memudahkan debugging di Docker/Ubuntu Anda
+        if (class_exists('\App\Core\Support\Log')) {
+            \App\Core\Support\Log::error("Redis Connection Failed: " . $e->getMessage(), "Helpers.setupRedisConnection");
+        }
+
+        // Skenario penanganan: Anda bisa melempar Exception atau mengembalikan null 
+        // agar script utama bisa mendeteksinya dan melakukan fallback ke database/file biasa.
+        throw new \Exception("Could not connect to Redis server: " . $e->getMessage(), 0, $e);
+        // return null; // Aktifkan ini jika ingin fallback tanpa crash
+
+    } finally {
+        // // Kembalikan error reporting asli aplikasi
+        // error_reporting($oldErrorReporting);
+
+        return $redis;
+    }
+}
+
 function getDataFromRedis($id, $prefix = null)
 {
-    if(empty($id))
+    if (empty($id)) {
         return;
+    }
 
     // Connect to Redis
-    $redis = new \Predis\Client([
-        'host' => Config::get('redis.cache.host'),
-        'port' => Config::get('redis.cache.port'),
-        'database' => Config::get('redis.cache.database')
-    ]);
+    $redis = setupRedisConnection();
 
     // $prefix = $prefix ?? 'bp_data';
     $prefix ??= 'bp_data';
 
     $data = $redis->get($prefix.':'.$id);
 
-    if (! is_null($data) && isset($data[0]))
+    if (! is_null($data) && isset($data[0])) {
         return unserialize(base64_decode($data[0]));
+    }
 
     return [];
 }
 
 function delDataFromRedis($id, $prefix = null, $db = null, $force = false)
 {
-    if(empty($id))
+    if (empty($id)) {
         return;
+    }
 
     // Connect to Redis
-    $redis = new \Predis\Client([
-        'host' => Config::get('redis.cache.host'),
-        'port' => Config::get('redis.cache.port'),
-        'database' => $db ?? Config::get('redis.cache.database')
-    ]);
+    $redis = setupRedisConnection();
 
     // $prefix = $prefix ?? 'bp_data';
     $prefix ??= 'bp_data';
 
     $data = $redis->get($prefix.':'.$id);
 
-    if ((! is_null($data) && isset($data[0])) || $force)
+    if ((! is_null($data) && isset($data[0])) || $force) {
         $redis->del($prefix.':'.$id);
+    }
 }
 
 function clearRedisDataByPrefix($prefix = null)
 {
     // Connect to Redis
-    $redis = new \Predis\Client([
-        'host' => Config::get('redis.cache.host'),
-        'port' => Config::get('redis.cache.port'),
-        'database' => Config::get('redis.cache.database')
-    ]);
+    $redis = setupRedisConnection();
 
     $prefix = $prefix ?: 'bp';
     $pattern = $prefix.':*'; // The pattern to match keys (e.g., all keys starting with 'my_prefix:')
@@ -441,7 +529,7 @@ function clearRedisDataByPrefix($prefix = null)
 
 function clearCacheFileByPrefix($directory = null, $pattern = null)
 {
-    $directory = $directory ?: __DIR__ . '/../../storage/framework/cache/'; // Specify the directory where files are located
+    $directory = $directory ?: storage_path('framework/cache/'); // Specify the directory where files are located
     $pattern = $pattern ?: '*.cache'; // Default: Delete all files ending with .cache
 
     // Combine directory and pattern to form the full pattern for glob()
@@ -521,31 +609,35 @@ function e($str, $doubleEncode = true)
         return json_encode($str);
     }
 
-    // if (is_numeric($str) && !is_float($str)) {
-    //     return (int)$str;
-    // }
+    // // if (is_numeric($str) && !is_float($str)) {
+    // //     return (int)$str;
+    // // }
 
-    // if (is_numeric($str) && is_float($str)) {
-    //     return floattostr(floatval($str));
-    // }
+    // // if (is_numeric($str) && is_float($str)) {
+    // //     return floattostr(floatval($str));
+    // // }
 
-    // // if (is_float($str) && is_numeric($str) === true && is_decimal($str) === false) {
-    // if (is_float_string($str) && is_numeric($str) && is_decimal($str) === false) {
-    //     dd($str);
-    //     //sprintf("%.2f", $str);
-    //     return round($str, 2);
-    // }
+    // // // if (is_float($str) && is_numeric($str) === true && is_decimal($str) === false) {
+    // // if (is_float_string($str) && is_numeric($str) && is_decimal($str) === false) {
+    // //     dd($str);
+    // //     //sprintf("%.2f", $str);
+    // //     return round($str, 2);
+    // // }
 
-    // if (is_decimal($str) && is_numeric($str) === true && is_float($str) === false) {
-    //     // number_format($latitude, 6);
-    //     return $str;
-    // }
+    // // if (is_decimal($str) && is_numeric($str) === true && is_float($str) === false) {
+    // //     // number_format($latitude, 6);
+    // //     return $str;
+    // // }
 
-    return htmlentities($str, ENT_QUOTES, 'UTF-8');
-    // return htmlspecialchars($str ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8', $doubleEncode);
+    // return htmlentities($str, ENT_QUOTES, 'UTF-8');
+    // // return htmlspecialchars($str ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8', $doubleEncode);
+
+    // Pilihan Terbaik & Paling Kompatibel
+    return htmlspecialchars($str ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8', $doubleEncode);
 }
 
-function remove_php_comments($code) {
+function remove_php_comments($code)
+{
     // Remove single-line comments that start with # or //
     // The pattern accounts for potential URLs (http://) and ensures the comment starts correctly.
     $patterns = [
@@ -640,12 +732,13 @@ function clientIP()
  * checkRateLimit function
  *
  * @param  string $identifier : client identity IP, Location, etc...
- * @param  int $limit : limit hit 
+ * @param  int $limit : limit hit
  * @param  int $timeframeSeconds : time in second
  *
  * @return void
  */
-function checkRateLimit($identifier, $limit, $timeframeSeconds) {
+function checkRateLimit($identifier, $limit, $timeframeSeconds)
+{
     $dirPath = storage_path('framework/tmp/rate_limits');
     $filePath =  $dirPath .'/'. md5($identifier) . '.txt';
 
@@ -682,16 +775,6 @@ function checkRateLimit($identifier, $limit, $timeframeSeconds) {
 
     return true; // Request allowed
 }
-
-// --- Base64URL Encoding/Decoding Functions ---
-function base64url_encode($data) {
-    return rtrim(strtr(base64_encode((string) $data), '+/', '-_'), '=');
-}
-
-function base64url_decode($data) {
-    return base64_decode(strtr($data, '-_', '+/'));
-}
-
 
 /**
  * Match encryption data
@@ -839,11 +922,11 @@ function sendEmailPhp(string $from, string $to, string $subject, $bodyText = '',
     $from = explode(",", $from);
     $to = explode(",", $to);
 
-    if(count($from)) {
+    if (count($from)) {
         $from = $from[0];
     }
 
-    if(count($to)) {
+    if (count($to)) {
         $to = $to[0];
     }
 
@@ -882,50 +965,52 @@ function sendEmailPhp(string $from, string $to, string $subject, $bodyText = '',
  */
 function sendEmail(string $from, string $to, string $subject, $bodyText = '', $bodyHtml = '', array $attachment = [], array $image = []): bool
 {
-    // if(env('APP_ENV') === 'local') {
-    try {
-        $email = (new \App\Core\Mailer\Email());
-        $email->prepareData($from, $to, $subject, $bodyText, $bodyHtml, $attachment, $image);
-        $email->send();
-        return true;
-    } catch (\Exception $e) {
-        // throw new Exception('Error send email: ' . $e->getMessage());
-        if(config('app.debug')) {
-            \App\Core\Support\Log::error('Error send email: ' . $e->getMessage(), 'Helpers.sendEmail');
+    if (config('app.env') === 'local') {
+        try {
+            $email = (new \App\Core\Mailer\Email());
+            $email->prepareData($from, $to, $subject, $bodyText, $bodyHtml, $attachment, $image);
+            $email->send();
+            return true;
+        } catch (\Exception $e) {
+            // throw new Exception('Error send email: ' . $e->getMessage());
+            if (config('app.debug')) {
+                \App\Core\Support\Log::error('Error send email: ' . $e->getMessage(), 'Helpers.sendEmail');
+            }
+            return false;
         }
-        return false;
+    } else {
+        $from = explode(",", $from);
+        $to = explode(",", $to);
+
+        if (count($from)) {
+            $from = $from[0];
+        }
+
+        if (count($to)) {
+            $to = $to[0];
+        }
+
+        $headers = 'From: '. $from . "\r\n" .
+                   'Reply-To: '. $from . "\r\n" .
+                   'X-Mailer: PHP/' . phpversion();
+
+        if (mail($to, $subject, $bodyText, $headers)) {
+            $status = true;
+        } else {
+            $status = false;
+            $msg = 'Gagal mengirim email.';
+            if (config('app.debug')) {
+                \App\Core\Support\Log::error([
+                    'msg' => $msg,
+                    'to' => $to,
+                    'subject' => $subject,
+                    'headers' => $headers,
+                ], 'Helpers.sendEmail.mail');
+            }
+        }
+
+        return $status;
     }
-    // } else {
-    //     $from = explode(",", $from);
-    //     $to = explode(",", $to);
-
-    //     if(count($from)) {
-    //         $from = $from[0];
-    //     }
-
-    //     if(count($to)) {
-    //         $to = $to[0];
-    //     }
-
-    //     $headers = 'From: '. $from . "\r\n" .
-    //                'Reply-To: '. $from . "\r\n" .
-    //                'X-Mailer: PHP/' . phpversion();
-
-    //     if (mail($to, $subject, $bodyText, $headers)) {
-    //         $status = true;
-    //     } else {
-    //         $status = false;
-    //         $msg = 'Gagal mengirim email.';
-    //         \App\Core\Support\Log::error([
-    //             'msg' => $msg,
-    //             'to' => $to,
-    //             'subject' => $subject,
-    //             'headers' => $headers,
-    //         ], 'Helpers.sendEmail.mail');
-    //     }
-
-    //     return $status;
-    // }
 }
 
 /**
@@ -947,7 +1032,7 @@ function isJson($value): bool
 
     try {
         json_decode($value, true, 512, JSON_THROW_ON_ERROR);
-    } catch (JsonException) {
+    } catch (\JsonException) {
         return false;
     }
 
@@ -979,113 +1064,4 @@ function readJson($key = null, $payload = null, $default = null)
     }
 
     return $payload;
-}
-
-/**
- * slug function
- *
- * @param  [string] $title
- * @param  string $separator
- * @param  string $language
- * @param  array  $dictionary
- *
- * @return void
- */
-function slug($title, $separator = '-', $language = 'en', $dictionary = ['@' => 'at'])
-{
-    // Convert all dashes/underscores into separator
-    $flip = $separator === '-' ? '_' : '-';
-
-    $title = preg_replace('![' . preg_quote($flip) . ']+!u', $separator, (string) $title);
-
-    // Replace dictionary words
-    foreach ($dictionary as $key => $value) {
-        $dictionary[$key] = $separator . $value . $separator;
-    }
-
-    $title = str_replace(array_keys($dictionary), array_values($dictionary), $title);
-
-    // Remove all characters that are not the separator, letters, numbers, or whitespace
-    $title = preg_replace('![^' . preg_quote($separator) . '\pL\pN\s]+!u', '', strtolower($title));
-
-    // Replace all separator characters and whitespace by a single separator
-    $title = preg_replace('![' . preg_quote($separator) . '\s]+!u', $separator, (string) $title);
-
-    return trim((string) $title, $separator);
-}
-
-function formatPhoneSnapshot($phoneNumber)
-{
-    $phone_number = str_replace('62', '0', trim((string) $phoneNumber));
-    return substr($phone_number, 0, 4).'****'.substr($phone_number, 8, strlen($phone_number));
-}
-
-function base64ToWebP($base64_string, $output_file, $quality = 80) {
-    // Remove the "data:image/webp;base64," prefix if present
-    $data = explode(',', (string) $base64_string);
-    $decoded_data = base64_decode(end($data));
-
-    // Create an image resource from the decoded data
-    $image = imagecreatefromstring($decoded_data);
-
-    if ($image === false) {
-        return false; // Error creating image resource
-    }
-
-    // 3. Handle Transparency (Optional but Recommended for PNG/GIF)
-    imagepalettetotruecolor($image);
-    imagealphablending($image, true);
-    imagesavealpha($image, true);
-
-    // Save the image as a WebP file
-    $success = imagewebp($image, $output_file, $quality);
-
-    // Free up memory
-    imagedestroy($image);
-
-    return $success;
-}
-
-function base64ToImage($base64_string, $output_file) {
-    // Separate the metadata from the base64 string
-    $parts = explode(',', (string) $base64_string);
-    $imageData = base64_decode($parts[1]);
-
-    // Save the decoded data to a file
-    if (file_put_contents($output_file, $imageData)) {
-        // return 'Image successfully saved to: ' . $output_file;
-        return true;
-    } else {
-        // return 'Failed to save image.';
-        return false;
-    }
-}
-
-// Function to save any image to Webp
-function webpImage($source, $quality = 80, $removeOld = false) {
-    $dir = pathinfo((string) $source, PATHINFO_DIRNAME);
-    $name = pathinfo((string) $source, PATHINFO_FILENAME);
-    $destination = $dir . DIRECTORY_SEPARATOR . $name . '.webp';
-    $info = getimagesize($source);
-    $isAlpha = false;
-    if ($info['mime'] == 'image/jpeg')
-        $image = imagecreatefromjpeg($source);
-    elseif ($isAlpha = $info['mime'] == 'image/gif') {
-        $image = imagecreatefromgif($source);
-    } elseif ($isAlpha = $info['mime'] == 'image/png') {
-        $image = imagecreatefrompng($source);
-    } else {
-        return $source;
-    }
-    if ($isAlpha) {
-        imagepalettetotruecolor($image);
-        imagealphablending($image, true);
-        imagesavealpha($image, true);
-    }
-    imagewebp($image, $destination, $quality);
-
-    if ($removeOld)
-        unlink($source);
-
-    return $destination;
 }

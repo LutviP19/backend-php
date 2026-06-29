@@ -6,8 +6,6 @@
  */
 
 use App\Core\Support\App;
-use Predis\Client as PredisClient;
-use Predis\Connection\ConnectionException;
 
 if (!defined('BASEPATH')) {
     define('BASEPATH', __DIR__ . '/../..');
@@ -40,41 +38,138 @@ date_default_timezone_set(env('APP_TIMEZONE', 'Asia/Jakarta'));
 // dd(config('app.ignore_port'), true);
 if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // Ignore OpenSwoole Server
 
-    if (session_status() == PHP_SESSION_NONE) {
-        try {
-            //Starting the session will be the first we do.
-            ini_set('session.save_handler', env('SESSION_DRIVER', 'files'));
+    // if (session_status() == PHP_SESSION_NONE) {
+    //     try {
+    //         //Starting the session will be the first we do.
+    //         ini_set('session.save_handler', env('SESSION_DRIVER', 'files'));
             
-            if (env('SESSION_DRIVER') === "redis") {
-                // ini_set('session.save_path', "tcp://" . env('REDIS_HOST') . ":" . env('REDIS_PORT') . "?auth" . env('REDIS_PASSWORD'));
-                // ini_set('session.gc_maxlifetime', (env('SESSION_LIFETIME', 120) * 60)); // Set default to 2 hours
+    //         if (env('SESSION_DRIVER') === "redis") {
+    //             // ini_set('session.save_path', "tcp://" . env('REDIS_HOST') . ":" . env('REDIS_PORT') . "?auth" . env('REDIS_PASSWORD'));
+    //             // ini_set('session.gc_maxlifetime', (env('SESSION_LIFETIME', 120) * 60)); // Set default to 2 hours
 
-                ini_set(
-                    "session.save_path",
-                    "tcp://" .
-                        config("redis.default.host") .
-                        ":" .
-                        config("redis.default.port") .
-                        "?auth" .
-                        config("redis.default.password"),
-                );
-                ini_set("session.gc_maxlifetime", (int) (config("session.lifetime") * 60)); // Set default to 2 hours                
+    //             ini_set(
+    //                 "session.save_path",
+    //                 "tcp://" .
+    //                     config("redis.default.host") .
+    //                     ":" .
+    //                     config("redis.default.port") .
+    //                     "?auth" .
+    //                     config("redis.default.password"),
+    //             );
+    //             ini_set("session.gc_maxlifetime", (int) (config("session.lifetime") * 60)); // Set default to 2 hours                
+    //         } else {
+    //             ini_set('session.save_handler', 'files');
+    //             ini_set('session.save_path', storage_path('framework/sessions'));
+    //         }            
+    //     } catch (\Exception $e) {
+    //         $errLog = "An unexpected error occurred: " . $e->getMessage();
+    //         write_log('error', $errLog, 'session.save_path.Redis');
+
+    //         // Fallback to default driver
+    //         ini_set('session.save_handler', 'files');
+    //         ini_set('session.save_path', storage_path('framework/sessions'));
+    //     }
+
+    //     session_name('BACKENDPHPSESSID'); // Set a custom session name
+    //     // @session_start();
+    //     bp_session_start();
+    // }
+
+    
+    // if (session_status() === PHP_SESSION_ACTIVE) {
+    //     // Set Client Identity
+    //     \App\Core\Support\Session::set("IPaddress", clientIP());
+    //     \App\Core\Support\Session::set("userAgent", $_SERVER["HTTP_USER_AGENT"] ?? "Unknown");
+
+    //      // 1. Jalankan proses regenerasi ID session lama ke baru
+    //     if (isset($_SESSION["destroyed"])) {
+    //         // $ttl = (int)env('SESSION_REGENERATE', 300);
+    //         $ttl = config("session.regenerate");
+
+    //         // $valid = (bool)($_SESSION['destroyed'] < time() - $ttl);
+    //         // // dd($ttl);
+    //         // dd($valid);
+
+    //         // Do not allow to use too old session ID
+    //         if (!empty($_SESSION["destroyed"]) && $_SESSION["destroyed"] < time() - $ttl) {
+    //             // Regenerate SessioId
+    //             $oldSessionId = session_id();
+    //             $headers = bp_session_regenerate_id($oldSessionId);
+    //             setHeaders($headers);
+    //         }
+    //     }
+    // }
+
+
+    if (session_status() === PHP_SESSION_NONE) {
+        try {
+            $driver = env('SESSION_DRIVER', 'files');
+            ini_set('session.save_handler', $driver);
+            
+            if ($driver === "redis") {
+                $redisHost = config("redis.default.host", "127.0.0.1");
+                $redisPort = config("redis.default.port", 6379);
+                $redisPass = config("redis.default.password");
+                $lifetime  = (int) config("session.lifetime", 120) * 60;
+
+                // PERBAIKAN: Format query string redis harus menggunakan "?auth=password" 
+                // dan hanya ditambahkan JIKA password tidak kosong.
+                $redisPath = "tcp://{$redisHost}:{$redisPort}";
+                if (!is_null($redisPass) && $redisPass !== '') {
+                    $redisPath .= "?auth=" . urlencode((string)$redisPass);
+                }
+
+                ini_set("session.save_path", $redisPath);
+                ini_set("session.gc_maxlifetime", $lifetime);               
             } else {
                 ini_set('session.save_handler', 'files');
-                ini_set('session.save_path', __DIR__ . '/../../storage/framework/sessions');
+                ini_set('session.save_path', storage_path('framework/sessions'));
             }            
         } catch (\Exception $e) {
-            $errLog = "An unexpected error occurred: " . $e->getMessage();
-            write_log('error', $errLog, 'session.save_path.Redis');
+            $errLog = "An unexpected error occurred during session init: " . $e->getMessage();
+            if (function_exists('write_log')) {
+                write_log('error', $errLog, 'session.save_path.Setup');
+            }
 
-            // Fallback to default driver
+            // Fallback aman ke driver files jika Redis bermasalah
             ini_set('session.save_handler', 'files');
-            ini_set('session.save_path', __DIR__ . '/../../storage/framework/sessions');
+            ini_set('session.save_path', storage_path('framework/sessions'));
         }
 
-        session_name('BACKENDPHPSESSID'); // Set a custom session name
-        // @session_start();
-        bp_session_start();
+        // Set nama session custom
+        session_name('BACKENDPHPSESSID'); 
+        
+        // Jalankan fungsi pembuka session bawaan helper yang sudah dioptimasi
+        if (function_exists('bp_session_start')) {
+            bp_session_start();
+        } else {
+            ini_set('session.use_strict_mode', 1);
+            @session_start();
+        }
+    }
+
+    // Handler setelah session berhasil aktif
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        
+        // OPTIMASI: Hanya set IP dan User Agent jika datanya BELUM ADA di session, 
+        // untuk menghemat operasi I/O baca/tulis ke Files/Redis.
+        if (!\App\Core\Support\Session::has("IPaddress")) {
+            \App\Core\Support\Session::set("IPaddress", clientIP());
+        }
+        
+        if (!\App\Core\Support\Session::has("userAgent")) {
+            $userAgent = $_SERVER["HTTP_USER_AGENT"] ?? "Unknown";
+            \App\Core\Support\Session::set("userAgent", $userAgent);
+        }
+
+        /* |--------------------------------------------------------------------------
+        | LOGIKA REGENERASI DIAPUS / DIKOMENTARI DI SINI
+        |--------------------------------------------------------------------------
+        | Mengapa? Karena logika pengecekan `$_SESSION['destroyed']` dan penembakan 
+        | `bp_session_regenerate_id()` SUDAH otomatis dijalankan di dalam fungsi 
+        | `bp_session_start()` di atas. Memasang ulang di sini akan memicu bug ganda.
+        |
+        */
     }
 
 } else {

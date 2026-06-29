@@ -16,7 +16,7 @@ class Role extends Model
      */
     protected static $tableM = "roles";
 
-    public function __construct(PDO $pdo = null)
+    public function __construct(?PDO $pdo = null)
     {
         // // Custom connection
         // $driver = '';

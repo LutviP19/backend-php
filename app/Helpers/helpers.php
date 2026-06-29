@@ -258,6 +258,83 @@ function endResponse($response, $status = 200, $headers = [])
     return;
 }
 
+/**
+ * Cek apakah request JSON.
+ */
+if (!function_exists("is_json_request")) {
+    function is_json_request()
+    {
+        // 1. Cek dari $_SERVER (Standard)
+        if (
+            isset($_SERVER["CONTENT_TYPE"]) &&
+            stripos((string) $_SERVER["CONTENT_TYPE"], "application/json") !== false
+        ) {
+            return true;
+        }
+
+        // 2. Cek dari HTTP_CONTENT_TYPE (Fallback beberapa konfigurasi FastCGI/Worker)
+        if (
+            isset($_SERVER["HTTP_CONTENT_TYPE"]) &&
+            stripos((string) $_SERVER["HTTP_CONTENT_TYPE"], "application/json") !== false
+        ) {
+            return true;
+        }
+
+        // 3. Cek langsung ke Header (Paling Akurat di Worker Mode)
+        if (function_exists("getallheaders")) {
+            $headers = getallheaders();
+            // Normalisasi key menjadi lowercase karena header bisa bervariasi (Content-Type vs content-type)
+            foreach ($headers as $name => $value) {
+                if (
+                    strtolower((string) $name) === "content-type" &&
+                    stripos((string) $value, "application/json") !== false
+                ) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+}
+
+/**
+ * Mengirimkan respons JSON yang standar dan menghentikan eksekusi script.
+ */
+if (!function_exists("json_response")) {
+    function json_response($data, $status = 200, $message = "", $errors = [])
+    {
+        header("Content-Type: application/json");
+        http_response_code($status);
+
+        // Format output JSON
+        if ($message !== "") {
+            $data = [
+                "statusCode" => $status,
+                "message" => $message,
+                "data" => $data,
+            ];
+        } else {
+            $data = [
+                "statusCode" => $status,
+                "data" => $data,
+            ];
+        }
+        // Keluarkan errors jika ada
+        if (!empty($errors)) {
+            unset($data["data"]);
+            $data["errors"] = $errors;
+        }
+        // Unset data jika status >= 300
+        if ($status >= 300) {
+            unset($data["data"]);
+        }
+
+        echo json_encode($data, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+        die();
+    }
+}
+
 
 /**
  * checkValidJSON function, to Check valid JSON format
@@ -305,7 +382,7 @@ function storage_path($filePath)
 }
 
 /**
- * default database path for sqlite
+ * default database path for public/assets/
  *
  * @param  string $key
  *
@@ -314,6 +391,17 @@ function storage_path($filePath)
 function assets_path($filePath)
 {
     return BASE_PATH . 'public/assets/' . $filePath;
+}
+
+/**
+ * Helper untuk memanggil file di folder public/
+ */
+if (!function_exists("asset")) {
+    function asset($path)
+    {
+        $baseUrl = rtrim(config("app.url"), "/");
+        return $baseUrl . "/" . ltrim((string) $path, "/");
+    }
 }
 
 /**
@@ -326,6 +414,11 @@ function assets_path($filePath)
 function logs_path($log_name)
 {
     return BASEPATH . 'storage/logs/' . $log_name;
+}
+
+function isHtmx()
+{
+    return isset($_SERVER["HTTP_HX_REQUEST"]) && $_SERVER["HTTP_HX_REQUEST"] === "true";
 }
 
 

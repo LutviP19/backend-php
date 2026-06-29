@@ -28,7 +28,7 @@ class User extends Model
     //user model code....
     public static function getAllUser()
     {
-        $data = self::table(self::$tableM)->select()->get();
+        $data = QueryBuilder::table(self::$tableM)->select()->get();
         if($data) return $data;
 
         return null;
@@ -36,7 +36,7 @@ class User extends Model
 
     public static function getUserByEmail($email)
     {
-        $data = self::table(self::$tableM)->select([
+        $data = QueryBuilder::table(self::$tableM)->select([
                         'ulid',
                         'name',
                         'email',
@@ -59,7 +59,7 @@ class User extends Model
 
     public static function getClientId($id, $columnId = 'id')
     {
-        $data = self::table(self::$tableM)->select(['client_token'])
+        $data = QueryBuilder::table(self::$tableM)->select(['client_token'])
                 ->where($columnId, '=', $id)
                 ->whereAnd('status', '=', 1)
                 ->first();
@@ -74,7 +74,7 @@ class User extends Model
 
     public static function getUlid($id)
     {
-        $data = self::table(self::$tableM)->select(['ulid'])->where('id', '=', $id)->first();
+        $data = QueryBuilder::table(self::$tableM)->select(['ulid'])->where('id', '=', $id)->first();
         // \App\Core\Support\Log::debug($data, 'UserModel.getUlid');
 
         if ($data) {
@@ -88,8 +88,8 @@ class User extends Model
     {
         $token = generateRandomString();
 
-        self::table(self::$tableM)->primaryKey($columnId);
-        $update = self::table(self::$tableM)->updateWhere(['client_token' => $token], $columnId, $id);
+        QueryBuilder::table(self::$tableM)->primaryKey($columnId);
+        $update = QueryBuilder::table(self::$tableM)->updateWhere(['client_token' => $token], $columnId, $id);
 
         if (true === $update) {
             return $token;

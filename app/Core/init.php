@@ -3,6 +3,7 @@
 /**
  * Init the Application
  * @author Lutvi <lutvip19@gmail.com>
+ * @package Backend-PHPs
  */
 
 use App\Core\Support\App;
@@ -38,93 +39,58 @@ date_default_timezone_set(env('APP_TIMEZONE', 'Asia/Jakarta'));
 // dd(config('app.ignore_port'), true);
 if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // Ignore OpenSwoole Server
 
-    // if (session_status() == PHP_SESSION_NONE) {
-    //     try {
-    //         //Starting the session will be the first we do.
-    //         ini_set('session.save_handler', env('SESSION_DRIVER', 'files'));
-            
-    //         if (env('SESSION_DRIVER') === "redis") {
-    //             // ini_set('session.save_path', "tcp://" . env('REDIS_HOST') . ":" . env('REDIS_PORT') . "?auth" . env('REDIS_PASSWORD'));
-    //             // ini_set('session.gc_maxlifetime', (env('SESSION_LIFETIME', 120) * 60)); // Set default to 2 hours
+    // Gunakan Throwable untuk menangkap Error.
+    set_exception_handler(function (\Throwable $exception) {
+        $message = $exception->getMessage();
+        $file = $exception->getFile();
+        $line = $exception->getLine();
+        $trace = $exception->getTraceAsString(); // Ini untuk mengambil stack trace
 
-    //             ini_set(
-    //                 "session.save_path",
-    //                 "tcp://" .
-    //                     config("redis.default.host") .
-    //                     ":" .
-    //                     config("redis.default.port") .
-    //                     "?auth" .
-    //                     config("redis.default.password"),
-    //             );
-    //             ini_set("session.gc_maxlifetime", (int) (config("session.lifetime") * 60)); // Set default to 2 hours                
-    //         } else {
-    //             ini_set('session.save_handler', 'files');
-    //             ini_set('session.save_path', storage_path('framework/sessions'));
-    //         }            
-    //     } catch (\Exception $e) {
-    //         $errLog = "An unexpected error occurred: " . $e->getMessage();
-    //         write_log('error', $errLog, 'session.save_path.Redis');
+        $logEntry = "Message: $message\n";
+        $logEntry .= "Location: $file on line $line\n";
+        // $logEntry .= "Stack Trace:\n$trace\n";
+        $logEntry .= str_repeat("-", 50); // Garis pemisah antar log
+        write_log("error", $logEntry, "App.Core.Init", false);
 
-    //         // Fallback to default driver
-    //         ini_set('session.save_handler', 'files');
-    //         ini_set('session.save_path', storage_path('framework/sessions'));
-    //     }
-
-    //     session_name('BACKENDPHPSESSID'); // Set a custom session name
-    //     // @session_start();
-    //     bp_session_start();
-    // }
-
-    
-    // if (session_status() === PHP_SESSION_ACTIVE) {
-    //     // Set Client Identity
-    //     \App\Core\Support\Session::set("IPaddress", clientIP());
-    //     \App\Core\Support\Session::set("userAgent", $_SERVER["HTTP_USER_AGENT"] ?? "Unknown");
-
-    //      // 1. Jalankan proses regenerasi ID session lama ke baru
-    //     if (isset($_SESSION["destroyed"])) {
-    //         // $ttl = (int)env('SESSION_REGENERATE', 300);
-    //         $ttl = config("session.regenerate");
-
-    //         // $valid = (bool)($_SESSION['destroyed'] < time() - $ttl);
-    //         // // dd($ttl);
-    //         // dd($valid);
-
-    //         // Do not allow to use too old session ID
-    //         if (!empty($_SESSION["destroyed"]) && $_SESSION["destroyed"] < time() - $ttl) {
-    //             // Regenerate SessioId
-    //             $oldSessionId = session_id();
-    //             $headers = bp_session_regenerate_id($oldSessionId);
-    //             setHeaders($headers);
-    //         }
-    //     }
-    // }
-
+        // Handler JSON Output
+        if (is_json_request()) {
+            $status = 500;
+            $message = "An internal error occurred. Please try again later.";
+            json_response([], $status, $message);
+            exit();
+        } else {
+            // Present a user-friendly view/response
+            // http_response_code(500);
+            // echo "<h1>An internal error occurred. Please try again later.</h1>";
+            // // In a production environment, avoid echoing the raw message
+            include BASEPATH . "views/error/500.php";
+            die();
+        }
+    });
 
     if (session_status() === PHP_SESSION_NONE) {
         try {
             $driver = env('SESSION_DRIVER', 'files');
             ini_set('session.save_handler', $driver);
-            
+
             if ($driver === "redis") {
                 $redisHost = config("redis.default.host", "127.0.0.1");
                 $redisPort = config("redis.default.port", 6379);
                 $redisPass = config("redis.default.password");
                 $lifetime  = (int) config("session.lifetime", 120) * 60;
 
-                // PERBAIKAN: Format query string redis harus menggunakan "?auth=password" 
-                // dan hanya ditambahkan JIKA password tidak kosong.
+
                 $redisPath = "tcp://{$redisHost}:{$redisPort}";
                 if (!is_null($redisPass) && $redisPass !== '') {
                     $redisPath .= "?auth=" . urlencode((string)$redisPass);
                 }
 
                 ini_set("session.save_path", $redisPath);
-                ini_set("session.gc_maxlifetime", $lifetime);               
+                ini_set("session.gc_maxlifetime", $lifetime);
             } else {
                 ini_set('session.save_handler', 'files');
                 ini_set('session.save_path', storage_path('framework/sessions'));
-            }            
+            }
         } catch (\Exception $e) {
             $errLog = "An unexpected error occurred during session init: " . $e->getMessage();
             if (function_exists('write_log')) {
@@ -137,8 +103,8 @@ if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // Ignore
         }
 
         // Set nama session custom
-        session_name('BACKENDPHPSESSID'); 
-        
+        session_name('BACKENDPHPSESSID');
+
         // Jalankan fungsi pembuka session bawaan helper yang sudah dioptimasi
         if (function_exists('bp_session_start')) {
             bp_session_start();
@@ -150,26 +116,14 @@ if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // Ignore
 
     // Handler setelah session berhasil aktif
     if (session_status() === PHP_SESSION_ACTIVE) {
-        
-        // OPTIMASI: Hanya set IP dan User Agent jika datanya BELUM ADA di session, 
-        // untuk menghemat operasi I/O baca/tulis ke Files/Redis.
         if (!\App\Core\Support\Session::has("IPaddress")) {
             \App\Core\Support\Session::set("IPaddress", clientIP());
         }
-        
+
         if (!\App\Core\Support\Session::has("userAgent")) {
             $userAgent = $_SERVER["HTTP_USER_AGENT"] ?? "Unknown";
             \App\Core\Support\Session::set("userAgent", $userAgent);
         }
-
-        /* |--------------------------------------------------------------------------
-        | LOGIKA REGENERASI DIAPUS / DIKOMENTARI DI SINI
-        |--------------------------------------------------------------------------
-        | Mengapa? Karena logika pengecekan `$_SESSION['destroyed']` dan penembakan 
-        | `bp_session_regenerate_id()` SUDAH otomatis dijalankan di dalam fungsi 
-        | `bp_session_start()` di atas. Memasang ulang di sini akan memicu bug ganda.
-        |
-        */
     }
 
 } else {
@@ -191,7 +145,6 @@ use App\Core\Http\Request;
 use App\Core\Http\Router;
 use App\Core\Support\Session;
 use App\Core\Validation\MessageBag;
-
 
 /**
  * Register MessageBag with all the validation errors
@@ -216,6 +169,6 @@ if (Request::isJsonRequest() && is_string($output)) {
  * and that way we can save the current uri and use it in
  * the next request as the previous uri.
  */
-if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { 
+if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) {
     Session::setPreviousUri(Request::uri());
 }

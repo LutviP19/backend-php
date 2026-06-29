@@ -9,8 +9,8 @@ use App\Core\Database\QueryBuilder;
 use App\Core\Database\Model;
 use App\Models\User;
 use App\Models\Role;
+use App\Models\Testing;
 use Exception;
-
 // // Queue
 // use Amp;
 // use Amp\Future;
@@ -54,14 +54,18 @@ class TestingController extends ApiController
         // Validate JWT
         $this->validateJwt();
 
-
-        $user = Model::table('users')->select(['*'])->get();
-        $roles = Model::table('roles')->select(['id', 'slug', 'name'])->get();
+        // Testing varian of models
+        $users = QueryBuilder::table('users')->select(['*'])->get();
+        $roles = QueryBuilder::table('roles')->select(['id', 'slug', 'name'])->get();
         $role = Role::getRoleById(3);
         $userUlid = User::getUlid(3);
 
+        // Empoyees DB - Testing Cross DB Connection
+        $employees = Testing::getAllEmployees();
+        // dd($employees);
+
         // dd($role, true);
-        $output = [$user, $roles, $role, $userUlid];
+        $output = ['employees' => $employees, 'users' => $users, 'roles' => $roles, 'role' => $role, 'userUlid' => $userUlid];
         // dd($output, true);
 
         // \App\Core\Support\Log::debug($output, 'TestingController.index.request');
@@ -69,22 +73,22 @@ class TestingController extends ApiController
             $this->getOutput(true, 200, [
                 'info' => 'This index path',
                 'output' => $output,
-                'request'=> $request->all(),
-            ], 'TestingController'), 
+                'request' => $request->all(),
+            ], 'TestingController'),
             200
         );
     }
 
-    public function neuronAi(Request $request, Response $response)    
+    public function neuronAi(Request $request, Response $response)
     {
         try {
-            if($request->has('prompt') && $request->prompt !== '') {
+            if ($request->has('prompt') && $request->prompt !== '') {
 
                 // // Menggunakan Neuon AI
                 // $responseAi = BpAgent::make()->chat(
                 //     new UserMessage($request->prompt ?? "Hi, Who are you?")
                 // );
-        
+
                 // echo $responseAi->getContent();
                 // // I'm a friendly AI Agent built with Neuron, how can I help you today?
 
@@ -120,14 +124,14 @@ class TestingController extends ApiController
                 // John like pizza. Address: st.James Street
                 echo \json_encode($person->tags);
             }
-            
+
         } catch (\Exception $e) {
             echo "Error: " . $e->getMessage() . "\n";
             echo "File: " . $e->getFile() . "\n";
             echo "Line: " . $e->getLine() . "\n";
             echo "Stack trace:\n" . $e->getTraceAsString();
         }
-        
+
         exit;
 
         // dd([$responseAi], true);
@@ -137,7 +141,7 @@ class TestingController extends ApiController
         //     $this->getOutput(true, 200, [
         //         'info' => 'This index path',
         //         'request'=> $request->all(),
-        //     ], 'TestingController'), 
+        //     ], 'TestingController'),
         //     200
         // );
     }
@@ -171,7 +175,8 @@ class TestingController extends ApiController
         }
 
         // Assume some functions that return Futures which might succeed or fail
-        function createFutures(): array {
+        function createFutures(): array
+        {
             return [
                 'future1' => \Future::error(new Exception('Reason 1')),
                 'future2' => \Future::complete('Success 2'),
@@ -190,7 +195,7 @@ class TestingController extends ApiController
 
 
         // We want 3 successful results, but only 2 are available.
-        $count = 4; 
+        $count = 4;
         try {
             // Await 3 successful futures
             $successfulResults = awaitAnyN($count, $futures);
@@ -200,31 +205,31 @@ class TestingController extends ApiController
                 echo "* $key: $value\n";
             }
 
-            // Await any futures. 
+            // Await any futures.
             // This example will succeed and return an array with 'Success 2' and 'Success 4'.
             $results = Future\awaitAnyN($count, createFutures());
             print_r($results);
         } catch (\CompositeException $e) {
             echo "Could not complete $count tasks successfully.\n";
-            
+
             // Use getReasons() to retrieve an array of all specific exceptions that occurred
             $reasons = $e->getReasons();
             $failCount = count($reasons);
             $successCount = $count - $failCount;
             echo "Success $successCount tasks, Failed $failCount tasks.\n";
             echo "Reasons for failure:\n";
-            
+
             foreach ($reasons as $key => $reason) {
                 // $key corresponds to the original key in the $futures array
                 echo " - [$key]: " . $reason->getMessage() . "\n";
             }
-        
+
         } catch (\MultiReasonException $e) {
             echo "Caught a MultiReasonException: " . $e->getMessage() . "\n";
-        
+
             // Retrieve the array of individual exceptions
             $reasons = $e->getReasons();
-        
+
             echo "Individual reasons:\n";
             foreach ($reasons as $index => $reason) {
                 if ($reason instanceof Exception) {
@@ -244,7 +249,7 @@ class TestingController extends ApiController
         //     $this->getOutput(true, 200, [
         //         'info' => 'This saveFcmToken path',
         //         'request'=> $request->all(),
-        //     ], 'TestingController'), 
+        //     ], 'TestingController'),
         //     200
         // );
 
@@ -357,13 +362,13 @@ class TestingController extends ApiController
         $tableId = $userType === 'customer' ? 'customer_id' : 'driver_id';
 
         // Update
-        if($forceUpdate === 'true') {
+        if ($forceUpdate === 'true') {
             // set expiration date
             $dayExpire = 3;
             $expired_seconds = time() + (60 * 60 * 24 * $dayExpire);
             $expiry = date('Y-m-d H:i:s', $expired_seconds);
             // dd($expiry, true);
-            
+
             $query = QueryBuilder::table($table)->execQuery('UPDATE '.$table.' SET fcm_token = ?, fcm_token_expiry = ? WHERE '.$tableId.' = ?', [$fcmToken, $expiry, $userId]);
 
             if (false === $query) {
@@ -382,8 +387,8 @@ class TestingController extends ApiController
             \Session::set('fcm_token', $fcmToken);
             \Session::set('fcm_token_expiry', $expiry);
         }
-        
-        
+
+
         return endResponse(
             $this->getOutput(true, 201, [
                 'fcmToken' => $fcmToken,
@@ -435,7 +440,7 @@ class TestingController extends ApiController
         // $accessToken = $firebaseCloudMessaging->createAccessToken();
         $notification = $firebaseCloudMessaging->sendMessage(false, $fcmToken, $title, $body);
 
-        if(is_null($notification)) {
+        if (is_null($notification)) {
             $errors = [
                 'busy' => ['System busy, please try again in few moments.'],
             ];
@@ -461,4 +466,3 @@ class TestingController extends ApiController
     }
 
 }
-

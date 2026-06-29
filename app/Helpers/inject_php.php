@@ -510,90 +510,6 @@ function checkSession()
     }
 }
 
-// function bp_session_start()
-// {
-//     ini_set("session.use_strict_mode", 1);
-//     @session_start();
-//     if (isset($_SESSION["destroyed"])) {
-//         // $ttl = (int)env('SESSION_REGENERATE', 300);
-//         $ttl = config("session.regenerate");
-
-//         // $valid = (bool)($_SESSION['destroyed'] < time() - $ttl);
-//         // // dd($ttl);
-//         // dd($valid);
-
-//         // Do not allow to use too old session ID
-//         if (!empty($_SESSION["destroyed"]) && $_SESSION["destroyed"] < time() - $ttl) {
-//             // Regenerate SessioId
-//             $oldSessionId = session_id();
-//             $headers = bp_session_regenerate_id($oldSessionId);
-//             setHeaders($headers);
-//         }
-//     }
-
-//     // $sessionStrictMode = ini_get('session.use_strict_mode');
-//     // write_log($sessionStrictMode, 'Helpers.inject_php.bp_session_start.$sessionStrictMode', 'debug');
-// }
-
-// function bp_session_regenerate_id($oldSessionId)
-// {
-//     $new_session_id = session_create_id();
-
-//     // add info for users with bad connection not receiving the new session id
-//     $_SESSION["new_session_id"] = $new_session_id;
-//     // Set destroy timestamp
-//     $_SESSION["destroyed"] = time();
-//     // Write and close current session;
-//     session_commit();
-
-//     // backup session variables
-//     $keepSession = $_SESSION;
-
-//     // Start session with new session ID
-//     ini_set("session.use_strict_mode", 0);
-//     session_id($new_session_id);
-
-//     if (session_status() == PHP_SESSION_ACTIVE) {
-//         session_destroy();
-//     }
-
-//     $sessionName = session_name();
-//     $cookie = session_get_cookie_params();
-//     // $sessionExp = (env('SESSION_LIFETIME', 120) * 60);
-//     $sessionExp = config("session.lifetime") * 60;
-//     $setcookie = [
-//         "Set-Cookie" => "{$sessionName}={$new_session_id}; Max-Age={$sessionExp}; Path={$cookie["path"]};",
-//     ];
-
-//     // use_strict_mode is mandatory for security reasons.
-//     ini_set("session.use_strict_mode", 1);
-
-//     @session_start();
-//     $_SESSION = $keepSession;
-//     // Write and close current session;
-//     session_commit();
-
-//     $saveHandler = ini_get("session.save_handler");
-
-//     if ($saveHandler === "files") {
-//         // Delete Old session file
-//         $sessionSavePath = session_save_path();
-//         $fileSessionOld = $sessionSavePath . "/sess_" . $oldSessionId;
-
-//         if (\file_exists($fileSessionOld)) {
-//             $status = unlink($fileSessionOld);
-//             // write_log($status, 'Helpers.inject_php.bp_session_regenerate_id.unlink-$fileSessionOld', 'debug');
-//         }
-//     } else {
-//         // Delete data redis PHPREDIS_SESSION
-//         if ($saveHandler === "redis") {
-//             delDataFromRedis($oldSessionId, "PHPREDIS_SESSION", config("redis.default.database"), true);
-//         }
-//     }
-
-//     return $setcookie;
-// }
-
 function bp_session_start()
 {
     // Pastikan session belum aktif sebelum mengubah konfigurasi ini
@@ -623,7 +539,7 @@ function bp_session_start()
 function bp_session_regenerate_id($oldSessionId = null)
 {
     $oldSessionId = $oldSessionId ?: session_id();
-    
+
     if (session_status() !== PHP_SESSION_ACTIVE) {
         @session_start();
     }

@@ -39,7 +39,8 @@ class Role extends Model
     public static function getRoleById($id, $cols = false) {
         $selectCols = $cols ?: '*';
         $sql = 'SELECT '.$selectCols.' FROM '.self::$tableM.' WHERE id = ? LIMIT 1';
-        $result = QueryBuilder::table(self::$tableM)->execQuery($sql, [$id], false, true, false);
+        // $result = Model::table(self::$tableM)->execQuery($sql, [$id], false, true, false);
+        $result = (new QueryBuilder())->table(self::$tableM)->execQuery($sql, [$id], false, true, false);
 
         return $result;
     }

@@ -274,7 +274,7 @@ class Model
     protected function setParams($params = [])
     {
         $this->params = array_merge($this->params, $params);
-        // write_log($this->params, 'Database.Model.setParams', 'debug', 'debug-model.log');
+        // write_log('debug', $this->params, 'Database.Model.setParams', true);
 
         return $this;
     }
@@ -310,7 +310,7 @@ class Model
     /**
      * Query the current SQL statement.
      *
-     * @return PDOStatement|false
+     * @return \PDOStatement|false
      * @throws PDOException
      */
     protected function query()
@@ -318,8 +318,8 @@ class Model
         try {
             $query = $this->getPDO()->prepare($this->getSQL());
 
-            // write_log($query, 'Database.Model.query.query', 'debug', 'debug-model.log');
-            // write_log($this->getSQL(), 'Database.Model.query.getSQL', 'debug', 'debug-model.log');
+            // write_log('debug', $query, 'Database.Model.query.query', true);
+            // write_log('debug', $this->getSQL(), 'Database.Model.query.getSQL', true);
 
             if ($query->execute($this->getParams())) {
                 $this->params = [];

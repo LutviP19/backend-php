@@ -6,7 +6,7 @@ use App\Core\Http\{Request, Response};
 use App\Core\Message\FirebaseCloudMessaging;
 use App\Core\Validation\Validator;
 use App\Core\Database\QueryBuilder;
-use App\Core\Database\Model;
+// use App\Core\Database\Model;
 use App\Models\User;
 use App\Models\Role;
 use App\Models\Testing;

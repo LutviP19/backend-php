@@ -1,15 +1,15 @@
 <?php
 
-namespace App\Core\Message\Serializer;
+namespace App\Core\Message;
 
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 
 /**
- * MessageWithTokenDecoder class
+ * Serializer class
  * @author Lutvi <lutvip19@gmail.com>
  */
-class MessageWithTokenDecoder implements SerializerInterface
+class Serializer implements SerializerInterface
 {
     public function decode(array $encodedEnvelope): Envelope
     {

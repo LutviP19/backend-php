@@ -11,14 +11,14 @@ use App\Models\User;
 use App\Models\Role;
 use App\Models\Testing;
 use Exception;
-// // Queue
-// use Amp;
-// use Amp\Future;
-// use function Amp\Future\awaitAnyN;
-// use function Amp\async;
-// use Amp\CompositeException;
-// use Amp\MultiReasonException;
-// use Amp\Http\Client\HttpClientBuilder;
+// Queue
+use Amp;
+use Amp\Future;
+use function Amp\Future\awaitAnyN;
+use function Amp\async;
+use Amp\MultiReasonException;
+use Amp\CompositeException;
+use Amp\Http\Client\HttpClientBuilder;
 // use Amp\Http\Client\Request as clientRequest;
 
 // AI
@@ -148,16 +148,15 @@ class TestingController extends ApiController
 
     public function queue()
     {
-
         // A helper function to simulate an asynchronous task that might succeed or fail
-        function simulatedAsyncRequest(string $url, bool $shouldSucceed): \Future
+        function simulatedAsyncRequest(string $url, bool $shouldSucceed): Future
         {
-            $httpClient = \HttpClientBuilder::buildDefault();
+            $httpClient = HttpClientBuilder::buildDefault();
 
             return async(function () use ($url, $shouldSucceed, $httpClient): string {
                 // In a real app, this would be an I/O operation (e.g., HTTP request)
                 if (!$shouldSucceed) {
-                    throw new \Exception("Failed to fetch $url");
+                    throw new Exception("Failed to fetch $url");
                 }
 
                 $r = $httpClient->request(new clientRequest($url, 'HEAD'));
@@ -178,24 +177,25 @@ class TestingController extends ApiController
         function createFutures(): array
         {
             return [
-                'future1' => \Future::error(new Exception('Reason 1')),
-                'future2' => \Future::complete('Success 2'),
-                'future3' => \Future::error(new Exception('Reason 3')),
-                'future4' => \Future::complete('Success 4'),
+                'future1' => Future::error(new Exception('Reason 1')),
+                'future2' => Future::complete('Success 2'),
+                'future3' => Future::error(new Exception('Reason 3')),
+                'future4' => Future::complete('Success 4'),
             ];
         }
 
         // Prepare an array of futures: 2 will succeed, 2 will fail
         $futures = [
-            'google' => simulatedAsyncRequest('https://www.google.com', true),
+            'lutvi-code' => simulatedAsyncRequest('https://lutvi-code.blogger.com', true),
+            'seni-digital' => simulatedAsyncRequest('https://seni-digital.blogger.com', true),
+            // 'google' => simulatedAsyncRequest('https://www.google.com', true),
             'bing' => simulatedAsyncRequest('https://www.bing.com', true),
             'yahoo' => simulatedAsyncRequest('https://www.yahoo.com', true),
             'microsoft' => simulatedAsyncRequest('https://www.microsoft.com', true),
         ];
 
-
         // We want 3 successful results, but only 2 are available.
-        $count = 4;
+        $count = 5;
         try {
             // Await 3 successful futures
             $successfulResults = awaitAnyN($count, $futures);
@@ -209,7 +209,7 @@ class TestingController extends ApiController
             // This example will succeed and return an array with 'Success 2' and 'Success 4'.
             $results = Future\awaitAnyN($count, createFutures());
             print_r($results);
-        } catch (\CompositeException $e) {
+        } catch (CompositeException $e) {
             echo "Could not complete $count tasks successfully.\n";
 
             // Use getReasons() to retrieve an array of all specific exceptions that occurred
@@ -224,7 +224,7 @@ class TestingController extends ApiController
                 echo " - [$key]: " . $reason->getMessage() . "\n";
             }
 
-        } catch (\MultiReasonException $e) {
+        } catch (MultiReasonException $e) {
             echo "Caught a MultiReasonException: " . $e->getMessage() . "\n";
 
             // Retrieve the array of individual exceptions

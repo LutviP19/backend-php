@@ -60,7 +60,7 @@ test('the http server is running', function () {
     $statusCode;
     co::run(function () use (&$statusCode) {
 
-        $client = new Client('127.0.0.1', 9501);
+        $client = new Client('127.0.0.1', 8080);
         $client->get('/health');
 
         $statusCode  = $client->getStatusCode();

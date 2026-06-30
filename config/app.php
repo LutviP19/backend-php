@@ -25,7 +25,7 @@ return [
         'env' => env('APP_ENV', 'production'),
         'debug' => (bool) env('APP_DEBUG', false),
         'logdir' => __DIR__ . '/../storage/logs/',
-        'ignore_port' => [8080, 9501, 8009], // OpenSwoole Server port
+        'ignore_port' => [8009, 8080, 9501, 9505], // OpenSwoole Server port
     ],
 
     'trusted_ips' => [
@@ -116,8 +116,8 @@ return [
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '5432'),
             'dbname' => env('DB_DATABASE', 'backend_php'),
-            'username' => env('DB_USERNAME', 'root'),
-            'password' => env('DB_PASSWORD', ''),
+            'username' => env('DB_USERNAME', 'admin'),
+            'password' => env('DB_PASSWORD', 'password123'),
             'charset' => env('DB_CHARSET', 'utf8'),
             'prefix' => '',
             'prefix_indexes' => true,
@@ -131,8 +131,8 @@ return [
             'host' => env('DB_HOST', 'localhost'),
             'port' => env('DB_PORT', '1433'),
             'dbname' => env('DB_DATABASE', 'backend_php'),
-            'username' => env('DB_USERNAME', 'root'),
-            'password' => env('DB_PASSWORD', ''),
+            'username' => env('DB_USERNAME', 'sa'),
+            'password' => env('DB_PASSWORD', 'password123'),
             'charset' => env('DB_CHARSET', 'utf8'),
             'prefix' => '',
             'prefix_indexes' => true,

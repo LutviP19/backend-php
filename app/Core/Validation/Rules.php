@@ -401,6 +401,9 @@ class Rules
      */
     protected function value($field)
     {
+        if(!isset($this->request[$field]))
+            return null;
+        
         if (\is_array($this->getRequest())) {
             return e($this->request[$field]);
         } else {

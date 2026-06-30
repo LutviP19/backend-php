@@ -19,7 +19,7 @@ use function Amp\async;
 use Amp\MultiReasonException;
 use Amp\CompositeException;
 use Amp\Http\Client\HttpClientBuilder;
-// use Amp\Http\Client\Request as clientRequest;
+use Amp\Http\Client\Request as clientRequest;
 
 // AI
 use App\Neuron\BpAgent;
@@ -186,8 +186,8 @@ class TestingController extends ApiController
 
         // Prepare an array of futures: 2 will succeed, 2 will fail
         $futures = [
-            'lutvi-code' => simulatedAsyncRequest('https://lutvi-code.blogger.com', true),
-            'seni-digital' => simulatedAsyncRequest('https://seni-digital.blogger.com', true),
+            'lutvi-code' => simulatedAsyncRequest('https://lutvi-code.blogspot.com', true),
+            'seni-digital' => simulatedAsyncRequest('https://seni-logika.blogspot.com', true),
             // 'google' => simulatedAsyncRequest('https://www.google.com', true),
             'bing' => simulatedAsyncRequest('https://www.bing.com', true),
             'yahoo' => simulatedAsyncRequest('https://www.yahoo.com', true),

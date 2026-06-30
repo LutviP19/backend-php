@@ -3,7 +3,7 @@
 namespace App\Controllers\Api\v1;
 
 use App\Controllers\Api\ApiController;
-use App\Core\Http\{Request, Response};
+// use App\Core\Http\{Request, Response};
 
 /*
 *   Client settings

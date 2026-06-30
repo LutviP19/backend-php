@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 // This is a RouteCollector for Api Server, separated file to dispact FastRoute dispacher
 use FastRoute\RouteCollector;
+use OpenSwoole\Core\Psr\Response;
 
 return \FastRoute\simpleDispatcher(function (RouteCollector $r) {
 
@@ -18,6 +19,10 @@ return \FastRoute\simpleDispatcher(function (RouteCollector $r) {
         );
 
         return (new Response($json))->withHeaders(["Content-Type" => "application/json"])->withStatus(200);
+
+        // // return new Response($json, 200, '', ['Content-Type' => 'application/json']);
+        // echo $json;
+        exit(0);
     });
 
     // Testing Call Controller

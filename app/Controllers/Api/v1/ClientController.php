@@ -20,6 +20,6 @@ class ClientController extends ApiController
 
     public function profile()
     {
-        echo "Client controller.";
+        echo "Client controller, with default client middleware(useMiddleware).";
     }
 }

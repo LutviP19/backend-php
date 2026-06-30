@@ -1,5 +1,5 @@
 <?php
-namespace App\Core\Database\Mappers;
+namespace App\Mappers;
 
 class InventoryMapper {
     private $db;

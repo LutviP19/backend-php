@@ -2,13 +2,17 @@
 
 namespace App\Core\Database;
 
+use Exception;
+use PDO;
+use PDOException;
+
 class BpQuery {
     private $pdo; // PDO instance for database connection
     protected $query; // Stores the SQL query to be executed
     private $stmt; // Holds the prepared statement
     private $params = []; // Array of parameters for query binding
     private $cache = []; // Caches results of executed queries
-    private $logFile = __DIR__ . "/../../storage/logs/query_log.log"; // File path for logging errors
+    private $logFile = __DIR__ . "/../../storage/logs/bp_query.log"; // File path for logging errors
     private $debugMode = false; // Debug mode flag
     private $adminEmails; // Stores emails for alert notifications
     private $adminIPs; // Stores IPs for admin-level access checks
@@ -160,7 +164,8 @@ class BpQuery {
         // }
 
         // if (in_array("email", $this->logTo)) {
-        //     $this->sendEmail($message); // Send error via email
+        //     // Send error via email - change sender & receiver
+        //     sendEmail('noreply@backenphp.local', 'admin@backenphp.local', 'BpQuery - Logs', $message);
         // }
     }
 

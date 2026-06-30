@@ -84,7 +84,7 @@ class TestingController extends ApiController
         try {
             if ($request->has('prompt') && $request->prompt !== '') {
 
-                // // Menggunakan Neuon AI
+                // // Menggunakan BpAgent(Neuon AI)
                 // $responseAi = BpAgent::make()->chat(
                 //     new UserMessage($request->prompt ?? "Hi, Who are you?")
                 // );

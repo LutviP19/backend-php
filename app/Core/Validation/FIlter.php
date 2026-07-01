@@ -34,6 +34,14 @@ class Filter
      */
     protected static $filter_methods = [];
 
+    /**
+     * Daftar nilai default yang dianggap sebagai boolean TRUE.
+     * Melindungi jika properti statis belum terdefinisi atau ter-overwrite.
+     *
+     * @var array<mixed>
+     */
+    protected static array $trues = ['1', 1, 'true', true, 'yes', 'on'];
+
 
     /**
      * Sanitize the input data.
@@ -358,9 +366,11 @@ class Filter
      *
      * @return bool
      */
-    public function filter_boolean($value, array $params = [])
+    public function filter_boolean(mixed $value, array $params = []): bool
     {
-        if (in_array($value, self::$trues, true)) {
+        $haystack = \is_array(self::$trues) ? self::$trues : ['1', 1, 'true', true, 'yes', 'on'];
+
+        if (\in_array($value, $haystack, true)) {
             return true;
         }
 

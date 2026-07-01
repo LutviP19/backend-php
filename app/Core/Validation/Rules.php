@@ -4,7 +4,6 @@ namespace App\Core\Validation;
 
 use Exception;
 use App\Core\Http\Request;
-use App\Core\Support\Session;
 use App\Core\Database\QueryBuilder;
 
 /**
@@ -102,18 +101,37 @@ class Rules
      */
     public function validateRequired($field)
     {
+        if (empty($field) || $field == '') {
+            $this->error($field, 'Field name is required for validation!');
+            return;
+        }
+
         if (\is_array($this->request)) {
-            if ((empty($field))) {
+            if (!isset($this->request[$field])) {
+                $this->error($field, 'is required!');
+                return;
+            }
+
+            $value = $this->request[$field];
+            if (\is_bool($value)) {
+                return;
+            }
+
+            if ($value === '' || $value === null) {
                 $this->error($field, 'is required!');
             }
-            if (! isset($this->request[$field]) || $this->request[$field] == '') {
-                $this->error($field, 'is required!');
-            }            
         } else {
-            if ((empty($field) || $field == '')) {
-                $this->error($field, 'is required!');
-            }
             if (!$this->getRequest()->has($field)) {
+                $this->error($field, 'is required!');
+                return;
+            }
+
+            $value = $this->getRequest()->get($field);
+            if (\is_bool($value)) {
+                return;
+            }
+
+            if ($value === '' || $value === null) {
                 $this->error($field, 'is required!');
             }
         }

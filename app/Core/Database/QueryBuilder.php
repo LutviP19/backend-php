@@ -33,7 +33,7 @@ class QueryBuilder
     /**
      * PDO connection.
      *
-     * @var PDO
+     * @var \PDO
      */
     private $pdo = null;
 
@@ -562,7 +562,7 @@ class QueryBuilder
     /**
      * Set current PDO connection.
      *
-     * @param PDO|null $pdo
+     * @param \PDO|null $pdo
      * @return void
      */
     protected function setPDO($pdo = null)
@@ -573,7 +573,7 @@ class QueryBuilder
     /**
      * Get current PDO connection.
      *
-     * @return PDO
+     * @return \PDO
      */
     protected function getPDO()
     {

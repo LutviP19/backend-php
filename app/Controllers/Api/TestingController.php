@@ -2,33 +2,28 @@
 
 namespace App\Controllers\Api;
 
-use App\Core\Http\{Request, Response};
-use App\Core\Message\FirebaseCloudMessaging;
-use App\Core\Validation\Validator;
-use App\Core\Database\QueryBuilder;
-// use App\Core\Database\Model;
-use App\Models\User;
-use App\Models\Role;
-use App\Models\Testing;
-use Exception;
-// Queue
 use Amp;
-use Amp\Future;
-use function Amp\Future\awaitAnyN;
-use function Amp\async;
-use Amp\MultiReasonException;
 use Amp\CompositeException;
+use Amp\Future;
 use Amp\Http\Client\HttpClientBuilder;
 use Amp\Http\Client\Request as clientRequest;
-
-// AI
+use Amp\MultiReasonException;
+use App\Core\Database\QueryBuilder;
+use App\Core\Http\{Request, Response};
+use App\Core\Message\FirebaseCloudMessaging;
+use App\Core\Support\Session;
+use App\Core\Validation\Validator;
+use App\Models\Role;
+use App\Models\Testing;
+use App\Models\User;
 use App\Neuron\BpAgent;
-use App\Neuron\Output\Person;
-use NeuronAI\Chat\Messages\UserMessage;
-// use NeuronAI\Observability\AgentMonitoring;
-
-// Ollama
 use App\Neuron\OllamaExec;
+use App\Neuron\Output\Person;
+use Exception;
+use NeuronAI\Chat\Messages\UserMessage;
+
+use function Amp\async;
+use function Amp\Future\awaitAnyN;
 
 class TestingController extends ApiController
 {
@@ -292,9 +287,14 @@ class TestingController extends ApiController
         $expiry = date('Y-m-d H:i:s', $expired_seconds);
         // dd($expiry, true);
 
-        $regId = \decryptData($regId);
+        $tableId = 'user_ulid';
+        // $userId = Session::get('uid') ?: '01JP9MA549R9NNVNGHTHJFTNXJ';
+        $userId = '01JP9MA549R9NNVNGHTHJFTNXJ';
+        $userType = 'userx';
+
+        // $regId = \decryptData($regId);
         // Insert / Update into tmp regis
-        $query = QueryBuilder::table('fcm_tokens')->execQuery('REPLACE INTO fcm_tokens (user_id, user_type, token, token_expiry) VALUES (?, ?, ?, ?)', [1, 'userx', $fcmToken, $expiry]);
+        $query = QueryBuilder::table('fcm_tokens')->execQuery('REPLACE INTO fcm_tokens (' . $tableId . ', user_type, token, token_expiry) VALUES (?, ?, ?, ?)', [$userId, $userType, $fcmToken, $expiry]);
 
         if (false === $query) {
             $errors = [
@@ -319,6 +319,7 @@ class TestingController extends ApiController
     public function updateFcmToken()
     {
         // \App\Core\Support\Log::debug($this->jsonData, 'TestingController.saveFcmToken.$this->jsonData');
+        // dd($this->jsonData['forceUpdate'], true);
 
         // Validate Input
         $validator = new Validator();
@@ -346,7 +347,7 @@ class TestingController extends ApiController
             'fcmToken' => 'trim',
             'userId'  => 'trim',
             'userType'  => 'trim',
-            'forceUpdate'  => 'trim',
+            'forceUpdate'  => 'boolean',
         ]);
         // Sanitize Input
         $payload = $this->filter->sanitize($this->jsonData, ['fcmToken', 'userId', 'userType', 'forceUpdate']);
@@ -355,21 +356,31 @@ class TestingController extends ApiController
         $userId = readJson('userId', $payload);
         $userType = readJson('userType', $payload);
         $forceUpdate = readJson('forceUpdate', $payload);
-        // dd($forceUpdate, true);
+        // dd($payload, true);
 
-        $userId = \decryptData($userId);
-        $table = $userType === 'customer' ? 'customers' : 'drivers';
-        $tableId = $userType === 'customer' ? 'customer_id' : 'driver_id';
+        // $userId = \decryptData($userId);
+        // $table = $userType === 'customer' ? 'customers' : 'drivers';
+        // $tableId = $userType === 'customer' ? 'customer_id' : 'driver_id';
+        $table = 'fcm_tokens';
+        $tableId = 'user_ulid';
+
+        // Check expiry token
+        $now = date('Y-m-d H:i:s');
+        $check_token_expiry = QueryBuilder::table($table)->execQuery('SELECT token, token_expiry FROM '.$table.' WHERE '.$tableId. ' = ? AND user_type = ? AND token_expiry <= ? ORDER BY created_at DESC LIMIT 1', [$userId, $userType, $now], false, true);
 
         // Update
-        if ($forceUpdate === 'true') {
+        if ($forceUpdate === 'true' || $check_token_expiry) {
+            // Generate new token
+            $firebaseCloudMessaging = new FirebaseCloudMessaging();
+            $fcmToken = $firebaseCloudMessaging->createAccessToken();
+
             // set expiration date
             $dayExpire = 3;
             $expired_seconds = time() + (60 * 60 * 24 * $dayExpire);
             $expiry = date('Y-m-d H:i:s', $expired_seconds);
-            // dd($expiry, true);
 
-            $query = QueryBuilder::table($table)->execQuery('UPDATE '.$table.' SET fcm_token = ?, fcm_token_expiry = ? WHERE '.$tableId.' = ?', [$fcmToken, $expiry, $userId]);
+            // $query = QueryBuilder::table($table)->execQuery('UPDATE '.$table.' SET fcm_token = ?, fcm_token_expiry = ? WHERE '.$tableId.' = ?', [$fcmToken, $expiry, $userId]);
+            $query = QueryBuilder::table($table)->execQuery('UPDATE '.$table.' SET token = ?, token_expiry = ? WHERE '.$tableId.' = ?', [$fcmToken, $expiry, $userId]);
 
             if (false === $query) {
                 $errors = [
@@ -384,8 +395,8 @@ class TestingController extends ApiController
             }
 
             // Update Session key
-            \Session::set('fcm_token', $fcmToken);
-            \Session::set('fcm_token_expiry', $expiry);
+            Session::set('fcm_token', $fcmToken);
+            Session::set('fcm_token_expiry', $expiry);
         }
 
 

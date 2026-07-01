@@ -11,7 +11,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/bootstrap.php';
 
 // use App\Core\Support\Config;
-use FastRoute\RouteCollector;
+// use FastRoute\RouteCollector;
 use OpenSwoole\Core\Psr\Middleware\StackHandler;
 use OpenSwoole\Core\Psr\Response;
 use Psr\Http\Message\ResponseInterface;
@@ -19,8 +19,8 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use OpenSwoole\HTTP\Server;
-use OpenSwoole\Http\Request as OpenSwooleRequest;
-use OpenSwoole\Http\Response as OpenSwooleResponse;
+// use OpenSwoole\Http\Request as OpenSwooleRequest;
+// use OpenSwoole\Http\Response as OpenSwooleResponse;
 
 // $table = new Swoole\Table(1024);
 // $table->column('name', Swoole\Table::TYPE_STRING, 64);

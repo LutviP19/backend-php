@@ -6,10 +6,13 @@
  * @package Backend-PHPs
  */
 
-use App\Core\Support\App;
-
 if (!defined('BASEPATH')) {
     define('BASEPATH', __DIR__ . '/../..');
+}
+
+
+if (!defined("BASEPATH_FFI")) {
+    define("BASEPATH_FFI", BASEPATH . "/bin/ffi");
 }
 
 /* ----------------------------- Default settings START -------------------------------- */
@@ -28,8 +31,10 @@ ini_set("error_append_string ", "</pre>");
 $dotenv = Dotenv\Dotenv::createUnsafeImmutable(__DIR__ . '/../..');
 $dotenv->load();
 
-//register configuration to the app.
-App::register('config', require __DIR__ . '/../../config/app.php');
+// Register the configuration to the application.
+use App\Core\Support\App;
+App::register('config', require_once BASEPATH . '/config/app.php');
+App::register("routing_external_api", require_once BASEPATH . "/routes/external-api.php");
 
 // Min php version
 bp_minimum_php_version(config('app.php_version'));
@@ -57,13 +62,13 @@ if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // Ignore
             $status = 500;
             $message = "An internal error occurred. Please try again later.";
             json_response([], $status, $message);
-            exit();
+            exit(0);
         } else {
             // Present a user-friendly view/response
             // http_response_code(500);
             // echo "<h1>An internal error occurred. Please try again later.</h1>";
             // // In a production environment, avoid echoing the raw message
-            include BASEPATH . "views/error/500.php";
+            include BASEPATH . "/views/error/500.php";
             die();
         }
     });

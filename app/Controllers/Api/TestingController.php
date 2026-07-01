@@ -70,9 +70,10 @@ class TestingController extends ApiController
         // Cache data
         $auth = Session::all();
         $cache = new \App\Core\Support\Cache();
+        $queryString = $queryString ?? get_device_fingerprint();
         $page = $page ?? 1;
         $limit = $limit ?? 10;
-        $cacheKeyId = "api-test:{$auth['uid']}:" . get_device_fingerprint() . ":p{$page}:l{$limit}";
+        $cacheKeyId = "api-test:{$auth['uid']}:" . $queryString . ":p{$page}:l{$limit}";
         // dd($cacheKeyId);
         $expiry = 300; // null:default | in seconds
         $output = $cache->remember($cacheKeyId, fn() => getData(), $expiry);

@@ -3,6 +3,11 @@
 define('APP_START', microtime(true));
 define('BASEPATH', __DIR__ . '/..');
 
+
+if (!defined("BASEPATH_FFI")) {
+    define("BASEPATH_FFI", BASEPATH . "/bin/ffi");
+}
+
 require_once __DIR__ . '/../vendor/autoload.php';
 
 /**
@@ -14,10 +19,12 @@ require_once __DIR__ . '/../vendor/autoload.php';
 $dotenv = Dotenv\Dotenv::createUnsafeImmutable(__DIR__.'/..');
 $dotenv->load();
 
-//register configuration to the app.
-\App\Core\Support\App::register('config', require __DIR__ . '/../config/app.php');
+// Register the configuration to the application.
+use App\Core\Support\App;
+App::register('config', require BASEPATH . '/config/app.php');
+App::register("routing_external_api", require BASEPATH . "/routes/external-api.php");
 
-date_default_timezone_set(env('APP_TIMEZONE', 'UTC'));
+date_default_timezone_set(env('APP_TIMEZONE', 'Asia/Jakarta'));
 
 //Starting the session will be the first we do.
 ini_set('session.save_handler', env('SESSION_DRIVER', 'file'));

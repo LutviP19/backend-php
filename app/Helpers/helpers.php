@@ -1158,3 +1158,64 @@ function readJson($key = null, $payload = null, $default = null)
 
     return $payload;
 }
+
+/**
+ * Mendapatkan versi singkat dari User Agent (Browser + OS + Version).
+ * @param bool $is_hash Jika true, mengembalikan MD5 hash (32 char).
+ * @return string
+ */
+function get_short_ua(bool $is_hash = false): string
+{
+    $ua = $_SERVER["HTTP_USER_AGENT"] ?? "Unknown";
+
+    // 1. Identifikasi Platform/OS & Versi
+    $os = "Unknown";
+    if (preg_match("/Windows NT ([\d\.]+)/i", (string) $ua, $m)) {
+        $os = "Win" . $m[1];
+    } elseif (preg_match("/Android ([\d\.]+)/i", (string) $ua, $m)) {
+        $os = "Android" . (int) $m[1];
+    } elseif (preg_match("/iPhone OS ([\d_]+)/i", (string) $ua, $m)) {
+        $os = "iOS" . (int) str_replace("_", "", $m[1]);
+    } elseif (preg_match("/Mac OS X ([\d_]+)/i", (string) $ua, $m)) {
+        $os = "MacOS" . (int) str_replace("_", "", $m[1]);
+    } elseif (stripos((string) $ua, "linux") !== false) {
+        $os = "Linux";
+    }
+
+    // 2. Identifikasi Browser & Versi Mayor
+    $browser = "Unknown";
+    if (preg_match("/(Edg|Edge)\/([\d\.]+)/i", (string) $ua, $m)) {
+        $browser = "Edge" . (int) $m[2];
+    } elseif (preg_match("/OPR\/([\d\.]+)/i", (string) $ua, $m)) {
+        $browser = "Opera" . (int) $m[1];
+    } elseif (preg_match("/Chrome\/([\d\.]+)/i", (string) $ua, $m)) {
+        $browser = "Chrome" . (int) $m[1];
+    } elseif (preg_match("/Firefox\/([\d\.]+)/i", (string) $ua, $m)) {
+        $browser = "Firefox" . (int) $m[1];
+    } elseif (preg_match("/Version\/([\d\.]+).*Safari/i", (string) $ua, $m)) {
+        $browser = "Safari" . (int) $m[1];
+    }
+
+    $shortUa = $os . "_" . $browser;
+
+    // Jika gagal deteksi, gunakan string asli yang dibersihkan sedikit
+    if ($shortUa === "Unknown_Unknown") {
+        $shortUa = substr((string) preg_replace("/[^a-zA-Z0-0]/", "", (string) $ua), 0, 20);
+    }
+
+    return $is_hash ? md5($shortUa) : $shortUa;
+}
+
+
+/**
+ * Mendapatkan sidik jari perangkat yang stabil.
+ * @param bool $is_hash Jika true, mengembalikan MD5 hash (32 char).
+ * @return string
+ */
+function get_device_fingerprint(bool $is_hash = true): string
+{
+    // Gabungkan Platform + UA + IP (Opsional: tambahkan IP agar lebih ketat)
+    $fingerprint = get_short_ua() . "_" . clientIP();
+
+    return $is_hash ? md5($fingerprint) : $fingerprint;
+}

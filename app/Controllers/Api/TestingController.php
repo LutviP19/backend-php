@@ -50,17 +50,32 @@ class TestingController extends ApiController
         $this->validateJwt();
 
         // Testing varian of models
-        $users = QueryBuilder::table('users')->select(['*'])->get();
-        $roles = QueryBuilder::table('roles')->select(['id', 'slug', 'name'])->get();
-        $role = Role::getRoleById(3);
-        $userUlid = User::getUlid(3);
+        function getData() {
+            $users = QueryBuilder::table('users')->select(['*'])->get();
+            $roles = QueryBuilder::table('roles')->select(['id', 'slug', 'name'])->get();
+            $role = Role::getRoleById(3);
+            $userUlid = User::getUlid(3);
+            // dd($role, true);
 
-        // Empoyees DB - Testing Cross DB Connection
-        $employees = Testing::getAllEmployees();
-        // dd($employees);
+            // Empoyees DB - Testing Cross DB Connection
+            $employees = Testing::getAllEmployees();
+            // dd($employees);
 
-        // dd($role, true);
-        $output = ['employees' => $employees, 'users' => $users, 'roles' => $roles, 'role' => $role, 'userUlid' => $userUlid];
+            return ['employees' => $employees, 'users' => $users, 'roles' => $roles, 'role' => $role, 'userUlid' => $userUlid];
+        }
+        
+        // $output = getData();
+        // dd($output, true);
+
+        // Cache data
+        $auth = Session::all();
+        $cache = new \App\Core\Support\Cache();
+        $page = $page ?? 1;
+        $limit = $limit ?? 10;
+        $cacheKeyId = "api-test:{$auth['uid']}:" . get_device_fingerprint() . ":p{$page}:l{$limit}";
+        // dd($cacheKeyId);
+        $expiry = 300; // null:default | in seconds
+        $output = $cache->remember($cacheKeyId, fn() => getData(), $expiry);
         // dd($output, true);
 
         // \App\Core\Support\Log::debug($output, 'TestingController.index.request');
@@ -176,6 +191,7 @@ class TestingController extends ApiController
                 'future2' => Future::complete('Success 2'),
                 'future3' => Future::error(new Exception('Reason 3')),
                 'future4' => Future::complete('Success 4'),
+                'future5' => Future::complete('Success 5'),
             ];
         }
 

@@ -179,6 +179,8 @@ class MiddlewareSetup implements MiddlewareInterface
                         ];
             }
 
+            var_dump('MiddlewareSetup failed. Invalid headers!');
+
             return new Response(\json_encode($json), $statusCode, 'Missing credentials', ['Content-Type' => 'application/json']);
         }
 
@@ -190,6 +192,8 @@ class MiddlewareSetup implements MiddlewareInterface
                         'statusCode' => $statusCode,
                         'message' => 'Invalid api token!',
                     ];
+
+            var_dump('MiddlewareSetup failed. Invalid API Token!');
 
             return new Response(\json_encode($json), $statusCode, '', ['Content-Type' => 'application/json']);
         }
@@ -210,13 +214,15 @@ class MiddlewareSetup implements MiddlewareInterface
             }
 
             if (false === $status) {
+                var_dump('MiddlewareSetup failed. Invalid Client Token!');
+
                 return new Response(\json_encode($json), $statusCode, 'Missing credentials', ['Content-Type' => 'application/json']);
             }
 
         }
 
         $response = $handler->handle($request);
-        var_dump('Middleware end');
+        var_dump('MiddlewareSetup passed');
 
         return $response;
     }

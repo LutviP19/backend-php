@@ -524,7 +524,7 @@ function setupRedisConnection()
 
         // 3. TES KONEKSI NYATA: Karena Predis bersifat 'lazy', 
         // kita panggil ping() di dalam try-catch untuk memastikan servernya hidup.
-        $redis->ping();
+        // $redis->ping();
 
         return $redis;
 

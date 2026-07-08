@@ -8,6 +8,11 @@ if (!defined("BASEPATH_FFI")) {
     define("BASEPATH_FFI", BASEPATH . "/bin/ffi");
 }
 
+// only level Deprecated & User Deprecated
+// error_reporting(E_DEPRECATED | E_USER_DEPRECATED);
+error_reporting(E_ALL);
+ini_set("display_errors", 1);
+
 require_once __DIR__ . '/../vendor/autoload.php';
 
 /**
@@ -27,16 +32,30 @@ App::register("routing_external_api", require BASEPATH . "/routes/external-api.p
 date_default_timezone_set(env('APP_TIMEZONE', 'Asia/Jakarta'));
 
 //Starting the session will be the first we do.
-ini_set('session.save_handler', env('SESSION_DRIVER', 'file'));
+ini_set('session.save_handler', env('SESSION_DRIVER', 'files'));
 if (env('SESSION_DRIVER') === "redis") {
-    ini_set('session.save_path', "tcp://" . env('REDIS_HOST') . ":" . env('REDIS_PORT') . "?auth" . env('REDIS_PASSWORD'));
-    ini_set('session.gc_maxlifetime', (env('SESSION_LIFETIME', 120) * 60)); // Set default to 2 hours
+    // ini_set('session.save_path', "tcp://" . env('REDIS_HOST') . ":" . env('REDIS_PORT') . "?auth" . env('REDIS_PASSWORD'));
+    // ini_set('session.gc_maxlifetime', (env('SESSION_LIFETIME', 120) * 60)); // Set default to 2 hours
+
+    $redisHost = config("redis.default.host", "127.0.0.1");
+    $redisPort = config("redis.default.port", 6379);
+    $redisPass = config("redis.default.password");
+    $lifetime  = (int) config("session.lifetime", 120) * 60;
+
+
+    $redisPath = "tcp://{$redisHost}:{$redisPort}";
+    if (!is_null($redisPass) && $redisPass !== '') {
+        $redisPath .= "?auth=" . urlencode((string)$redisPass);
+    }
+
+    ini_set("session.save_path", $redisPath);
+    ini_set("session.gc_maxlifetime", $lifetime);
 } else {
-    ini_set('session.save_path', __DIR__ . '/../storage/framework/sessions');
+    ini_set('session.save_path', BASEPATH . '/storage/framework/sessions');
 }
 
-// Set a custom session name
-session_name('BACKENDPHPSESSID');
+// // Set a custom session name
+// session_name('SVCBACKENDPHPSESSID');
 
 // Make sure use_strict_mode is enabled.
 // use_strict_mode is mandatory for security reasons.

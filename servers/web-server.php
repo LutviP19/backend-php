@@ -15,7 +15,7 @@ require_once __DIR__ . '/bootstrap.php';
 // Set a custom session name
 ini_set('session.use_strict_mode', 0);
 session_name('WEBBACKENDPHPSESSID');
-// ini_set('session.use_strict_mode', 1);
+ini_set('session.use_strict_mode', 1);
 
 // Set Session
 $sessionName = session_name();
@@ -24,20 +24,20 @@ $sessionId = '';
 
 use OpenSwoole\Http\Request as OpenSwooleRequest;
 use OpenSwoole\Http\Response as OpenSwooleResponse;
-use OpenSwoole\Core\Psr\Middleware\StackHandler;
-use OpenSwoole\Core\Psr\Response as PsrResponse;
+// use OpenSwoole\Core\Psr\Middleware\StackHandler;
+// use OpenSwoole\Core\Psr\Response as PsrResponse;
 use OpenSwoole\HTTP\Server;
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
-use Psr\Http\Server\MiddlewareInterface;
-use Psr\Http\Server\RequestHandlerInterface;
+// use Psr\Http\Message\ResponseInterface;
+// use Psr\Http\Message\ServerRequestInterface;
+// use Psr\Http\Server\MiddlewareInterface;
+// use Psr\Http\Server\RequestHandlerInterface;
 
 
-use App\Core\Http\Request;
-use App\Core\Http\Router;
 use App\Core\Support\App;
-use App\Core\Support\Session;
-use App\Core\Validation\MessageBag;
+// use App\Core\Http\Request;
+// use App\Core\Http\Router;
+// use App\Core\Support\Session;
+// use App\Core\Validation\MessageBag;
 
 $serverip = "127.0.0.1";
 $serverport = 8009;

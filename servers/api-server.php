@@ -10,6 +10,11 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/bootstrap.php';
 
+// Set a custom session name
+ini_set('session.use_strict_mode', 0);
+session_name('APIBACKENDPHPSESSID');
+ini_set('session.use_strict_mode', 1);
+
 // use App\Core\Support\Config;
 // use FastRoute\RouteCollector;
 use OpenSwoole\Core\Psr\Middleware\StackHandler;

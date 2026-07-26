@@ -1,87 +1,86 @@
 #!/usr/bin/env php
 <?php 
+
 /**
  * @author LutviP19 <lutvip19@gmail.com>
- * generator
- * Script Generator Model Pro
- * Usage: ./generator [Model Name] [Destination Folder]
- * Contoh: ./generator DashboardModel App/Models
+ * Generator Tool - Backend PHP
+ * Usage: ./generator [Name] [Destination Folder]
+ * Examples:
+ *   ./generator DashboardModel
+ *   ./generator AdminSettingsModel App/Models/Admin
+ *   ./generator AdminSettingsController app/Controllers/Admin
+ *   ./generator UserApiController App/Controllers/Api
+ *   ./generator detail_pesanan views/order
  */
+
+declare(strict_types=1);
 
 include_once './stubs/Stubs.php';
 
-
-// 1. Capture Input
-$inputName = $argv[1] ?? null;
-$folderInput = $argv[2] ?? null; // Default folder if not filled in
-
-// If there is no name, enter Interactive Mode
-if (!$inputName) {
-    echo "\033[0;33m❓ Nama file tidak ditentukan. Masukkan nama: \033[0m";
-    $handle = fopen("php://stdin", "r");
-    $name = trim(fgets($handle));
-    if (empty($name)) die("❌ Proses dibatalkan.\n");
+// Standardize Autoload / Stubs Class Loading
+$stubsPath = __DIR__ . '/stubs/Stubs.php';
+if (file_exists($stubsPath)) {
+    require_once $stubsPath;
+} elseif (file_exists(__DIR__ . '/app/Core/Support/Stubs.php')) {
+    require_once __DIR__ . '/app/Core/Support/Stubs.php';
+} else {
+    fwrite(STDERR, "\033[0;31m❌ Error: Stubs class file not found.\033[0m" . PHP_EOL);
+    exit(1);
 }
 
-// 2. Class and Folder Name Format
-$targetDir = rtrim(trim($folderInput), '/');
-$newClassName = ucfirst(trim($inputName));
 
+// 1. Capture Input & Interactive Fallback
+$inputName   = $argv[1] ?? null;
+$folderInput = $argv[2] ?? null;
 
-// --- GENERATE STUBS --- 
-// Normalization for type checking
+if (!$inputName) {
+    fwrite(STDOUT, "\033[0;33m❓ Nama file/class tidak ditentukan. Masukkan nama: \033[0m");
+    $handle = fopen("php://stdin", "r");
+    $inputName = trim((string) fgets($handle));
+    fclose($handle);
+
+    if (empty($inputName)) {
+        fwrite(STDOUT, "\033[0;31m❌ Proses dibatalkan.\033[0m" . PHP_EOL);
+        exit(1);
+    }
+}
+
+// 2. Determine File Type & Process Stub Generation
 $lowerInput = strtolower($inputName);
 
+// --- A. MODEL GENERATOR ---
 if (str_contains($lowerInput, 'model')) {
-    // ./generator DashboardModel
-    // ./generator ProductModel
-    // ./generator AdminSettingsModel App/Models/Admin
-
     $stubPath  = './stubs/Models/sample.php';
-    // Fallback ke Default targetDir
-    $targetDir = $targetDir ?: './App/Models';
-    // die(var_dump($targetDir));
-
-    // formatClassName
-    $newClassName = Stubs::formatClassName($inputName, "Model");
+    $targetDir = $folderInput ?: 'app/Models';
     
-    // echo Stubs::generateModelFromStub($newClassName, $stubPath, $targetDir);
+    $newClassName = Stubs::formatClassName($inputName, 'Model');
     echo Stubs::generate($newClassName, $stubPath, $targetDir);
 }
+
+// --- B. CONTROLLER GENERATOR (Web & API) ---
 elseif (str_contains($lowerInput, 'controller')) {
-    // ./generator DashboardController
-    // ./generator ProductController
-    // ./generator AdminSettingsController App/Controllers/Admin
-
-    
-    
-    // If Api Controller './App/Controllers/Api'
+    // API Controller Specifics
     if (str_contains($lowerInput, 'api')) {
-        // formatClassName
-        $newClassName = Stubs::formatClassName($inputName, "ApiController");
-        $targetDir = $targetDir ?: './App/Controllers/Api';
         $stubPath  = './stubs/Controllers/sample-api.php';
+        $targetDir = $folderInput ?: 'app/Controllers/Api';
+        $newClassName = Stubs::formatClassName($inputName, 'ApiController');
     } else {
-
+        // Standard Web Controller
         $stubPath  = './stubs/Controllers/sample.php';
-        // Fallback ke Default targetDir
-        $targetDir = $targetDir ?: './App/Controllers';
-
-        // formatClassName
-        $newClassName = Stubs::formatClassName($inputName, "Controller");
+        $targetDir = $folderInput ?: 'app/Controllers';
+        $newClassName = Stubs::formatClassName($inputName, 'Controller');
     }
-    // var_dump($targetDir); die();
 
     echo Stubs::generate($newClassName, $stubPath, $targetDir);
 }
-else {
-    //./generator detail_pesanan views/order
 
-    // view no special suffix
-    $stubPath = './stubs/Views/sample.php';
-    $targetDir = $targetDir ?: './views';
+// --- C. VIEW GENERATOR ---
+else {
+    $stubPath  = './stubs/Views/sample.php';
+    $targetDir = $folderInput ?: 'views';
 
     $viewName = Stubs::formatViewName($inputName);
     echo Stubs::generateView($viewName, $stubPath, $targetDir);
 }
-exit;
+
+exit(0);

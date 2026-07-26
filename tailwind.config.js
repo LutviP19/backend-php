@@ -13,8 +13,17 @@ module.exports = {
     },
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        'dark-navy-header': 'rgb(10 17 34)',
+        app: {
+          bg: 'rgb(var(--color-bg) / <alpha-value>)',
+          card: 'rgb(var(--color-card) / <alpha-value>)',
+          text: 'rgb(var(--color-text) / <alpha-value>)',
+          border: 'rgb(var(--color-border) / <alpha-value>)',
+        }
+      }
+    }
   },
   plugins: [],
 }
-

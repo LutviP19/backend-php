@@ -7,17 +7,10 @@
     <script src="<?= assets('js/htmx.min.js') ?>"></script>    
     <script defer src="<?= assets('/js/persist@3.min.js') ?>"></script>
     <script defer src="<?= assets('/js/alpinejs3.min.js') ?>"></script>
-    <!-- <script src="<?= assets('/js/cdn-tailwindcss.js') ?>"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class', 
-        }
-    </script> -->
 
     <link rel="stylesheet" href="<?= assets('/assets/css/app.css') ?>">
-
-    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"> -->
     <link rel="stylesheet" href="<?= assets('/assets/fontawesome-web/css/all.min.css') ?>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
@@ -56,7 +49,10 @@
             <div class="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 rounded-2xl text-white shadow-lg shadow-indigo-200 dark:shadow-none mb-6">
                 <i class="fas fa-leaf text-2xl"></i>
             </div>
-            <h2 class="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-2">SmartStock AI</h2>
+            <h2 class="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-2">
+                Smart<span class="text-red-600 dark:text-amber-400">Stock</span> 
+                <span class="text-indigo-600 dark:text-indigo-400">AI</span>
+            </h2>
             <p class="text-slate-500 dark:text-slate-400 font-medium italic">Sistem Koperasi AgriSmart</p>
         </div>
 

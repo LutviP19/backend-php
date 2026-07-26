@@ -1,3 +1,168 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+    :root {
+        --color-bg: 255 255 255;       /* White */
+        --color-card: 248 250 252;     /* Slate-50 */
+        --color-text: 15 23 42;        /* Slate-900 */
+        --color-border: 226 232 240;   /* Slate-200 */
+    }
+
+    .dark {
+        --color-bg: 15 23 42;          /* Slate-900 */
+        --color-card: 30 41 59;        /* Slate-800 */
+        --color-text: 248 250 252;     /* Slate-50 */
+        --color-border: 51 65 85;      /* Slate-700 */
+    }
+}
+
+body { font-family: 'Inter', sans-serif; }
+[x-cloak] { display: none !important; }
+/* Pengaturan Font Global Responsif */
+html {
+    /* Base font 16px di desktop, akan mengecil secara halus di mobile */
+    font-size: 16px;
+}
+
+@media (max-width: 768px) {
+    html {
+        font-size: 14px; /* Menurunkan base font agar semua elemen mengecil otomatis */
+    }
+    
+    /* Membatasi ukuran teks yang terlalu besar di mobile */
+    h1 { font-size: 1.5rem !important; }
+    h2 { font-size: 1.25rem !important; }
+    h3 { font-size: 1.1rem !important; }
+    
+    /* Mengoptimalkan padding tabel di mobile agar tidak sesak */
+    td, th {
+        padding: 12px 8px !important;
+        font-size: 12px !important;
+    }
+
+    /* Memaksa elemen italic/kecil tidak terlalu dominan */
+    .text-sm {
+        font-size: 0.8rem !important;
+    }
+}
+
+/* Utilitas tambahan untuk teks yang sangat panjang agar tidak merusak layout */
+.truncate-mobile {
+    @apply truncate;
+    max-width: 150px;
+}
+
+/* Container loading bar */
+#loading-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    z-index: 9999;
+    background-color: #4f46e5; /* warna dasar */
+    display: none; /* sembunyi secara default */
+}
+
+/* Garis yang bergerak */
+#loading-bar::before {
+    content: "";
+    display: block;
+    height: 100%;
+    width: 0%;
+    background-color: #4f46e5; /* warna indigo-600 */
+    box-shadow: 0 0 10px #6366f1;
+    transition: width 0.4s ease;
+}
+
+/* Tampilkan dan jalankan saat HTMX sedang request */
+.htmx-request#loading-bar,
+.htmx-request #loading-bar {
+    display: block;
+}
+
+.htmx-request#loading-bar::before,
+.htmx-request #loading-bar::before {
+    animation: progress-animation 2s infinite ease-in-out;
+}
+
+@keyframes progress-animation {
+    0% { width: 0%; }
+    50% { width: 70%; }
+    100% { width: 100%; }
+}
+
+.htmx-indicator {
+    opacity: 0;
+    transition: opacity 200ms ease-in;
+}
+.htmx-request.htmx-indicator, .htmx-request .htmx-indicator {
+    opacity: 1;
+}
+/* Paksa transisi untuk properti margin-left */
+.transition-margin {
+    transition-property: margin-left, width;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 300ms;
+}
+
+@keyframes pulse-bg {
+    0% { background-color: #f1f5f9; }
+    50% { background-color: #e2e8f0; }
+    100% { background-color: #f1f5f9; }
+}
+.skeleton-row td div {
+    height: 20px;
+    border-radius: 4px;
+    animation: pulse-bg 1.5s infinite ease-in-out;
+}
+/* Sembunyikan skeleton secara default */
+#skeleton-loader { display: none; }
+/* Tampilkan saat HTMX sedang proses */
+.htmx-request #skeleton-loader { display: table-row-group; }
+/* Sembunyikan data asli saat HTMX sedang proses */
+.htmx-request #inventory-data { display: none; }
+
+/* Animasi highlight kuning ke transparan */
+@keyframes highlightFade {
+    0% { background-color: #fef08a; } /* Warna kuning indigo-50 atau yellow-200 */
+    100% { background-color: transparent; }
+}
+
+.row-updated {
+    animation: highlightFade 2s ease-out;
+}
+
+/* Transisi halus untuk konten yang baru masuk */
+.fade-in-content {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.htmx-swapping {
+    opacity: 0;
+    transform: scale(0.95);
+    transition: all 0.3s ease-out;
+}
+
+#inventory-table-body.htmx-request {
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
+}
+
+/* Efek saat data sedang dimuat */
+.htmx-adding {
+    opacity: 0;
+}
+
+#activity-table-body.htmx-request {
+    opacity: 0.5;
+    filter: blur(1px);
+    transition: all 200ms ease-in;
+}

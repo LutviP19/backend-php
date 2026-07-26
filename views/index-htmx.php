@@ -1,29 +1,17 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" x-data="{ isDark: $persist(false) }" :class="isDark ? 'dark' : ''">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="<?= token() ?>">
     <title>SmartStock AI - Koperasi Desa</title>
-    
-    <!-- <script src="https://cdn.tailwindcss.com"></script>    
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script> -->
 
     <script src="<?= assets('js/htmx.min.js') ?>"></script> 
+    <script defer src="<?= assets('/js/persist@3.min.js') ?>"></script>
     <script defer src="<?= assets('/js/alpinejs3.min.js') ?>"></script>
-    <!-- <script src="<?= assets('/js/cdn-tailwindcss.js') ?>"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class', 
-        }
-    </script> -->
-
-    <link rel="stylesheet" href="<?= assets('/assets/css/app.css') ?>">
-
-    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"> -->
-    <link rel="stylesheet" href="<?= assets('/assets/fontawesome-web/css/all.min.css') ?>">
     
+    <link rel="stylesheet" href="<?= assets('/assets/css/app.css') ?>">
+    <link rel="stylesheet" href="<?= assets('/assets/fontawesome-web/css/all.min.css') ?>">    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">    
 
@@ -34,7 +22,7 @@
                 map: {
                     'dashboard': 'Dashboard',
                     'inventory': 'Pupuk & Benih',
-                    'assets': 'Alat Berat',
+                    'assets': 'Alat Berat & Drone',
                     'rental': 'Sewa Alat Berat',
                     'rental-drone': 'Sewa Drone'
                 },
@@ -45,160 +33,6 @@
             })
         });
     </script>
-
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        [x-cloak] { display: none !important; }
-        /* Pengaturan Font Global Responsif */
-        html {
-            /* Base font 16px di desktop, akan mengecil secara halus di mobile */
-            font-size: 16px;
-        }
-
-        @media (max-width: 768px) {
-            html {
-                font-size: 14px; /* Menurunkan base font agar semua elemen mengecil otomatis */
-            }
-            
-            /* Membatasi ukuran teks yang terlalu besar di mobile */
-            h1 { font-size: 1.5rem !important; }
-            h2 { font-size: 1.25rem !important; }
-            h3 { font-size: 1.1rem !important; }
-            
-            /* Mengoptimalkan padding tabel di mobile agar tidak sesak */
-            td, th {
-                padding: 12px 8px !important;
-                font-size: 12px !important;
-            }
-
-            /* Memaksa elemen italic/kecil tidak terlalu dominan */
-            .text-sm {
-                font-size: 0.8rem !important;
-            }
-        }
-
-        /* Utilitas tambahan untuk teks yang sangat panjang agar tidak merusak layout */
-        .truncate-mobile {
-            @apply truncate;
-            max-width: 150px;
-        }
-
-        /* Container loading bar */
-        #loading-bar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 3px;
-            z-index: 9999;
-            background-color: #4f46e5; /* warna dasar */
-            display: none; /* sembunyi secara default */
-        }
-
-        /* Garis yang bergerak */
-        #loading-bar::before {
-            content: "";
-            display: block;
-            height: 100%;
-            width: 0%;
-            background-color: #4f46e5; /* warna indigo-600 */
-            box-shadow: 0 0 10px #6366f1;
-            transition: width 0.4s ease;
-        }
-
-        /* Tampilkan dan jalankan saat HTMX sedang request */
-        .htmx-request#loading-bar,
-        .htmx-request #loading-bar {
-            display: block;
-        }
-
-        .htmx-request#loading-bar::before,
-        .htmx-request #loading-bar::before {
-            animation: progress-animation 2s infinite ease-in-out;
-        }
-
-        @keyframes progress-animation {
-            0% { width: 0%; }
-            50% { width: 70%; }
-            100% { width: 100%; }
-        }
-
-        .htmx-indicator {
-            opacity: 0;
-            transition: opacity 200ms ease-in;
-        }
-        .htmx-request.htmx-indicator, .htmx-request .htmx-indicator {
-            opacity: 1;
-        }
-    </style>
-    <style>
-        /* Paksa transisi untuk properti margin-left */
-        .transition-margin {
-            transition-property: margin-left, width;
-            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-            transition-duration: 300ms;
-        }
-    </style>
-    <style>
-        @keyframes pulse-bg {
-            0% { background-color: #f1f5f9; }
-            50% { background-color: #e2e8f0; }
-            100% { background-color: #f1f5f9; }
-        }
-        .skeleton-row td div {
-            height: 20px;
-            border-radius: 4px;
-            animation: pulse-bg 1.5s infinite ease-in-out;
-        }
-        /* Sembunyikan skeleton secara default */
-        #skeleton-loader { display: none; }
-        /* Tampilkan saat HTMX sedang proses */
-        .htmx-request #skeleton-loader { display: table-row-group; }
-        /* Sembunyikan data asli saat HTMX sedang proses */
-        .htmx-request #inventory-data { display: none; }
-
-        /* Animasi highlight kuning ke transparan */
-        @keyframes highlightFade {
-            0% { background-color: #fef08a; } /* Warna kuning indigo-50 atau yellow-200 */
-            100% { background-color: transparent; }
-        }
-
-        .row-updated {
-            animation: highlightFade 2s ease-out;
-        }
-
-        /* Transisi halus untuk konten yang baru masuk */
-        .fade-in-content {
-            animation: fadeIn 0.5s ease-in;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .htmx-swapping {
-            opacity: 0;
-            transform: scale(0.95);
-            transition: all 0.3s ease-out;
-        }
-        
-        #inventory-table-body.htmx-request {
-            opacity: 0.5;
-            transition: opacity 0.2s ease;
-        }
-
-        /* Efek saat data sedang dimuat */
-        .htmx-adding {
-            opacity: 0;
-        }
-
-        #activity-table-body.htmx-request {
-            opacity: 0.5;
-            filter: blur(1px);
-            transition: all 200ms ease-in;
-        }
-    </style>
 </head>
 
 <body class="bg-slate-50 font-[Inter] overflow-x-hidden">
@@ -267,7 +101,7 @@
                         <i class="fas fa-cube text-white"></i>
                     </div>
                     <span x-show="sidebarOpen || (window.innerWidth < 768)" x-transition class="font-bold text-white tracking-tight">
-                        SmartStock <span class="text-indigo-400">AI</span>
+                        Smart<span class="text-amber-400">Stock</span> <span class="text-indigo-400">AI</span>
                     </span>
                 </div>
             </div>
@@ -308,7 +142,7 @@
                         :class="isActive('htmx/assets') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'"
                         class="w-full flex items-center p-3 rounded-xl transition">
                     <i class="fas fa-tractor w-6 text-center"></i>
-                    <span x-show="sidebarOpen || (window.innerWidth < 768)" class="ml-3 font-medium">Alat Berat</span>
+                    <span x-show="sidebarOpen || (window.innerWidth < 768)" class="ml-3 font-medium">Alat Berat & Drone</span>
                 </button>
 
                 <div class="pt-4 pb-2 px-3">
@@ -333,7 +167,7 @@
                         hx-push-url="true"
                         :class="isActive('htmx/rental-drone') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'"
                         class="w-full flex items-center p-3 rounded-xl transition">
-                    <i class="fas fa-tractor w-6 text-center"></i>
+                    <i class="fas fa-plane-up w-6 text-center"></i>
                     <span x-show="sidebarOpen || (window.innerWidth < 768)" class="ml-3 font-medium">Sewa Drone</span>
                 </button>
             </nav>
@@ -352,48 +186,171 @@
         </button>
 
         <div :class="sidebarOpen ? 'md:ml-64' : 'md:ml-20'" class="transition-margin min-h-screen flex flex-col">
-            <header class="h-20 bg-white/80 backdrop-blur-md border-b sticky top-0 px-8 flex items-center justify-between z-40 ml-[30px] md:ml-0 transition-all duration-300">
+            <header class="h-20 bg-white dark:bg-dark-navy-header backdrop-blur-md border-b border-slate-200 dark:border-slate-800/60 top-0 px-8 flex items-center justify-between z-40 ml-[30px] md:ml-0 transition-colors duration-300">
+                <!-- Search Bar -->
                 <div class="relative w-96 group" x-data="{ showResults: true }" @click.away="showResults = false">
-                    <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500"></i>
                     <input type="text" 
-                           name="search"
-                           @focus="showResults = true"
-                           placeholder="Cari pupuk, petani, atau alat..." 
-                           hx-post="<?= url('/backend/search') ?>" 
-                           hx-trigger="keyup changed delay:500ms" 
-                           hx-target="#search-results"
-                           class="w-full bg-slate-100 border-none rounded-2xl py-2.5 pl-12 pr-4 focus:ring-2 focus:ring-indigo-500 transition-all">
+                        name="search"
+                        @focus="showResults = true"
+                        placeholder="Cari pupuk, petani, atau alat..." 
+                        hx-post="<?= url('/backend/search') ?>" 
+                        hx-trigger="keyup changed delay:500ms" 
+                        hx-target="#search-results"
+                        class="w-full bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 border-none rounded-2xl py-2.5 pl-12 pr-4 focus:ring-2 focus:ring-indigo-500 transition-all">
                     
-                   <div id="search-results" 
-                         x-show="showResults" 
-                         x-transition
-                         class="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden z-50">
+                <div id="search-results" 
+                        x-show="showResults" 
+                        x-transition
+                        class="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden z-50">
                     </div>
                 </div>
 
-                <div class="flex items-center gap-2 md:gap-5 text-sm font-medium">
-    
-                    <button class="relative w-10 h-10 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-all shrink-0">
-                        <i class="far fa-bell text-lg"></i>
-                        <span class="absolute top-2 right-2 w-4 h-4 bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white">
-                            3
-                        </span>
-                    </button>
+                <!-- User Action Controls -->
+                <div class="flex items-center gap-2 md:gap-4 text-sm font-medium">
 
-                    <div class="hidden md:block w-px h-6 bg-slate-200"></div>
+                    <!-- TOGGLE DARK MODE BUTTON (Alpine.js) -->
+                    <div>
+                        <button @click="isDark = !isDark" 
+                                type="button"
+                                title="Ganti Mode Tampilan"
+                                class="w-10 h-10 flex items-center justify-center text-slate-400 dark:text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all shrink-0">
+                            <!-- Icon Bulan (Tampil saat Light Mode) -->
+                            <i x-show="!isDark" class="far fa-moon text-lg"></i>
+                            <!-- Icon Matahari (Tampil saat Dark Mode) -->
+                            <i x-show="isDark" x-cloak class="far fa-sun text-lg text-amber-400"></i>
+                        </button>
+                    </div>
 
-                    <div class="flex items-center gap-3 md:gap-4">
-                        <div class="text-right hidden lg:block">
-                            <p class="text-slate-900 leading-tight font-bold">Admin Koperasi</p>
-                            <p class="text-indigo-500 text-[9px] font-black tracking-widest uppercase">Premium Partner</p>
-                        </div>
-                        
-                        <div class="relative shrink-0">
-                            <img src="https://ui-avatars.com/api/?name=AK&background=6366f1&color=fff" 
-                                 class="w-10 h-10 rounded-full border-2 border-indigo-100 object-cover aspect-square shadow-sm">
-                            <div class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full shadow-sm animate-pulse"></div>
+                    <!-- 1. Dropdown Notifikasi -->
+                    <div class="relative" x-data="{ openNotifications: false }" @click.away="openNotifications = false">
+                        <button @click="openNotifications = !openNotifications"
+                                class="relative w-10 h-10 flex items-center justify-center text-slate-400 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 rounded-full transition-all shrink-0">
+                            <i class="far fa-bell text-lg"></i>
+                            <span class="absolute top-2 right-2 w-4 h-4 bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white dark:border-slate-900">
+                                3
+                            </span>
+                        </button>
+
+                        <!-- Panel Notifikasi -->
+                        <div x-show="openNotifications"
+                            x-cloak
+                            style="display: none;"
+                            x-transition:enter="transition ease-out duration-200"
+                            x-transition:enter-start="opacity-0 scale-95 -translate-y-2"
+                            x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                            x-transition:leave="transition ease-in duration-150"
+                            x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                            x-transition:leave-end="opacity-0 scale-95 -translate-y-2"
+                            class="absolute right-0 mt-3 w-[calc(100vw-2rem)] sm:w-120 max-w-[480px] bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden z-50">
+                            
+                            <div class="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
+                                <div class="flex items-center gap-2">
+                                    <h3 class="font-bold text-slate-800 dark:text-slate-100 text-base">Notifikasi</h3>
+                                    <span class="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 font-bold text-[11px] rounded-full">3 Baru</span>
+                                </div>
+                                <button class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline transition-all">
+                                    Tandai semua dibaca
+                                </button>
+                            </div>
+
+                            <div class="max-h-[380px] overflow-y-auto divide-y divide-slate-50 dark:divide-slate-700/40">
+                                <a href="#" class="flex items-start gap-4 p-4 hover:bg-slate-50/80 dark:hover:bg-slate-700/50 transition-colors group">
+                                    <div class="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                                        <i class="fas fa-truck-loading text-sm"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center justify-between gap-2 mb-1">
+                                            <span class="font-semibold text-xs text-slate-800 dark:text-slate-200">Pengiriman Diproses</span>
+                                            <span class="text-[10px] text-slate-400 dark:text-slate-500 shrink-0">5 menit yang lalu</span>
+                                        </div>
+                                        <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                                            Pengiriman Pupuk Urea sebanyak <span class="font-semibold text-slate-700 dark:text-slate-300">50 Sak</span> ke Kelompok Tani B telah diproses.
+                                        </p>
+                                    </div>
+                                </a>
+
+                                <a href="#" class="flex items-start gap-4 p-4 hover:bg-slate-50/80 dark:hover:bg-slate-700/50 transition-colors group">
+                                    <div class="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                                        <i class="fas fa-wallet text-sm"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center justify-between gap-2 mb-1">
+                                            <span class="font-semibold text-xs text-slate-800 dark:text-slate-200">Pembayaran Diterima</span>
+                                            <span class="text-[10px] text-slate-400 dark:text-slate-500 shrink-0">1 jam yang lalu</span>
+                                        </div>
+                                        <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                                            Pembayaran simpanan wajib sebesar <span class="font-semibold text-slate-700 dark:text-slate-300">Rp 250.000</span> dari Bpk. Budi berhasil.
+                                        </p>
+                                    </div>
+                                </a>
+                            </div>
+
+                            <a href="#" class="block p-3.5 text-center text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-slate-50 dark:bg-slate-800 hover:bg-indigo-50/50 dark:hover:bg-slate-700/50 transition-colors border-t border-slate-100 dark:border-slate-700">
+                                Lihat Semua Notifikasi <i class="fas fa-arrow-right ml-1 text-[10px]"></i>
+                            </a>
                         </div>
                     </div>
+
+                    <div class="hidden md:block w-px h-6 bg-slate-200 dark:bg-slate-700"></div>
+
+                    <!-- 2. Dropdown Profil User -->
+                    <div class="relative" x-data="{ openProfile: false }" @click.away="openProfile = false">
+                        <button @click="openProfile = !openProfile" 
+                                class="flex items-center gap-3 md:gap-4 p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-all focus:outline-none">
+                            <div class="text-right hidden lg:block">
+                                <p class="text-slate-900 dark:text-slate-100 leading-tight font-bold">Admin Koperasi</p>
+                                <p class="text-indigo-500 dark:text-indigo-400 text-[9px] font-black tracking-widest uppercase">Premium Partner</p>
+                            </div>
+                            
+                            <div class="relative shrink-0">
+                                <img src="https://ui-avatars.com/api/?name=AK&background=6366f1&color=fff" 
+                                    class="w-10 h-10 rounded-full border-2 border-indigo-100 dark:border-indigo-900/50 object-cover aspect-square shadow-sm">
+                                <div class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full shadow-sm animate-pulse"></div>
+                            </div>
+                            
+                            <i class="fas fa-chevron-down text-xs text-slate-400 transition-transform duration-200" 
+                            :class="openProfile ? 'rotate-180' : ''"></i>
+                        </button>
+
+                        <!-- Panel Profil Menu -->
+                        <div x-show="openProfile"
+                            x-cloak
+                            style="display: none;"
+                            x-transition:enter="transition ease-out duration-200"
+                            x-transition:enter-start="opacity-0 scale-95 -translate-y-2"
+                            x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                            x-transition:leave="transition ease-in duration-150"
+                            x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                            x-transition:leave-end="opacity-0 scale-95 -translate-y-2"
+                            class="absolute right-0 mt-3 w-60 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 p-2 z-50">
+                            
+                            <div class="px-3 py-2 border-b border-slate-100 dark:border-slate-700 lg:hidden">
+                                <p class="text-slate-900 dark:text-slate-100 font-bold">Admin Koperasi</p>
+                                <p class="text-indigo-500 dark:text-indigo-400 text-[9px] font-black tracking-widest uppercase">Premium Partner</p>
+                            </div>
+
+                            <div class="py-1">
+                                <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50/60 dark:hover:bg-slate-700/50 transition-all font-medium">
+                                    <i class="far fa-user w-4 text-center"></i>
+                                    <span>Pengaturan Profil</span>
+                                </a>
+                                
+                                <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50/60 dark:hover:bg-slate-700/50 transition-all font-medium">
+                                    <i class="fas fa-sliders-h w-4 text-center"></i>
+                                    <span>Pengaturan Sistem</span>
+                                </a>
+                            </div>
+
+                            <div class="border-t border-slate-100 dark:border-slate-700 pt-1 mt-1">
+                                <a href="<?= url('/logout') ?>" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all font-medium">
+                                    <i class="fas fa-sign-out-alt w-4 text-center"></i>
+                                    <span>Keluar (Logout)</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </header>
 
@@ -422,17 +379,19 @@
                 </nav>
 
                 <div id="main-content" hx-indicator="#loading-bar">
-                    <?php 
+                    <?php
                     // dd($paged_data);
-                    $this->include('htmx.dashboard', 
+                    $this->include(
+                        'htmx.dashboard',
                         [
-                        'isHome' => true, 
-                        'total_items' => $total_items, 
-                        'total_pages' => $total_pages, 
-                        'page' => $page, 
-                        'offset' => $offset, 
-                        'paged_data' => $paged_data, 
-                    ]); ?>
+                        'isHome' => true,
+                        'total_items' => $total_items,
+                        'total_pages' => $total_pages,
+                        'page' => $page,
+                        'offset' => $offset,
+                        'paged_data' => $paged_data,
+                    ]
+                    ); ?>
                 </div>
             </main>
 

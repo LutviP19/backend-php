@@ -93,6 +93,14 @@ class DashboardController extends Controller
         }
     }
 
+    public function logout(Request $request, Response $response)
+    {
+        Session::destroy();
+
+        response()->redirect('/login');
+        exit();
+    }
+
     public function dashboard(Request $request, Response $response)
     {
         $dataViews = $this->data_dashboard_activities($request, $response);

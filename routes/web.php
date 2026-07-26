@@ -8,7 +8,7 @@
  * Available router methods : get(), post(), put(), delete().
  */
 
-// // WEB
+// // WEB - BASIC
 // $router->get('', 'PagesHtmlController@index');
 // $router->get('/', 'PagesHtmlController@index');
 $router->get('/contact', 'PagesHtmlController@contact');
@@ -17,7 +17,7 @@ $router->get('/notification', 'PagesHtmlController@notification');
 $router->get('/dashboard', 'PagesHtmlController@dashboard');
 $router->get('/extra', 'PagesHtmlController@extra');
 
-// SPA
+// SPA - Homepage
 $router->get('', 'PagesController@index');
 $router->get('/', 'PagesController@index');
 $router->post('/subscribe', 'PagesController@demoSpa');
@@ -26,9 +26,10 @@ $router->get('/demo/prediction', 'PagesController@demoSpa');
 $router->get('/demo/suppliers', 'PagesController@demoSpa');
 
 
-// HTMX
+// HTMX - Dashboard
 $router->get('/login', 'DashboardController@login');
 $router->post('/login/auth', 'DashboardController@loginAuth');
+$router->get('/logout', 'DashboardController@logout');
 
 $router->get('/htmx', 'DashboardController@index');
 $router->get('/htmx/dashboard', 'DashboardController@dashboard');

@@ -248,7 +248,7 @@ class Request
         if(isset($_SERVER['HTTP_ACCEPT'][0]) && \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port')))
             return $_SERVER['HTTP_ACCEPT'][0] == 'application/json' ? true : false;
         else
-            return $_SERVER['HTTP_ACCEPT'] == 'application/json' ? true : false;
+            return isset($_SERVER['HTTP_ACCEPT']) && $_SERVER['HTTP_ACCEPT'] == 'application/json' ? true : false;
     }
 
     /**
@@ -365,8 +365,8 @@ class Request
             'SERVER_SOFTWARE'      => $_SERVER['SERVER_SOFTWARE'],
             'SERVER_PROTOCOL'      => $_SERVER['SERVER_PROTOCOL'],
             'HTTP_HOST'            => $_SERVER['HTTP_HOST'],
-            'HTTP_ACCEPT'          => $_SERVER['HTTP_ACCEPT'],
-            'HTTP_USER_AGENT'      => $_SERVER['HTTP_USER_AGENT'],
+            'HTTP_ACCEPT'          => $_SERVER['HTTP_ACCEPT'] ?? [],
+            'HTTP_USER_AGENT'      => $_SERVER['HTTP_USER_AGENT'] ?? null,
             // 'HTTP_ACCEPT_ENCODING' =>  isset($_SERVER['HTTP_ACCEPT_ENCODING']) ? $_SERVER['HTTP_ACCEPT_ENCODING'] : null,
             // 'QUERY_STRING'         => isset($_SERVER['QUERY_STRING']) ? $_SERVER['QUERY_STRING'] : null,
             'HTTP_ACCEPT_ENCODING' =>  $_SERVER['HTTP_ACCEPT_ENCODING'] ?? null,

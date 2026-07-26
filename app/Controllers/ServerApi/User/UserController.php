@@ -109,14 +109,13 @@ class UserController extends ServerApiController
                 $email = readJson('email', $payload, $payload['email']);
 
                 // Match email with auth session
-                if (!empty(Session::get('email')) && !empty($email )) {
+                if (!empty(Session::get('email')) && !empty($email)) {
                     $callback = (bool)(Session::get('email') === $email);
                 }
             }
 
             // // Middleware
-            // (new \App\Core\Security\Middleware\RateLimiter('uptoken_request'))
-            //     ->setupForm(Session::get('uid'), $callback, 5, 10, 1200);
+            // $this->setRatelimiter('uptoken_request', 1200, 5);
 
             if (false == $callback) {
 
@@ -214,8 +213,7 @@ class UserController extends ServerApiController
             }
 
             // // Middleware
-            // (new \App\Core\Security\Middleware\RateLimiter('uptoken_request'))
-            //     ->setupForm(Session::get('uid'), $callback, 5, 10, 1200);
+            // $this->setRatelimiter('uptoken_request', 1200, 5);
 
             if (false === $validEmail || false == $callback || empty($user)) {
 

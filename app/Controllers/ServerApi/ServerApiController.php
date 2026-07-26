@@ -58,7 +58,7 @@ class ServerApiController extends BaseController
             Session::set($key, $value);
         }
         // dd(Session::all(), true);
-        
+
 
         Session::set('gnr', generateRandomString(32, true));
         $userId =  Session::get('uid');
@@ -84,7 +84,7 @@ class ServerApiController extends BaseController
         $info = 'Api jwt-'.$userId;
         $subject = 'Access API for user:'.$userId;
         $tokenJwt =  $jwtToken->createToken($userId, $info, $subject);
-        Session::set('tokenJwt', $tokenJwt);        
+        Session::set('tokenJwt', $tokenJwt);
 
         return $tokenJwt;
     }
@@ -114,14 +114,18 @@ class ServerApiController extends BaseController
     {
         // Validate header X-Client-Token
         $validate = $this->validateClientToken();
-        if($validate) return $validate;
+        if ($validate) {
+            return $validate;
+        }
 
         // Validate Jwt
         $validate = $this->validateJwt();
-        if($validate) return $validate;
+        if ($validate) {
+            return $validate;
+        }
     }
 
-    /** 
+    /**
      * validateClientToken function
      *
      * @return \OpenSwooleResponseon $status === false, or void
@@ -134,7 +138,7 @@ class ServerApiController extends BaseController
         $output = [];
         $message = '';
         $headers = [];
-        
+
         if (Session::has('uid')) {
 
             $clientHeaderToken = $this->headers['X-Client-Token'][0] ?? '';
@@ -170,28 +174,43 @@ class ServerApiController extends BaseController
             $user = Session::all();
             $tokenJwt = Session::get('tokenJwt');
             $bearerToken = str_replace('Bearer ', '', $this->headers['Authorization'][0] ?? '');
-    
+
             if (empty($user) ||
                 is_null($this->jwtToken) ||
                 $bearerToken !== $tokenJwt ||
                 false === $this->jwtToken->validateToken($bearerToken)) {
-    
+
                 $statusCode = 401;
                 $message = 'Please login!';
                 $output = [ 'jwt' => 'Invalid jwt!' ];
-                
+
                 return $this->SetOpenSwooleResponse(false, $statusCode, $output, $message);
             }
-    
+
             return false;
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             $statusCode = 401;
             $message = 'Please login!';
             $output = [ 'jwt' => $e->getMessage() ];
-            
+
             return $this->SetOpenSwooleResponse(false, $statusCode, $output, $message);
         }
-        
+
+    }
+
+    protected function setRatelimiter(?string $identifier, int $perSeconds = 120, int $limit = 10)
+    {
+        $identifier = str_replace(" ", "_", $identifier);
+        $identifier = $identifier . "-" . \clientIP();
+        if (false === checkRateLimit($identifier, $limit, $perSeconds)) {
+            $after = round($perSeconds / 60);
+            $afteText = $after > 1 ? "{$after} minutes" : "{$after} minute";
+            $errors = [
+                "busy" => ["Please try again after {$afteText}."],
+            ];
+
+            json_response([], 429, "Too many requests", $errors);
+        }
     }
 
 }

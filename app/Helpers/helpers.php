@@ -96,7 +96,7 @@ function handle_cors()
  * @return array
  */
 if (! function_exists('getallheaders')) {
-    function getallheaders() : array
+    function getallheaders(): array
     {
         $headers = [];
         foreach ($_SERVER as $name => $value) {
@@ -185,11 +185,11 @@ function endResponse($response, $status = 200, $headers = [])
     if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // non OpenSwoole Server
         if (count($headers)) {
             foreach ($headers as $header) {
-                if(!is_string($header)) {
+                if (!is_string($header)) {
                     foreach ($header as $key => $value) {
                         header("{$key}: {$value}");
                     }
-                }                
+                }
             }
         }
 
@@ -511,8 +511,12 @@ function setupRedisConnection()
         'database' => $database,
     ];
 
-    if (!is_null($username) && $username !== '') $parameters['username'] = (string)$username;
-    if (!is_null($password) && $password !== '') $parameters['password'] = (string)$password;
+    if (!is_null($username) && $username !== '') {
+        $parameters['username'] = (string)$username;
+    }
+    if (!is_null($password) && $password !== '') {
+        $parameters['password'] = (string)$password;
+    }
 
     // // 2. Muted E_DEPRECATED jika library Predis Anda belum versi terbaru
     // $oldErrorReporting = error_reporting();
@@ -522,7 +526,7 @@ function setupRedisConnection()
         // Buat instance client Redis
         $redis = new \Predis\Client($parameters);
 
-        // 3. TES KONEKSI NYATA: Karena Predis bersifat 'lazy', 
+        // 3. TES KONEKSI NYATA: Karena Predis bersifat 'lazy',
         // kita panggil ping() di dalam try-catch untuk memastikan servernya hidup.
         // $redis->ping();
 
@@ -534,7 +538,7 @@ function setupRedisConnection()
             \App\Core\Support\Log::error("Redis Connection Failed: " . $e->getMessage(), "Helpers.setupRedisConnection");
         }
 
-        // Skenario penanganan: Anda bisa melempar Exception atau mengembalikan null 
+        // Skenario penanganan: Anda bisa melempar Exception atau mengembalikan null
         // agar script utama bisa mendeteksinya dan melakukan fallback ke database/file biasa.
         throw new \Exception("Could not connect to Redis server: " . $e->getMessage(), 0, $e);
         // return null; // Aktifkan ini jika ingin fallback tanpa crash
@@ -819,54 +823,6 @@ function clientIP()
     }
 
     return $ip == '::1' ? '127.0.0.1' : $ip;
-}
-
-/**
- * checkRateLimit function
- *
- * @param  string $identifier : client identity IP, Location, etc...
- * @param  int $limit : limit hit
- * @param  int $timeframeSeconds : time in second
- *
- * @return void
- */
-function checkRateLimit($identifier, $limit, $timeframeSeconds)
-{
-    $dirPath = storage_path('framework/tmp/rate_limits');
-    $filePath =  $dirPath .'/'. md5($identifier) . '.txt';
-
-    // Create directory if it doesn't exist
-    if (!is_dir($dirPath)) {
-        mkdir($dirPath, 0775, true);
-    }
-
-    $timestamps = [];
-    if (file_exists($filePath)) {
-        $content = file_get_contents($filePath);
-        $timestamps = json_decode($content, true) ?: [];
-    }
-
-    $currentTime = time();
-    $newTimestamps = [];
-    $requestCount = 0;
-
-    // Filter out old timestamps and count recent requests
-    foreach ($timestamps as $timestamp) {
-        if ($currentTime - $timestamp < $timeframeSeconds) {
-            $newTimestamps[] = $timestamp;
-            $requestCount++;
-        }
-    }
-
-    if ($requestCount >= $limit) {
-        return false; // Rate limit exceeded
-    }
-
-    // Add current request timestamp
-    $newTimestamps[] = $currentTime;
-    file_put_contents($filePath, json_encode($newTimestamps));
-
-    return true; // Request allowed
 }
 
 /**

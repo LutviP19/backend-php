@@ -86,8 +86,7 @@ class AuthController extends ServerApiController
             }
 
             // // Middleware
-            // (new \App\Core\Security\Middleware\RateLimiter('login_request'))
-            //     ->setupForm(clientIP(), $callback, 5, 10, 1200);
+            // $this->setRatelimiter('login_request', 1200, 10);
 
             if (false == $callback || empty($errors)) {
 
@@ -119,7 +118,7 @@ class AuthController extends ServerApiController
                             'sessid' => $sessionId,
                             'account' => Session::all()
                         ];
-                        
+
                 return $this->SetOpenSwooleResponse($status, $statusCode, $output, '', $headers);
             }
         } catch (Exception $exception) {

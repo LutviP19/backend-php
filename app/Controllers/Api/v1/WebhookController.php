@@ -26,8 +26,7 @@ class WebhookController extends ApiController
         // Middlewares
         if ($this->rateLimit) {
             try {
-                (new \App\Core\Security\Middleware\RateLimiter('webhook_request'))
-                    ->setup(clientIP(), 5, 500, 1200);
+                $this->setRatelimiter('webhook_request', 500, 5);
             } catch (Exception $exception) {
                 die($exception->getMessage());
             }
@@ -82,7 +81,7 @@ class WebhookController extends ApiController
             'password'  => 'required|min:8|max:100',
         ]);
         $errors = \App\Core\Support\Session::get('errors');
-        // \App\Core\Support\Log::debug($errors, 'WebhookController.index.errors');        
+        // \App\Core\Support\Log::debug($errors, 'WebhookController.index.errors');
 
         if ($errors) {
             $callback = false;
@@ -106,7 +105,7 @@ class WebhookController extends ApiController
         // Sanitize Input
         $payload = $this->filter->sanitize($this->jsonData, ['email', 'password']);
         // \App\Core\Support\Log::debug($payload, 'WebhookController.index.sanitize.$payload');
-        
+
 
         // \App\Core\Support\Log::debug($_SERVER, 'WebhookController.index.$_SERVER');
         // \App\Core\Support\Log::debug($_COOKIE, 'WebhookController.index.$_COOKIE');

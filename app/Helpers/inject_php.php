@@ -5,6 +5,91 @@
  * @author Lutvi <lutvip19@gmail.com>
  */
 
+/**
+ * Check Rate Limit dengan Redis & Fallback File
+ *
+ * @param  string $identifier : client identity IP, Location, etc...
+ * @param  int $limit : limit hit
+ * @param  int $timeframeSeconds : time in second
+ *
+ * @return void
+ */
+function checkRateLimit(?string $identifier, ?int $limit, ?int $timeframeSeconds): bool
+{
+    $key = "rate_limit:" . md5($identifier);
+
+    if (config("app.cache_driver") === "files") {
+        return rateLimitFallbackFile($identifier, $limit, $timeframeSeconds);
+    }
+
+    try {
+        $redis = new \Predis\Client([
+            "host" => config("redis.cache.host"),
+            "port" => config("redis.cache.port"),
+            "database" => config("redis.cache.database"),
+            "timeout" => 0.5, // Timeout pendek agar tidak menghambat user jika redis down
+        ]);
+
+        $redis->connect();
+
+        $responses = $redis->transaction(function ($tx) use ($key, $timeframeSeconds) {
+            $tx->incr($key);
+            $tx->expire($key, $timeframeSeconds);
+        });
+
+        return $responses[0] <= $limit;
+    } catch (\Predis\Connection\ConnectionException | \Exception) {
+        return rateLimitFallbackFile($identifier, $limit, $timeframeSeconds);
+    }
+}
+
+/**
+ * rateLimitFallbackFile function
+ *
+ * @param  string $identifier : client identity IP, Location, etc...
+ * @param  int $limit : limit hit
+ * @param  int $timeframeSeconds : time in second
+ *
+ * @return void
+ */
+function rateLimitFallbackFile(?string $identifier, ?int $limit, ?int $timeframeSeconds): bool
+{
+    $dirPath = storage_path("framework/tmp/rate_limits");
+    $filePath = $dirPath . "/" . md5($identifier) . ".txt";
+
+    // Create directory if it doesn't exist
+    if (!is_dir($dirPath)) {
+        mkdir($dirPath, 0775, true);
+    }
+
+    $timestamps = [];
+    if (file_exists($filePath)) {
+        $content = file_get_contents($filePath);
+        $timestamps = json_decode($content, true) ?: [];
+    }
+
+    $currentTime = time();
+    $newTimestamps = [];
+    $requestCount = 0;
+
+    // Filter out old timestamps and count recent requests
+    foreach ($timestamps as $timestamp) {
+        if ($currentTime - $timestamp < $timeframeSeconds) {
+            $newTimestamps[] = $timestamp;
+            $requestCount++;
+        }
+    }
+
+    if ($requestCount >= $limit) {
+        return false; // Rate limit exceeded
+    }
+
+    // Add current request timestamp
+    $newTimestamps[] = $currentTime;
+    file_put_contents($filePath, json_encode($newTimestamps));
+
+    return true; // Request allowed
+}
 
 // --- Base64URL Encoding/Decoding Functions ---
 function base64url_encode($data)
@@ -524,10 +609,10 @@ function bp_session_start()
         // Jika session lama sudah melewati batas toleransi TTL, regenerasi ID baru
         if (!empty($_SESSION['destroyed']) && $_SESSION['destroyed'] < time() - $ttl) {
             $oldSessionId = session_id();
-            
+
             // Lakukan rotasi ID session
             $headers = bp_session_regenerate_id($oldSessionId);
-            
+
             // Pastikan fungsi setHeaders ada sebelum dipanggil (khusus OpenSwoole)
             if (function_exists('setHeaders')) {
                 setHeaders($headers);
@@ -553,7 +638,7 @@ function bp_session_regenerate_id($oldSessionId = null)
     // 3. Tandai session lama sebagai hancur dan berikan info ID baru untuk toleransi koneksi tidak stabil
     $_SESSION['new_session_id'] = $new_session_id;
     $_SESSION['destroyed'] = time();
-    
+
     // Simpan penanda hancur ini ke session ID lama terlebih dahulu
     session_commit();
 
@@ -563,13 +648,13 @@ function bp_session_regenerate_id($oldSessionId = null)
     ini_set('session.use_strict_mode', 1);
 
     @session_start();
-    
+
     // Salin kembali semua data dari session lama ke session ID baru
     $_SESSION = $keepSession;
-    
+
     // Hapus penanda hancur di session baru agar tidak terjadi perulangan tanpa akhir (infinite loop)
     unset($_SESSION['destroyed'], $_SESSION['new_session_id']);
-    
+
     // Tulis data ke session baru dan kunci/tutup sementara
     session_commit();
 
@@ -595,18 +680,18 @@ function bp_session_regenerate_id($oldSessionId = null)
 
     // Mulai susun string cookie
     $cookieString = "{$sessionName}={$new_session_id}; Max-Age={$sessionExp}; Path={$cookie['path']};";
-    
+
     // 1. JANGAN gunakan Domain jika menembak ke localhost/127.0.0.1 agar cookie tidak ditolak client
     if (!empty($cookie['domain']) && !in_array($cookie['domain'], ['localhost', '127.0.0.1'])) {
         $cookieString .= " Domain={$cookie['domain']};";
     }
-    
+
     // 2. KRUSIAL: Hanya gunakan Secure jika URL menggunakan HTTPS!
     // Jika di localhost (http://localhost:8008), pastikan 'Secure;' TIDAK MASUK.
     if (!empty($cookie['secure']) && env('APP_ENV') !== 'local') {
         $cookieString .= " Secure;";
     }
-    
+
     $cookieString .= " HttpOnly; SameSite=Lax;";
 
     return ['Set-Cookie' => $cookieString];

@@ -2,7 +2,6 @@
 
 namespace App\Controllers\Api\v1\Auth;
 
-
 use App\Core\Support\Session;
 use App\Core\Security\Middleware\ValidateClient;
 use App\Models\User;
@@ -81,23 +80,24 @@ class AuthController extends ApiController
                 // \App\Core\Support\Log::debug($callback, 'WebAuth.login.$callback');
             }
 
-            // // Middleware
-            // if($this->rateLimit) {
-            //     (new \App\Core\Security\Middleware\RateLimiter('login_request'))
-            //     ->setupForm(clientIP(), $callback, 5, 10, 1200);
-            // }
-            
+            // Middleware
+            if ($this->rateLimit) {
+                $this->setRatelimiter('login_request', 1200, 5);
+            }
+
             if (false == $callback || empty($user)) {
 
                 return endResponse(
                     $this->getOutput(false, $statusCode, [
                         $errors
-                   ]), $statusCode);
+                   ]),
+                    $statusCode
+                );
             } else {
                 // // Regenerate SessionId
                 // $oldSessionId = session_id();
                 // $headers = bp_session_regenerate_id($oldSessionId);
-                // setHeaders($headers);                
+                // setHeaders($headers);
 
                 // if (session_status() !== PHP_SESSION_ACTIVE) {
                 //     bp_session_start();
@@ -110,8 +110,10 @@ class AuthController extends ApiController
                     return endResponse(
                         $this->getOutput(false, 401, [
                           'auth' => 'Client not found!',
-                       
-                        ], 'Invalid Client!'), 401);
+
+                        ], 'Invalid Client!'),
+                        401
+                    );
                 }
 
                 // // Set cookie
@@ -123,7 +125,7 @@ class AuthController extends ApiController
                 // $sessionId = session_create_id('bp-');
                 // $sessionExp = (env('SESSION_LIFETIME', 120) * 60);
                 // $headers = ['Set-Cookie' => "{$sessionName}={$sessionId}; Max-Age={$sessionExp}; Path=/; SameSite=Lax;"];
-                
+
                 // \App\Core\Support\Log::debug($headers, 'AuthController.login.$headers');
 
                 // Cache session data by uid
@@ -139,14 +141,19 @@ class AuthController extends ApiController
                             'token' => $tokenJwt,
                             'sessid' => $this->sessionId,
                             'account' => Session::all()
-                    ]), 201, $headers);
+                    ]),
+                    201,
+                    $headers
+                );
             }
         } catch (Exception $exception) {
 
             return endResponse(
                 $this->getOutput(false, 429, [
                   'exception', $exception->getMessage(),
-               ]), 429);
+               ]),
+                429
+            );
         }
     }
 
@@ -161,7 +168,7 @@ class AuthController extends ApiController
     public function updateToken(Request $request, Response $response)
     {
         $this->useMiddleware();
-        
+
         try {
 
             $validator = new Validator();
@@ -209,16 +216,17 @@ class AuthController extends ApiController
 
             // Middleware
             if ($this->rateLimit) {
-                (new \App\Core\Security\Middleware\RateLimiter('uptoken_request'))
-                    ->setupForm(clientIP(), $callback, 5, 10, 1200);
+                $this->setRatelimiter('uptoken_request', 1200, 5);
             }
 
             if (false == $callback || empty($user)) {
-                
+
                 return endResponse(
                     $this->getOutput(false, $statusCode, [
                         $errors
-                   ], 'Validation errors.'), $statusCode);
+                   ], 'Validation errors.'),
+                    $statusCode
+                );
             } else {
 
                 // Update Client Token
@@ -231,14 +239,18 @@ class AuthController extends ApiController
                 return endResponse(
                     $this->getOutput(true, 201, [
                     'auth' => 'Token successfully updated, please re-login to use new token!',
-                ]), 201);
+                ]),
+                    201
+                );
             }
         } catch (Exception $exception) {
-            
+
             return endResponse(
                 $this->getOutput(false, 429, [
                   'exception', $exception->getMessage(),
-               ]), 429);
+               ]),
+                429
+            );
         }
     }
 
@@ -287,8 +299,7 @@ class AuthController extends ApiController
 
             // Middleware
             if ($this->rateLimit) {
-                (new \App\Core\Security\Middleware\RateLimiter('logout_request'))
-                    ->setupForm(clientIP(), $callback, 5, 10, 1200);
+                $this->setRatelimiter('logout_request', 1200, 5);
             }
 
             if (false == $callback || empty($user)) {
@@ -296,7 +307,9 @@ class AuthController extends ApiController
                 return endResponse(
                     $this->getOutput(false, $statusCode, [
                         $errors
-                   ], 'Validation errors.'), $statusCode);
+                   ], 'Validation errors.'),
+                    $statusCode
+                );
             } else {
 
                 // clear cache token
@@ -316,16 +329,20 @@ class AuthController extends ApiController
                 return endResponse(
                     $this->getOutput(true, 200, [
                     'auth' => 'You are logged out!',
-                    ]), 200);
+                    ]),
+                    200
+                );
             }
         } catch (Exception $exception) {
 
             return endResponse(
                 $this->getOutput(false, 429, [
                   'exception', $exception->getMessage(),
-               ]), 429);
+               ]),
+                429
+            );
         }
     }
 
-    
+
 }

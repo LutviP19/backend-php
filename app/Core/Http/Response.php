@@ -24,6 +24,19 @@ class Response
     protected $controller;
 
     /**
+     * Penampung header yang di-set di controller
+     */
+    protected array $headers = [];
+
+    /**
+     * HTTP Status Code default
+     */
+    protected int $statusCode = 200;
+
+    // Property to store the response body
+    protected mixed $content = '';
+
+    /**
      * Magic method called when the instance
      * is created.
      *
@@ -36,20 +49,42 @@ class Response
     }
 
     /**
-     * Set a header.
-     *
-     * @param string $key
-     * @param string $value
-     * @param int|200 $statusCode
-     * @param bool|true $replace
-     * @return Response
+     * Set Header
      */
-    public function header($key, $value, $statusCode = 200, $replace = true)
+    public function header($key, $value, $statusCode = null, $replace = true)
     {
-        if (!headers_sent()) {
-            header("{$key}: {$value}", $replace, $statusCode);
+        // ONLY updates the status code if $statusCode is filled in and is a valid integer
+        if (is_numeric($statusCode) && (int)$statusCode >= 100) {
+            $this->statusCode = (int)$statusCode;
         }
 
+        // Save the header to the container array
+        $this->headers[$key] = $value;
+
+        // Note: PHP's native header() is called when running in a non-Swoole/FPM environment
+        if (!headers_sent() && php_sapi_name() !== 'cli') {
+            header("{$key}: {$value}", $replace, $this->statusCode);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Take all the headers that have been saved
+     *
+     * @return array
+     */
+    public function getHeaders(): array
+    {
+        return $this->headers;
+    }
+
+    /**
+     * Set status code HTTP
+     */
+    public function status(int $code): self
+    {
+        $this->statusCode = $code;
         return $this;
     }
 
@@ -73,7 +108,10 @@ class Response
      */
     public function getStatusCode()
     {
-        return http_response_code();
+        // return http_response_code();
+
+        // Provide a fallback of 200 if the value is somehow cast to false/empty
+        return (is_int($this->statusCode) && $this->statusCode > 0) ? $this->statusCode : 200;
     }
 
     /**
@@ -83,12 +121,16 @@ class Response
      * @param string|int $url (url or status code)
      * @return Response
      */
-    public function redirect($url)
+    public function redirect(string $url, int $statusCode = 302): self
     {
         if (is_int($url)) {
             $this->httpError($url);
         } else {
-            $this->header("Location", $url, 302);
+            // $this->header("Location", $url, 302);
+            $this->status($statusCode);
+            $this->header("Location", $url);
+            // JIKA dipanggil via HTMX, gunakan HX-Redirect agar HTMX tahu harus mengalihkan halaman
+            $this->header("HX-Redirect", $url);
         }
         return $this;
     }
@@ -118,16 +160,15 @@ class Response
 
             print json_encode($data, JSON_UNESCAPED_SLASHES);
             exit;
-        }
-        else {
+        } else {
 
             // print json_encode($data, JSON_UNESCAPED_SLASHES);
             return [
-                'code'=> $code,
+                'code' => $code,
                 'data' => $data
             ];
         }
-        
+
     }
 
     /**
@@ -199,6 +240,23 @@ class Response
         } else {
             $this->getController()->view($view);
         }
+    }
+
+    /**
+     * Set the body contents of the response
+     */
+    public function setContent(mixed $content): self
+    {
+        $this->content = $content;
+        return $this;
+    }
+
+    /**
+     * Take the body of the response
+     */
+    public function getContent(): mixed
+    {
+        return $this->content;
     }
 
     /**

@@ -2,570 +2,212 @@
 
 declare(strict_types=1);
 
-// Disabled Log Errors
-error_reporting(~E_NOTICE & ~E_DEPRECATED);
-ini_set('log_errors', false);
-ini_set('ignore_repeated_errors', true);
-ini_set('display_errors', 'off');
-// ini_set('display_startup_errors', 0);
 
+// // only level Deprecated & User Deprecated
+// error_reporting(E_DEPRECATED | E_USER_DEPRECATED);
 
-require_once __DIR__ . '/bootstrap.php';
-
-// Set a custom session name
-ini_set('session.use_strict_mode', 0);
-session_name('WEBBACKENDPHPSESSID');
-ini_set('session.use_strict_mode', 1);
-
-// Set Session
-$sessionName = session_name();
-$sessionId = '';
+// Dev - Display All Errors
+error_reporting(E_ALL);
+ini_set("display_errors", 1);
 
 
 use OpenSwoole\Http\Request as OpenSwooleRequest;
 use OpenSwoole\Http\Response as OpenSwooleResponse;
-// use OpenSwoole\Core\Psr\Middleware\StackHandler;
-// use OpenSwoole\Core\Psr\Response as PsrResponse;
-use OpenSwoole\HTTP\Server;
-// use Psr\Http\Message\ResponseInterface;
-// use Psr\Http\Message\ServerRequestInterface;
-// use Psr\Http\Server\MiddlewareInterface;
-// use Psr\Http\Server\RequestHandlerInterface;
-
-
+use OpenSwoole\Http\Server;
+use App\Core\Http\Request;
+use App\Core\Http\Response;
+use App\Core\Http\Router;
 use App\Core\Support\App;
-// use App\Core\Http\Request;
-// use App\Core\Http\Router;
-// use App\Core\Support\Session;
-// use App\Core\Validation\MessageBag;
 
-$serverip = "127.0.0.1";
-$serverport = 8009;
-$max_request = 10000;
-$ssl_dir = __DIR__ . "/../storage/ssl";
-$requestServer = new OpenSwooleRequest();
-$openSwooleResponse = new OpenSwooleResponse();
-$clientInfo = '';
-$ignoredUri = ['/metrics', '/health', '/favicon.ico'];
+// 1. APPLICATION BOOTSTRAP (Only executed once when the server is turned on)
+require_once __DIR__ . '/../app/Core/swoole_init.php';
 
-$server = new Server($serverip, $serverport);
+$server = new Server("127.0.0.1", 8009);
 
-// https
-// $server = new Server($serverip, $serverport, Server::SIMPLE_MODE, \OpenSwoole\Constant::SOCK_TCP | \OpenSwoole\Constant::SSL);
-
-$redis = new \Predis\Client([
-    'host' => config('redis.default.host'),
-    'port' => config('redis.default.port'),
-    'database' => config('redis.default.database')
-]);
-
-// Server settings
 $server->set([
-    // Process ID
-    "pid_file" => __DIR__ . "/web-swoole.pid",
-    // 'document_root' => __DIR__ .'../public',
-    'document_root' => __DIR__ . '/../public/',
-
-    // Workers
-    'worker_num' => 2,
-    'task_worker_num' => 5,
-    //'max_request' => 10000,
-    //'max_request_grace' => 0,
-
-    // // Setup SSL files
-    // 'ssl_cert_file' => $ssl_dir . '/ssl.crt',
-    // 'ssl_key_file' => $ssl_dir . '/ssl.key',
-
-    // Logging
-    "log_file" => __DIR__ . "/../storage/logs/web-swoole.log",
-    "log_rotation" => SWOOLE_LOG_ROTATION_DAILY,
-    "log_date_format" => "%d-%m-%Y %H:%M:%S",
-    "log_date_with_microseconds" => false,
-
-    // Compression
-    'http_compression' => true,
-    'http_compression_level' => 5, // 1 - 9
-    'compression_min_length' => 20,
-
-    // // Coroutine
-    // 'enable_coroutine' => true,
-
-    // // Protocol
-    // 'open_http_protocol' => true,
-    // 'open_http2_protocol' => true,
-    // 'open_websocket_protocol' => true,
-    // 'open_mqtt_protocol' => true,
-
-    // // HTTP2
-    // 'http2_header_table_size' => 4095,
-    // 'http2_initial_window_size' => 65534,
-    // 'http2_max_concurrent_streams' => 1281,
-    // 'http2_max_frame_size' => 16383,
-    // 'http2_max_header_list_size' => 4095,
+    'worker_num'            => 2,
+    'document_root'         => realpath(__DIR__ . '/../public'), // Path mutlak ke folder public
+    'enable_static_handler' => true,                             // <--- TAMBAHKAN INI
+    'static_handler_locations' => ['/css', '/js', '/assets', '/images', '/favicon.ico'], // <--- (Opsional) Folder asset kamu
 ]);
 
-// $process = new OpenSwoole\Process(function ($process) use ($server) {
-//     while (true) {
-//         $msg = $process->read();
-//         var_dump($msg);
+// Pre-load router ke memory 1x
+$router = Router::load(BASEPATH . '/routes/routes.php');
 
-//         foreach ($server->connections as $conn) {
-//             $server->send($conn, $msg);
-//         }
-//     }
-// });
+$server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse $response) use ($router) {
 
-// $server->addProcess($process);
-
-
-class CustomServerRequest extends \OpenSwoole\Core\Psr\ServerRequest
-{
-}
-
-class ExitException extends \OpenSwoole\ExitException
-{
-}
-
-// Start session
-if (session_status() === PHP_SESSION_NONE) {
-
-    session_start();
-
-    session_regenerate_id(true);
-    $sessionId = session_id();
-    // setcookie(session_name(), $sessionId, (env('SESSION_LIFETIME', 120) * 60), '/');
-}
-
-// Start Server
-$server->on("Start", function (Server $server) {
-    global $serverip, $serverport, $sessionId, $sessionName;
-
-    echo "Swoole http server is started at http://" . $serverip . ":" . $serverport . "\n";
-});
-
-$server->on("Connect", function (Server $server, int $fd) {
-    global $clientInfo, $sessionId, $sessionName;
-
-    echo "{$fd} Connect, worker:" . $server->worker_id . PHP_EOL;
-
-    $clientInfo = $server->getClientInfo($fd);
-    // var_dump($clientInfo);
-
-    if ($clientInfo) {
-        echo "Client connected: " . $clientInfo['remote_ip'] . "\n";
-        echo "Client connected port: " . $clientInfo['remote_port'] . "\n";
-        echo "Http sessStatus: " . session_status() . "\n";
-        // echo "Http sessionId: " . $sessionId . "\n";
+    // Clear Output Buffer if any
+    while (ob_get_level() > 0) {
+        ob_end_clean();
     }
 
-    // Session Active
-    if (session_status() === PHP_SESSION_ACTIVE) {
-        
+    // Init Server constants
+    initializeServerConstant($request, $response);
+
+    // Get header metadata
+    $headers = getallheaders();
+
+    $uri = $request->server['request_uri'] ?? '/';
+    $publicDir = realpath(__DIR__ . '/../public');
+    $filePath  = $publicDir . $uri;
+
+    // -------------------------------------------------------------
+    // 1. HANDLER ASSETS
+    // -------------------------------------------------------------
+    if ($uri !== '/' && file_exists($filePath) && !is_dir($filePath)) {
+
+        $extension = pathinfo($filePath, PATHINFO_EXTENSION);
+
+        $mimeTypes = [
+            'css'   => 'text/css; charset=UTF-8',
+            'js'    => 'application/javascript; charset=UTF-8',
+            'png'   => 'image/png',
+            'jpg'   => 'image/jpeg',
+            'jpeg'  => 'image/jpeg',
+            'gif'   => 'image/gif',
+            'svg'   => 'image/svg+xml',
+            'ico'   => 'image/x-icon',
+            'woff'  => 'font/woff',
+            'woff2' => 'font/woff2',
+            'ttf'   => 'font/ttf',
+        ];
+
+        if (isset($mimeTypes[$extension])) {
+            $response->header('Content-Type', $mimeTypes[$extension]);
+            // sendfile() sends files directly from the OS kernel without entering the PHP RAM buffer
+            $response->sendfile($filePath);
+            return; // Stop execution, do not proceed to PHP Router
+        }
     }
 
-});
+    // -------------------------------------------------------------
+    // 2.CHECK BLOCKED USER AGENT
+    // -------------------------------------------------------------
+    $userAgent = $request->header['user-agent'] ?? '';
+    $blockedAgents = ['python-httpx', 'go-http-client'];
+    foreach ($blockedAgents as $agent) {
+        if (str_contains(strtolower($userAgent), strtolower($agent))) {
+            $response->status(403);
+            $response->end('Access denied.');
+            return;
+        }
+    }
 
-$server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse $response) use ($server) {
-    global $server, $clientInfo, $ignoredUri, $sessionId, $sessionName;
+    // --- FASE CHECK: Block User Agent (Replacement for index.php) ---
+    $userAgent = $request->header['user-agent'] ?? '';
+    $blockedAgents = ['python-httpx', 'go-http-client'];
 
-    $uri = $request->server['request_uri'];
+    foreach ($blockedAgents as $agent) {
+        if (str_contains(strtolower($userAgent), strtolower($agent))) {
+            $response->status(403);
+            $response->end('Access denied.');
+            return; // Use RETURN, NOT exit() /die()!
+        }
+    }
 
-    $clientInfo = $server->getClientInfo($request->fd);
-    // var_dump($clientInfo);
+    // --- FASE POPULATE: Environment Synchronization ---
+    $_GET     = $request->get ?? [];
+    $_POST    = $request->post ?? [];
+    $_COOKIE  = $request->cookie ?? [];
+    $_SERVER['REQUEST_URI']    = $request->server['request_uri'] ?? '/';
+    $_SERVER['REQUEST_METHOD'] = $request->server['request_method'] ?? 'GET';
+    $_SERVER['HTTP_USER_AGENT'] = $userAgent;
+
+    // --- FASE EXECUTION: Capture Router Output---
     try {
-        // Log the incoming request method
-        echo "Received a '{$request->server['request_method']}:'{$request->server['request_uri']} request\n";
+        ob_start();
 
-        if ((session_status()) == PHP_SESSION_ACTIVE) {
-            $sessionName = session_name();
+        // Dispatch route
+        $output = $router->dispatch(Request::uri(), Request::method());
+        $bufferedOutput = ob_get_clean();
+        $finalOutput = !empty($output) ? $output : $bufferedOutput;
 
-            echo "Http sessionName: " . $sessionName . "\n";
-            echo "Http sessionId: " . $sessionId . "\n";
-        }
+        // If the controller returns your custom Response instance
+        if ($output instanceof Response) {
+            // Apply HTTP Status Code (IMPORTANT! This is what changes 200 to 302)
+            $response->status($output->getStatusCode());
 
-        if (isset($request->header['user-agent'])) {
-            $userAgent = $request->header['user-agent'];
-            echo  "Client User-Agent: " . $userAgent . PHP_EOL;
-        } else {
-            echo "Client User-Agent header not found." . PHP_EOL;
-        }
-
-        // Handle an OPTIONS request with an empty response
-        if ($request->server['request_method'] === 'OPTIONS') {
-            // Explicitly set an HTTP status code for preflight requests
-            $response->status(204); // 204 No Content
-            // End the response without a body
-            $response->end();
+            // Transfer header dari custom Response ke OpenSwoole Response
+            foreach ($output->getHeaders() as $name => $value) {
+                $response->header($name, $value);
+            }
+            $response->status($output->getStatusCode() ?: 302);
+            $response->end($output->getContent() ?? '');
             return;
         }
 
-        // Handle /metrics URI
-        if ($request->server['request_uri'] === '/metrics') {
-            $response->header("Content-Type", "text/plain");
+        // -------------------------------------------------------------
+        // HANDLER RESPONSE JSON
+        // -------------------------------------------------------------
+        $isJsonRequest = isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json');
 
-            $localIps = config('local_ips');
-            if (in_array($clientInfo["remote_ip"], config('local_ips'))) {
-                $content = $server->stats(\OPENSWOOLE_STATS_OPENMETRICS);
-            } else {
-                $content = "404 Not Found";
-                $response->status(404);
-            }
-
-            $response->end($server->stats(\OPENSWOOLE_STATS_OPENMETRICS));
+        // 1. If the output is an Array or Object (Automatically encode to JSON)
+        if (is_array($finalOutput) || is_object($finalOutput)) {
+            // echo "1. If the output is an Array or Object (Automatically encode to JSON)";
+            $response->header('Content-Type', 'application/json; charset=UTF-8');
+            $response->end(json_encode($finalOutput, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
             return;
         }
 
-//============= START WEB
-        // Init Server constants
-        initializeServerConstant($request);
+        // 2. If the output is a valid JSON string or the request requests JSON
+        if (is_string($finalOutput) && (is_json($finalOutput) || $isJsonRequest)) {
+            // echo "2. If the output is a valid JSON string or the request requests JSON";
 
-        // Get header metadata
-        $headers = getallheaders();
+            $contents = explode('@|@', $finalOutput);
+            if ($response->isWritable() && !empty($contents[0])) {
+                // 1. Take the first part (Index 0)
+                $content = $contents[0];
+                $convertArr = json_decode($content, true);
 
-        $_SESSION = [];
-        if (isset($_COOKIE[$sessionName])) {
-            // Try get session data from Redis
-            // $_SESSION = cacheContent('get', $_COOKIE[$sessionName], 'bp_web_session') ?: [];
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    // 2. If there is a key "0" (containing Set-Cookie) included, delete it to clean the JSON
+                    unset($convertArr['0']);
 
-            // \App\Core\Support\Log::debug($sessionData, 'HttpServer.fetchDataAsynchronously.first.$sessionData');
-            // \App\Core\Support\Log::debug($_SESSION, 'HttpServer.fetchDataAsynchronously.first.$_SESSION');
-            // \App\Core\Support\Log::debug(\App\Core\Support\Session::all(), 'HttpServer.fetchDataAsynchronously.first.Session::all()');
+                    // Set statusCode
+                    // Retrieve statusCode safely using the Null Coalescing Operator (??)
+                    $rawStatus = $convertArr['data']['statusCode'] ?? $convertArr['code'] ?? $convertArr['statusCode'] ?? 200;
 
-            // \App\Core\Support\Log::debug( $_COOKIE[$sessionName], 'HttpServer.request.$_COOKIE[$sessionName]');
-            $getSessionId = explode("-", (string) $_COOKIE[$sessionName]);
-            if (count($getSessionId) == 2) {
-                $sessionId = $_COOKIE[$sessionName];
-            } else {
-                $sessionId = session_id();
+                    // Make sure the status code value is a valid integer type (between 100 and 599)
+                    $statusCode = (is_numeric($rawStatus) && (int)$rawStatus >= 100 && (int)$rawStatus <= 599)
+                        ? (int)$rawStatus
+                        : 200;
+
+                    $response->status($statusCode);
+
+                    // 3. Encode it back as final output
+                    $finalOutput = json_encode($convertArr, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                }
             }
+
+            $response->header('Content-Type', 'application/json; charset=UTF-8');
+            $response->end($finalOutput);
+            return;
         }
 
-        // print_r($server->stats());
-        // \App\Core\Support\Log::debug($server->stats() 'Swoole.request.$server->stats()');
+        // 3. Fallback to regular HTML Response
+        $response->header('Content-Type', 'text/html; charset=UTF-8');
+        $response->end((string)$finalOutput);
 
-        // Simulate some asynchronous operation (e.g., fetching data from a database)
-        go(function () use ($server, $request, $response, $clientInfo, $sessionId, $sessionName, $uri, $ignoredUri) {
-            // // returned of fetchDataAsynchronously
-            // $returned = ['response', 'tmp', 'void'];
+    } catch (\Throwable $e) {
+        // Catch Exception WITHOUT shutting down the server
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
 
-            $response = fetchDataAsynchronously($request, $response, 'response', $_SESSION);
+        // Print error to Swoole terminal for debugging
+        echo "=== FATAL ERROR AT " . Request::uri() . " ===\n";
+        echo $e->getMessage() . "\n";
+        echo $e->getTraceAsString() . "\n";
+        echo "=========================================\n";
 
-            if ($response->isWritable()) {
-                $response->end();
-            }
+        // Write log manual
+        if (function_exists('write_log')) {
+            write_log("error", $e->getMessage() . "\n" . $e->getTraceAsString(), "Swoole.Request");
+        }
 
-            throw new ExitException();
-        });
-//============= END WEB
-    } catch (Throwable $e) {
-
-        // Handle exceptions and errors
         $response->status(500);
-        $response->end('Internal Server Error');
-        // Log the exception or send it to an error monitoring service
-        echo "Exception: " . $e->getMessage() . "\n";
+        $response->end("500 Internal Server Error");
     }
-});
-
-$server->on('Task', function (Swoole\Server $server, $task_id, $reactorId, $data) {
-    echo "Task Worker Process received data";
-    echo "#{$server->worker_id}\tonTask: [PID={$server->worker_pid}]: task_id=$task_id, data_len=" . strlen((string) $data) . "." . PHP_EOL;
-    $server->finish($data);
 });
 
 $server->start();
-
-// Simulated asynchronous function to fetch data from a database
-// function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse $response, $returned = 'response', &$sessionData)
-function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse $response, $returned = 'response', &$sessionData = null)
-{
-    global $server, $clientInfo, $ignoredUri, $requestServer, $sessionId, $sessionName;
-
-    // requestServer
-    $requestServer = $request;
-
-    
-
-    $uri = $request->request_uri ?? $_SERVER['REQUEST_URI'];
-
-    if (! in_array($uri, $ignoredUri)) {
-        // Try get session data from Redis
-        // $_SESSION['app'] = 'web';
-        // $_SESSION = array_merge($_SESSION, $sessionData, cacheContent('get', $_COOKIE[$sessionName], 'bp_web_session') ?: []);
-        $_SESSION = array_merge($_SESSION, $sessionData);
-    }
-
-
-    // \App\Core\Support\Log::debug($sessionData, 'HttpServer.fetchDataAsynchronously.first.$sessionData');
-    // \App\Core\Support\Log::debug($_SESSION, 'HttpServer.fetchDataAsynchronously.first.$_SESSION');
-    // \App\Core\Support\Log::debug(\App\Core\Support\Session::all(), 'HttpServer.fetchDataAsynchronously.first.Session::all()');
-
-    // Check response Writable status
-    if ($response->isWritable()) {
-        echo "FD:{$request->fd}, Writable!\n";
-        echo "Curr sessionName: " . $sessionName . "\n";
-        echo "Curr sessionId: " . $sessionId . "\n";
-    } else {
-        $response = $response::create($request->fd);
-        echo "New-FD:{$request->fd}, Created!\n";
-    }
-
-    // \App\Core\Support\Log::debug($request, 'HttpServer.fetchDataAsynchronously.$request');
-    // \App\Core\Support\Log::debug($_SERVER, 'HttpServer.fetchDataAsynchronously.$_SERVER');
-    // \App\Core\Support\Log::debug($_SESSION, 'HttpServer.fetchDataAsynchronously.$_SESSION');
-    // \App\Core\Support\Log::debug($_COOKIE, 'HttpServer.fetchDataAsynchronously.$_COOKIE');
-
-    $baseDir = __DIR__ .'/../public';
-    $fd = $request->fd;
-
-    $filePath = $baseDir . $uri;
-    if (is_dir($filePath)) {
-        $filePath = rtrim($filePath, '/') . '/index.php';
-    }
-
-    if (file_exists($filePath)) {
-        $fileInfo = pathinfo($filePath);
-        // $extension = isset($fileInfo['extension']) ? $fileInfo['extension'] : '';
-        // $fileName = isset($fileInfo['basename']) ? $fileInfo['basename'] : '';
-        $extension = $fileInfo['extension'] ?? '';
-        $fileName = $fileInfo['basename'] ?? '';
-
-        switch ($extension) {
-            case 'htnl':
-            case 'php':
-                ob_start();
-                include $filePath;
-                $content = ob_get_clean();
-                $response->header('Content-Type', 'text/html; charset=UTF-8');
-                $response->header('Content-Encoding', 'gzip');
-                $response->header('Content-Length', strlen(gzencode($content)));
-
-                $setHeaders[] = "Content-Type, text/html; charset=UTF-8";
-                $setHeaders[] = "Content-Encoding, gzip";
-                $setHeaders[] = "Content-Length, ".strlen(gzencode($content));
-
-                if ($response->isWritable() && $returned === 'response') {
-                    $response->end(gzencode($content));
-                } else {
-                    echo "{$filePath}, URI Not rendered! \n";
-                }
-                break;
-            case 'ico':
-                $content = file_get_contents($filePath);
-                $response->header('Content-Type', 'image/vnd.microsoft.icon');
-                $response->header('Content-Length', strlen($content));
-
-                $setHeaders[] = "Content-Type, image/vnd.microsoft.icon";
-                $setHeaders[] = "Content-Length, ".strlen($content);
-
-                $response->write($content);
-                break;
-            case 'css':
-                $content = file_get_contents($filePath);
-                $response->header('Content-Type', 'text/css; charset=UTF-8');
-                $response->header('Content-Length', strlen($content));
-
-                $setHeaders[] = "Content-Type, text/css; charset=UTF-8";
-                $setHeaders[] = "Content-Length, ".strlen($content);
-
-                $response->write($content);
-                break;
-            case 'js':
-                $content = file_get_contents($filePath);
-                $response->header('Content-Type', 'application/javascript');
-                $response->header('Content-Length', strlen($content));
-
-                $setHeaders[] = "Content-Type, application/javascript";
-                $setHeaders[] = "Content-Length, ".strlen($content);
-
-                $response->end($content);
-                break;
-            case 'jpg':
-            case 'jpeg':
-                $content = file_get_contents($filePath);
-                $response->header('Content-Type', 'image/jpeg');
-                $response->header('Content-Length', strlen($content));
-
-                $setHeaders[] = "Content-Type, image/jpeg";
-                $setHeaders[] = "Content-Length, ".strlen($content);
-
-                $response->write($content);
-                break;
-            case 'png':
-                $content = file_get_contents($filePath);
-                $response->header('Content-Type', 'image/png');
-                $response->header('Content-Length', strlen($content));
-
-                $setHeaders[] = "Content-Type, image/png";
-                $setHeaders[] = "Content-Length, ".strlen($content);
-
-                $response->write($content);
-                break;
-            case 'gif':
-                $content = file_get_contents($filePath);
-                $response->header('Content-Type', 'image/gif');
-                $response->header('Content-Length', strlen($content));
-
-                $setHeaders[] = "Content-Type, image/gif";
-                $setHeaders[] = "Content-Length, ".strlen($content);
-
-                $response->write($content);
-                break;
-            case 'svg':
-                $content = file_get_contents($filePath);
-                $response->header('Content-Type', 'image/svg+xml');
-                $response->header('Content-Length', strlen($content));
-
-                $setHeaders[] = "Content-Type, image/svg+xml";
-                $setHeaders[] = "Content-Length, ".strlen($content);
-
-                $response->write($content);
-                break;
-            case 'woff':
-                $content = file_get_contents($filePath);
-                $response->header('Content-Type', 'font/woff');
-                $response->header('Content-Length', strlen($content));
-
-                $setHeaders[] = "Content-Type, font/woff";
-                $setHeaders[] = "Content-Length, ".strlen($content);
-
-                $response->write($content);
-                break;
-            case 'woff2':
-                $content = file_get_contents($filePath);
-                $response->header('Content-Type', 'font/woff2');
-                $response->header('Content-Length', strlen($content));
-
-                $setHeaders[] = "Content-Type, font/woff2";
-                $setHeaders[] = "Content-Length, ".strlen($content);
-
-                $response->write($content);
-                break;
-            case 'ttf':
-                $content = file_get_contents($filePath);
-                $response->header('Content-Type', 'font/ttf');
-                $response->header('Content-Length', strlen($content));
-
-                $setHeaders[] = "Content-Type, font/ttf";
-                $setHeaders[] = "Content-Length, ".strlen($content);
-
-                $response->write($content);
-                break;
-            case 'otf':
-                $content = file_get_contents($filePath);
-                $response->header('Content-Type', 'font/otf');
-                $response->header('Content-Length', strlen($content));
-
-                $setHeaders[] = "Content-Type, font/otf";
-                $setHeaders[] = "Content-Length, ".strlen($content);
-
-                $response->write($content);
-                break;
-            default:
-                // Explicitly set an HTTP status code for preflight requests
-                $response->status(204); // 204 No Content
-                break;
-        }
-
-    } else {
-
-        $filePath = $baseDir . '/index.php';
-        // $lastSegment = $uri;
-        $fileName = str_replace('/', '', $uri).".php";
-
-        // Routing content
-        switch ($uri) {
-            case '/home':
-            case '/contact':
-            case '/about':
-            case '/dashboard':
-            case '/extra':
-                ob_start();
-                include $filePath;
-                $content = ob_get_clean();
-                $response->header('Content-Type', 'text/html; charset=UTF-8');
-                $response->header('Content-Encoding', 'gzip');
-                $response->header('Content-Length', strlen(gzencode($content)));
-
-                // $setHeaders[] = "Content-Type, text/html; charset=UTF-8";
-                // $setHeaders[] = "Content-Encoding, gzip";
-                // $setHeaders[] = "Content-Length, ".strlen(gzencode($content));
-
-                if ($response->isWritable() && $returned === 'response') {
-                    $response->end(gzencode($content));
-                } else {
-                    echo "{$filePath}, URI Not rendered! \n";
-                }
-                break;
-            default:
-                // Handle any other unmatched requests with a 404 Not Found
-                $content = "404 Not Found";
-                $response->status(404);
-                $response->header("Content-Type", "text/plain");
-                $response->end($content);
-                break;
-        }
-    }
-
-
-    // \App\Core\Support\Log::debug(session_id(), 'HttpServer.fetchDataAsynchronously.end.session_id()');
-    // \App\Core\Support\Log::debug($sessionId, 'HttpServer.fetchDataAsynchronously.end.$sessionId');
-    // \App\Core\Support\Log::debug($_SESSION, 'HttpServer.fetchDataAsynchronously.end.$_SESSION');
-    // // \App\Core\Support\Log::debug(\App\Core\Support\Session::all(), 'HttpServer.fetchDataAsynchronously.Session::all()');
-
-    if (isset($_COOKIE[$sessionName]) && count($_SESSION) > 1) {
-        cacheContent('set', $_COOKIE[$sessionName], 'bp_web_session', $_SESSION);
-
-        // Delete old session_id()
-        $getSessionId = explode("-", (string) $_COOKIE[$sessionName]);
-        if (count($getSessionId) == 2) {
-            delCache($getSessionId[1], 'bp_web_session');
-        }
-    }
-
-    // End process
-    echo  "---------" . PHP_EOL;
-
-    if ($returned === 'tmp' && $setHeaders) {
-        $tmpFile = createTmp($fd, $fileName, $setHeaders, $content);
-        return $tmpFile;
-    }
-
-    if ($returned === 'response') {
-        return $response;
-    }
-}
-
-function createTmp($fd, $fileName, $setHeaders, $content)
-{
-    $tmpPath = __DIR__ . "/../storage/framework/tmp";
-
-    $fdPath = "{$tmpPath}/{$fd}";
-    if (! file_exists($fdPath)) {
-        mkdir($fdPath);
-    }
-
-    $filePath = "{$fdPath}/$fileName";
-    if (file_exists($filePath)) {
-        unlink($filePath);
-    }
-
-    $fileContents = "<?php " . PHP_EOL;
-    foreach ($setHeaders as $header) {
-        $value = explode(",", (string) $header);
-        if (is_numeric($value[1])) {
-            $fileContents .= '$response->header("'.$value[0].'", '.$value[1].');' . PHP_EOL;
-        } else {
-            $fileContents .= '$response->header("'.$value[0].'", "'.trim($value[1]).'");' . PHP_EOL;
-        }
-    }
-
-    $content = base64_encode((string) $content);
-    $fileContents .= '$content=\''.($content).'\';' . PHP_EOL;
-    $fileContents .= '$response->end(base64_decode($content));' . PHP_EOL;
-
-    // write contents to file
-    file_put_contents($filePath, $fileContents);
-
-    return $filePath;
-}

@@ -30,7 +30,7 @@ class DashboardController extends Controller
 
         // Handler reload manual
         if(!$agentAllow) {
-            $ignore_uri = ['login', 'htmx'];
+            $ignore_uri = ['login', 'logout', 'htmx'];
             if (request()->method() === 'GET' && ! in_array(request()->uri(), $ignore_uri) && !$this->__isHtmxRequest()) {
                 response()->redirect('/htmx');
             }
@@ -50,7 +50,8 @@ class DashboardController extends Controller
         // $users = Model::table('users')->select(['*'])->get();
         // dd($users);
         // Session::set('users', generateUlid());
-        $server = \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port')) ? "OpenSwoole" : "PHP FPM";
+        // $server = \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port')) ? "OpenSwoole" : "PHP FPM";
+        $server = \isSwoole() ? "OpenSwoole" : "PHP FPM";
 
         $dataViews = $this->data_dashboard_activities($request, $response);
         // dd($dataViews);
@@ -67,38 +68,37 @@ class DashboardController extends Controller
         $user = $request->username ?? '';
         $pass = $request->password ?? '';
 
-        // Simulasi Cek Login
         if ($user === 'admin' && $pass === 'desa2026') {
             
-            // 1. Kirim sinyal ke Alpine.js untuk munculkan Toast
-            // Format: HX-Trigger: {"namaEvent": "isiData"}
-            header('HX-Trigger: {"show-toast": "Login Berhasil! Mengalihkan..."}');
-
-            // 2. Tunggu 1.5 detik (simulasi proses) lalu redirect
-            // Catatan: Redirect HTMX dilakukan via header
-            header('HX-Redirect: /htmx');
-
-            // Regenerate SessioId
-            $oldSessionId = session_id();
-            $headers = bp_session_regenerate_id($oldSessionId);
-            setHeaders($headers);
-            
-            exit();
-
-        } else {
-            // Jika gagal, kirim pesan error ke #error-area
-            // Dan bisa juga trigger event khusus untuk suara 'tetot'
-            header('HX-Trigger: {"play-error-sound": true}');
-            echo "<i class='fas fa-exclamation-triangle mr-1'></i> Username atau Password salah!";
+            // Memakai method header() buatan kita di custom Response
+            return $response
+                ->header('HX-Trigger', json_encode([
+                    'show-toast' => 'Login Berhasil! Mengalihkan...'
+                ]))
+                ->header('HX-Redirect', '/htmx');
         }
+
+        return $response
+            ->header('HX-Trigger', json_encode([
+                'play-error-sound' => true
+            ]))
+            ->setContent("<i class='fas fa-exclamation-triangle mr-1'></i> Username atau Password salah!");
     }
 
     public function logout(Request $request, Response $response)
     {
-        Session::destroy();
+        try {
+            // Make sure Session destroy safe for OpenSwoole
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                Session::destroy();
+            }
+        } catch (\Throwable $e) {
+            // Log session errors if any, without shutting down the Swoole worker
+            error_log("Session destroy error: " . $e->getMessage(), 0, \logs_path('error_log_php.log'));
+        }
 
-        response()->redirect('/login');
-        exit();
+        // Use a $response instance passed to the method
+        return $response->redirect('/login');
     }
 
     public function dashboard(Request $request, Response $response)
@@ -477,7 +477,7 @@ class DashboardController extends Controller
             $queryStr .= " AND (a.title LIKE ? OR a.member LIKE ?)";
             $params['search1'] = "%$search%";
             $params['search2'] = "%$search%";
-        }        
+        }
 
         $queryStr .= " ORDER BY a.time ASC";
 
@@ -507,6 +507,8 @@ class DashboardController extends Controller
 
         $dataViews = [
             // 'filtered' => $filtered, 
+            'search' => $search, 
+            'category' => $category, 
             'total_items' => $total_items, 
             'total_pages' => $total_pages, 
             'page' => $page, 
@@ -529,7 +531,7 @@ class DashboardController extends Controller
 
         // B. Endpoint untuk Data Chart (JSON)
         if ($endpoint === 'stats') {
-            header('Content-Type: application/json');
+            // header('Content-Type: application/json');
 
             $lastIncome = random_int(30000000, 90000000);
 
@@ -562,9 +564,17 @@ class DashboardController extends Controller
             }
 
 
-            header('Content-Type: application/json');
-            echo json_encode($data);
-            exit;
+            // // header('Content-Type: application/json');
+            // echo json_encode($data);
+
+            // // if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) {
+            // if (!isSwoole()) {
+            //     exit;
+            // }
+            // return;
+
+            // CONTOH BENAR JIKA KIRIM JSON
+            return endResponse($data);
         }
     }
     // ===== END GET DATA CHART
@@ -631,7 +641,7 @@ class DashboardController extends Controller
             $queryStr .= " AND (a.name LIKE ? OR a.asset_id LIKE ?)";
             $params['search1'] = "%$search%";
             $params['search2'] = "%$search%";
-        }        
+        }
 
         $queryStr .= " ORDER BY a.updated_at DESC, c.category_name ASC, a.asset_id ASC";
 
@@ -694,8 +704,12 @@ class DashboardController extends Controller
         $logs = json_decode($json_string, true);        
 
         // $logs = [];
-        $unitId = $logs[0] ? $logs[0]['unit_id'] : '';
-        $unitName = $logs[0] ? $logs[0]['unit_name'] : '';
+        $unitId = $unitName = '';
+        if(isset($logs[0])) {
+            $unitId = $logs[0]['unit_id'] ?: '';
+            $unitName = $logs[0]['unit_name'] ?: '';
+        }
+        
         $this->include('htmx.modals.assets.logs', ['unitId' => $unitId, 'unitName' => $unitName, 'logs' => $logs]);
     }
 

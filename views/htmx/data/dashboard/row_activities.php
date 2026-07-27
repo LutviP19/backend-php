@@ -1,25 +1,26 @@
 <?php
+if (!function_exists("renderPaginationButtons")) {
+    function renderPaginationButtons($page, $total_pages)
+    {
+        $prev = $page - 1;
+        $next = $page + 1;
+        $disabledPrev = ($page <= 1) ? 'disabled opacity-50' : '';
+        $disabledNext = ($page >= $total_pages) ? 'disabled opacity-50' : '';
 
-function renderPaginationButtons($page, $total_pages) {
-    $prev = $page - 1;
-    $next = $page + 1;
-    $disabledPrev = ($page <= 1) ? 'disabled opacity-50' : '';
-    $disabledNext = ($page >= $total_pages) ? 'disabled opacity-50' : '';
+        echo "<button hx-get='data-chart.php/activities?page={$prev}' hx-include='#search-input, [name=\"category\"]' hx-target='#activity-table-body' class='w-9 h-9 border rounded-xl hover:bg-slate-50' {$disabledPrev}><i class='fas fa-chevron-left text-xs'></i></button>";
 
-    echo "<button hx-get='data-chart.php/activities?page={$prev}' hx-include='#search-input, [name=\"category\"]' hx-target='#activity-table-body' class='w-9 h-9 border rounded-xl hover:bg-slate-50' {$disabledPrev}><i class='fas fa-chevron-left text-xs'></i></button>";
-    
-    for ($i = 1; $i <= $total_pages; $i++) {
-        $activeClass = ($i == $page) ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white text-slate-600 hover:bg-slate-50';
-        echo "<button hx-get='data-chart.php/activities?page={$i}' hx-include='#search-input, [name=\"category\"]' hx-target='#activity-table-body' class='w-9 h-9 rounded-xl font-bold text-xs transition-all {$activeClass}'>{$i}</button>";
+        for ($i = 1; $i <= $total_pages; $i++) {
+            $activeClass = ($i == $page) ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white text-slate-600 hover:bg-slate-50';
+            echo "<button hx-get='data-chart.php/activities?page={$i}' hx-include='#search-input, [name=\"category\"]' hx-target='#activity-table-body' class='w-9 h-9 rounded-xl font-bold text-xs transition-all {$activeClass}'>{$i}</button>";
+        }
+
+        echo "<button hx-get='data-chart.php/activities?page={$next}' hx-include='#search-input, [name=\"category\"]' hx-target='#activity-table-body' class='w-9 h-9 border rounded-xl hover:bg-slate-50' {$disabledNext}><i class='fas fa-chevron-right text-xs'></i></button>";
     }
-
-    echo "<button hx-get='data-chart.php/activities?page={$next}' hx-include='#search-input, [name=\"category\"]' hx-target='#activity-table-body' class='w-9 h-9 border rounded-xl hover:bg-slate-50' {$disabledNext}><i class='fas fa-chevron-right text-xs'></i></button>";
 }
-
 
 if (empty($paged_data)) {
     //echo '<tr><td colspan="4" class="px-8 py-10 text-center text-slate-400 italic">Data tidak ditemukan.</td></tr>';
-?>
+    ?>
 
 <tr>
     <td colspan="4" class="px-8 py-20">
@@ -58,7 +59,13 @@ if (empty($paged_data)) {
 </tr>
 
 <?php
-    exit; // Data empty
+        // 2. Jika BUKAN Swoole (misal CLI/PHP-FPM biasa), boleh die/exit
+        if (!isSwoole()) {
+            exit(0);
+        }
+
+    // 3. Jika Swoole, CUKUP RETURN agar Worker tidak mati/crash
+    return;
 }
 
 // Render Fragment HTML

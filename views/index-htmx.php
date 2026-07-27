@@ -7,6 +7,10 @@
     <title>SmartStock AI - Koperasi Desa</title>
 
     <script src="<?= assets('js/htmx.min.js') ?>"></script> 
+    <script>
+        // Tell HTMX to execute the <script> tag in the partial response
+        htmx.config.evalIndicator = true;
+    </script>
     <script defer src="<?= assets('/js/persist@3.min.js') ?>"></script>
     <script defer src="<?= assets('/js/alpinejs3.min.js') ?>"></script>
     

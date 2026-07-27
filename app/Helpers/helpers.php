@@ -160,7 +160,7 @@ function response()
 }
 
 /**
- * endResponse function, stop to response with conditional SERVER_PORT
+ * endResponse function, stop to response with conditional isSwoole()
  *
  * @param  json_response $response
  *
@@ -182,7 +182,8 @@ function endResponse($response, $status = 200, $headers = [])
     $csrfHeader[] = ['Set-Cookie' => "XSRF-TOKEN={$csrfToken}; Max-Age={$expired_seconds}; Path={$path}; Domain={$domain}; HttpOnly; SameSite=Lax; Secure;"];
     $headers = array_merge($csrfHeader, $headers);
 
-    if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // non OpenSwoole Server
+    // if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // non OpenSwoole Server
+    if (! isSwoole()) {
         if (count($headers)) {
             foreach ($headers as $header) {
                 if (!is_string($header)) {
@@ -195,6 +196,11 @@ function endResponse($response, $status = 200, $headers = [])
 
         // die(response()->json($response, $status));
         response()->json($response, $status);
+    } else {
+        // Langsung set status code ke Swoole Response
+        if (isset($GLOBALS['swoole_response']) && $GLOBALS['swoole_response'] instanceof \OpenSwoole\Http\Response) {
+            $GLOBALS['swoole_response']->status($status);
+        }
     }
 
     // // Get output response

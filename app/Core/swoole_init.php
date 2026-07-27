@@ -1,37 +1,36 @@
 <?php
 
-define('APP_START', microtime(true));
-define('BASEPATH', __DIR__ . '/..');
+/**
+ * Init Open Swoole Application
+ * @author Lutvi <lutvip19@gmail.com>
+ * @package Backend-PHP
+ */
+// app/Core/swoole_init.php
 
+if (!defined('BASEPATH')) {
+    define('BASEPATH', __DIR__ . '/../..');
+}
 
 if (!defined("BASEPATH_FFI")) {
     define("BASEPATH_FFI", BASEPATH . "/bin/ffi");
 }
 
-// only level Deprecated & User Deprecated
-// error_reporting(E_DEPRECATED | E_USER_DEPRECATED);
-error_reporting(E_ALL);
-ini_set("display_errors", 1);
 
-require_once __DIR__ . '/../vendor/autoload.php';
+require_once BASEPATH . '/vendor/autoload.php';
 
-/**
- * Bootstrap the Application.
- * @author Lutvi <lutvip19@gmail.com>
- */
-/* ----------------------------- Default settings START -------------------------------- */
-// Looking for .env at the root directory
-$dotenv = Dotenv\Dotenv::createUnsafeImmutable(__DIR__.'/..');
+// Load .env only once when the server is on
+$dotenv = Dotenv\Dotenv::createUnsafeImmutable(BASEPATH);
 $dotenv->load();
 
-// Register the configuration to the application.
 use App\Core\Support\App;
+
+// Register Config & Routes cukup 1x di RAM
 App::register('config', require BASEPATH . '/config/app.php');
 App::register("routing_external_api", require BASEPATH . "/routes/external-api.php");
 
 date_default_timezone_set(env('APP_TIMEZONE', 'Asia/Jakarta'));
 
-//Starting the session will be the first we do.
+// Starting the session will be the first we do.
 ini_set('session.save_handler', env('SESSION_DRIVER', 'files'));
 if (env('SESSION_DRIVER') === "redis") {
     // ini_set('session.save_path', "tcp://" . env('REDIS_HOST') . ":" . env('REDIS_PORT') . "?auth" . env('REDIS_PASSWORD'));
@@ -54,39 +53,64 @@ if (env('SESSION_DRIVER') === "redis") {
     ini_set('session.save_path', BASEPATH . '/storage/framework/sessions');
 }
 
-// // Set a custom session name
-// session_name('SVCBACKENDPHPSESSID');
+// Set session from cache
+if (isset($_SESSION['uid'])) {
+    $_SESSION = array_merge($_SESSION, cacheContent('get', $_SESSION['uid'] .'-'. $_COOKIE[session_name()]) ?: []);
+}
 
-// Make sure use_strict_mode is enabled.
-// use_strict_mode is mandatory for security reasons.
-ini_set('session.use_strict_mode', 1);
-
-// Write useful codes
-/* ----------------------------- Default settings END -------------------------------- */
 
 $serverip = "127.0.0.1";
-// $serverport = 8080;
-$serverport = 8008;
+// $serverport = 8008;
+$serverport = 8009;
 $sessionName = '';
 $sessionId = '';
 
-function initializeServerConstant($request): void
+/**
+ * Helper to check whether a string is a valid JSON format
+ */
+function is_json(mixed $string): bool
+{
+    if (!is_string($string) || trim($string) === '') {
+        return false;
+    }
+    
+    json_decode($string);
+    return json_last_error() === JSON_ERROR_NONE;
+}
+
+function initializeServerConstant($request, $response): void
 {
     global $serverip, $serverport;
+
+    // --- SYNCHRONIZE HEADER FROM NATIVE PHP (If there is still a header() function that escapes) ---
+    if (function_exists('headers_list')) {
+        foreach (headers_list() as $headerLine) {
+            if (str_contains($headerLine, ':')) {
+                [$name, $value] = explode(':', $headerLine, 2);
+                $response->header(trim($name), trim($value));
+            }
+        }
+        // Clean the native PHP header list so that it doesn't pile up in subsequent requests
+        header_remove();
+    }
+
+    // Inject into GLOBALS to be detected by isSwoole() & ApiController
+    $GLOBALS['requestServer'] = $request;
+    $GLOBALS['swoole_response'] = $response;
 
     // \App\Core\Support\Log::debug(gettype($request), 'Bootstrap.initializeServerConstant.$request.gettype');
     // \App\Core\Support\Log::debug($request, 'Bootstrap.initializeServerConstant.$request');
 
     $_SERVER = [];
     // Clean up $_SERVER dari request sebelumnya
-    $_SERVER = array_filter($_SERVER, function ($key) {
+    $_SERVER = array_filter($_SERVER, function($key) {
         return !str_starts_with($key, 'HTTP_');
     }, ARRAY_FILTER_USE_KEY);
 
     $uri = $request->server["request_uri"] ?? $request["request_uri"];
     $requestip = $request->server["remote_addr"] ?? $request["remote_addr"];
 
-    $_REQUEST = [];
+    $_REQUEST = [];    
     $_GET = $request->get ?? [];
     $_POST = $request->post ?? [];
     $_FILES = $request->files ?? [];
@@ -107,12 +131,12 @@ function initializeServerConstant($request): void
     $_SERVER['SCRIPT_FILENAME'] = $request->server['script_filename'] ?? 'index.php';
 
     $reqData = is_array($request) ? $request : ($request->server ?? []);
-    $servers = array_merge($reqData, (new \Swoole\Http\Request())->server ?? [], $request->server ?? []);
+    $servers = array_merge($reqData, (new \Swoole\Http\Request)->server ?? [], $request->server ?? []);
     foreach ($servers as $key => $value) {
         $_SERVER[strtoupper((string) $key)] = $value;
     }
 
-    $headers = array_merge((new \Swoole\Http\Request())->header ?? [], $request->header ?? [], getallheaders() ?? [], $reqData);
+    $headers = array_merge((new \Swoole\Http\Request)->header ?? [], $request->header ?? [], getallheaders() ?? [], $reqData);
     foreach ($headers as $key => $value) {
         $_SERVER['HTTP_' . strtoupper(str_replace('-', '_', $key))] = $value;
     }

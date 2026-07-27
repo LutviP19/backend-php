@@ -1,5 +1,4 @@
-<?php
-
+<?php 
 declare(strict_types=1);
 
 namespace App\Controllers\Api;
@@ -39,19 +38,39 @@ class ApiController extends BaseController
         $this->sessionId = $sessionId;
         $this->sessionName = $sessionName ?? \session_name();
 
+        $rawBody = '';
+        $this->headers = [];
+        $this->jsonData = [];
 
-        if (\in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // on OpenSwoole Server
+        
+        // if ( \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // on OpenSwoole Server
+        // Pastikan requestServer BUKAN null sebelum mengakses method/property-nya
+        if ($this->requestServer instanceof \OpenSwoole\Http\Request) { // atau Swoole\Http\Request
+
+            // // Format Headers
+            // foreach($this->requestServer->header as $key => $value) {
+            //     $this->headers[ucwords((string) $key, "-")] = $value;
+            // }
+
+            // $rawBody = $this->requestServer->rawContent();
+            // if (! empty($rawBody) && checkValidJSON($rawBody)) {
+            //     $this->jsonData = \is_string($rawBody) ? \json_decode($rawBody, true, 512, \JSON_BIGINT_AS_STRING | \JSON_THROW_ON_ERROR) : [];
+            // } else {
+            //     $this->jsonData = [];
+            // }
 
             // Format Headers
-            foreach ($this->requestServer->header as $key => $value) {
-                $this->headers[ucwords((string) $key, "-")] = $value;
+            if (!empty($this->requestServer->header) && is_array($this->requestServer->header)) {
+                foreach ($this->requestServer->header as $key => $value) {
+                    $this->headers[ucwords((string) $key, "-")] = $value;
+                }
             }
 
-            $rawBody = $this->requestServer->rawContent();
-            if (! empty($rawBody) && checkValidJSON($rawBody)) {
-                $this->jsonData = \is_string($rawBody) ? \json_decode($rawBody, true, 512, \JSON_BIGINT_AS_STRING | \JSON_THROW_ON_ERROR) : [];
-            } else {
-                $this->jsonData = [];
+            // Ambil raw body dari Swoole Request
+            $rawBody = $this->requestServer->rawContent() ?: '';
+            
+            if (!empty($rawBody) && checkValidJSON($rawBody)) {
+                $this->jsonData = \json_decode($rawBody, true, 512, \JSON_BIGINT_AS_STRING | \JSON_THROW_ON_ERROR);
             }
         } else {
 
@@ -63,15 +82,11 @@ class ApiController extends BaseController
 
         // Accepted type is JSON
         $validate = $this->onlyAcceptedJSON();
-        if ($validate) {
-            return $validate;
-        }
-
+        if ($validate) return $validate;
+        
         // Validate JSON
         $validate = $this->checkValidJSON($rawBody);
-        if ($validate) {
-            return $validate;
-        }
+        if ($validate) return $validate;
 
 
         // Clean Errors MessageBag
@@ -94,7 +109,7 @@ class ApiController extends BaseController
 
     public function onlyAcceptedJSON()
     {
-        if ($this->headers['Accept'] !== 'application/json' ||
+        if ($this->headers['Accept'] !== 'application/json' || 
         $this->headers['Content-Type'] !== 'application/json' ||
         $_SERVER['HTTP_ACCEPT'] !== 'application/json') {
 
@@ -109,7 +124,7 @@ class ApiController extends BaseController
         return;
     }
 
-    public function checkValidJSON($rawBody)
+    public function checkValidJSON($rawBody) 
     {
         if ($rawBody === '') {
 
@@ -121,9 +136,9 @@ class ApiController extends BaseController
             );
         }
         $validBody = json_decode(trim((string) $rawBody), true);
-
+    
         if (json_last_error() !== JSON_ERROR_NONE) {
-
+        
             return endResponse(
                 $this->getOutput(false, 406, [
                     'Invalid Json format!'
@@ -162,7 +177,7 @@ class ApiController extends BaseController
         $clientToken = $validateClient->getToken();
         $clientTokenGen = $validateClient->generateToken();
         Session::set('client_token', $clientTokenGen);
-
+        
         if (false === $validateClient->matchToken($clientTokenGen)) {
 
             Session::destroy();
@@ -214,30 +229,24 @@ class ApiController extends BaseController
 
     protected function useMiddleware($guest = false)
     {
-        if ($guest) {
+        if($guest) {
             // Validate Api token
             $this->validateApiToken();
         } else {
             // Validate header X-Client-Token
             // \App\Core\Support\Log::debug($this->headers, 'WebAuth.updateToken.$headers');
             $validate = $this->validateClientToken();
-            if ($validate) {
-                return $validate;
-            }
+            if($validate) return $validate;
 
             // Validate Jwt
             $validate = $this->validateJwt();
-            if ($validate) {
-                return $validate;
-            }
+            if($validate) return $validate;
 
             // Validate using session data
             if (Session::has('uid') && Session::has('secret') && Session::has('jwtId')) {
                 // ValidateSession
                 $validate = (new \App\Core\Security\Middleware\ValidateSession())->handle();
-                if ($validate) {
-                    return $validate;
-                }
+                if($validate) return $validate;
             }
         }
     }
@@ -273,7 +282,7 @@ class ApiController extends BaseController
 
             // Check isDev
             // \App\Core\Support\Log::debug($this->isDev, 'ApiController.validateApiToken.csrf.isDev');
-            if ($this->isDev === true) {
+            if($this->isDev === true) {
                 $request_token = CSRF::generate();
             } else {
                 // Assuming token is sent in X-CSRF-Token header
@@ -326,13 +335,13 @@ class ApiController extends BaseController
             return endResponse(
                 $this->getOutput(false, 401, [
                     'auth' => 'Session expired!'
-                ], 'Please login!'),
+                ], 'Please login!'), 
                 401
             );
         }
 
-        // \App\Core\Support\Log::debug(isset($header['X-Client-Token']), 'ApiController.validateClientToken.X-Client-Token');
-        if (! isset($this->headers['X-Client-Token'])) {
+        // \App\Core\Support\Log::debug(isset($header['X-Client-Token']), 'ApiController.validateClientToken.X-Client-Token');        
+        if(! isset($this->headers['X-Client-Token'])) {
             return endResponse(
                 $this->getOutput(false, 403, [
                         'client_token' => 'Missing client token!',
@@ -340,8 +349,8 @@ class ApiController extends BaseController
                 403
             );
         }
-
-        if (! $validateClient->matchToken($this->headers['X-Client-Token'])) {
+        
+        if(! $validateClient->matchToken($this->headers['X-Client-Token'])) {
 
             return endResponse(
                 $this->getOutput(false, 403, [
@@ -367,13 +376,13 @@ class ApiController extends BaseController
             return endResponse(
                 $this->getOutput(false, 401, [
                     'jwt' => 'Invalid jwt!',
-                ], 'Please login!'),
+                ], 'Please login!'), 
                 401
             );
         }
     }
 
-    protected function setRatelimiter($identifier, $perSeconds = 120, $limit = 10)
+    protected function setRatelimiter(?string $identifier, int $perSeconds = 120, int $limit = 10)
     {
         $identifier = str_replace(" ", "_", $identifier);
         $identifier = $identifier . "-" . \clientIP();
@@ -404,7 +413,7 @@ class ApiController extends BaseController
     protected function formatCamelCaseKey(array $jsonData = [], $replaced = ['' => '']): array
     {
         $formated = $output = [];
-        foreach ($jsonData as $key => $value) {
+        foreach($jsonData as $key => $value) {
             $key = str_replace_multi($replaced, $key);
             $formatKey = camelCaseToUnderscore($key);
 
@@ -433,7 +442,7 @@ class ApiController extends BaseController
         //         }
         //         $output[$key] = $value;
         //     }
-        // }
+        // }        
 
         // return $output;
     }

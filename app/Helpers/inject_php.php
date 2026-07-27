@@ -5,6 +5,29 @@
  * @author Lutvi <lutvip19@gmail.com>
  */
 
+
+/**
+ * Check if the current script execution is inside an active OpenSwoole HTTP Worker.
+ */
+function isSwoole(): bool
+{
+    // 1. Most Accurate: Check if there is a Response/Request Swoole instance in the current Request Lifecycle
+    if (isset($GLOBALS['swoole_response']) && $GLOBALS['swoole_response'] instanceof \OpenSwoole\Http\Response) {
+        return true;
+    }
+
+    if (isset($GLOBALS['requestServer']) && $GLOBALS['requestServer'] instanceof \OpenSwoole\Http\Request) {
+        return true;
+    }
+
+    // 2. Check whether the Swoole Event Loop /Coroutine Server is running actively (OpenSwoole Environment)
+    if (class_exists(\OpenSwoole\Coroutine::class) && \OpenSwoole\Coroutine::getCid() > 0) {
+        return true;
+    }
+
+    return false;
+}
+
 /**
  * Check Rate Limit dengan Redis & Fallback File
  *

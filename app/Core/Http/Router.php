@@ -509,13 +509,15 @@ class Router
             // Optionally, you can include content for the 429 page
             echo "<h1>404 Not Found</h1>";
             echo "<p>The page you requested could not be found.</p>";
-            exit(); // Terminate script execution after sending the 429
+            // exit(); // Terminate script execution after sending the 429
+            customExit();
         }
 
         header("HTTP/1.0 404 Not Found");
         // Optionally, you can include content for the 404 page
         echo "<h1>404 Not Found</h1>";
         echo "<p>The page you requested could not be found.</p>";
-        exit(); // Terminate script execution after sending the 404
+        // exit(); // Terminate script execution after sending the 404
+        customExit();
     }
 }

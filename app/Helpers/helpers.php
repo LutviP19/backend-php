@@ -87,7 +87,8 @@ function handle_cors()
     // Handle "Preflight" requests (browser sends OPTIONS method before POST/PUT)
     if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
         http_response_code(204); // No Content
-        exit();
+        // exit();
+        customExit();
     }
 }
 

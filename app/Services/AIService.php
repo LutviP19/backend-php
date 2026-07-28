@@ -53,7 +53,8 @@ class AIService {
             $model = new OllamaExec($selectedModel);
             if (!$model->checkModelExists()) {
                 echo "Error: Model belum terpasang di sistem.";
-                exit;
+                // exit;
+                customExit();
             }
 
             // Calling the Wrapper class we created earlier
@@ -74,7 +75,8 @@ class AIService {
             echo "Stack trace:\n" . $e->getTraceAsString();
         } finally {
 
-            exit;
+            // exit;
+            customExit();
         }
     }
 }

@@ -25,7 +25,8 @@ if (empty($filtered)) {
             Kembalikan Semua Data
         </button>
     </div>';
-    exit;
+    // exit;
+    customExit();
 }
 
 

@@ -54,7 +54,8 @@ if (strpos($path, '/demo/inventory') !== false) {
     </div>
 </div>
     <?php
-    exit;
+    // exit;
+    customExit();
 }
 
 // 2. Response untuk Tab Prediksi AI
@@ -88,7 +89,8 @@ if (strpos($path, '/demo/prediction') !== false) {
     </div>
 </div>
     <?php
-    exit;
+    // exit;
+    customExit();
 }
 
 // 2. Response untuk Tab Prediksi AI
@@ -160,7 +162,8 @@ $suppliers = [
     </div>
 </div>
 <?php
-    exit;
+    // exit;
+    customExit();
 }
 
 // 3. Response untuk Form Subscribe (POST)
@@ -179,5 +182,6 @@ if (strpos($path, '/subscribe') !== false) {
         <p class="text-slate-400">Terima kasih '.$email.'. Cek inbox Anda segera.</p>
     </div>
     ';
-    exit;
+    // exit;
+    customExit();
 }

@@ -139,7 +139,8 @@ class Validator
 
                 //stop the execution of any other code after the
                 //validation.
-                exit();
+                // exit();
+                customExit();
             }
         }
     }

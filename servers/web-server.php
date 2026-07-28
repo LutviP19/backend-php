@@ -188,6 +188,14 @@ $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse 
         $response->header('Content-Type', 'text/html; charset=UTF-8');
         $response->end((string)$finalOutput);
 
+    } catch (\App\Core\Exceptions\SwooleExitException $e) {
+        // Catch Graceful Exit dari customExit()
+        $bufferedOutput = ob_get_clean();
+
+        // Tetapkan status code dari exception jika belum diset
+        $response->status($e->getCode() ?: 200);
+        $response->end($bufferedOutput);
+
     } catch (\Throwable $e) {
         // Catch Exception WITHOUT shutting down the server
         while (ob_get_level() > 0) {

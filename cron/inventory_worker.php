@@ -10,7 +10,8 @@ $db = \App\Core\DB::getInstance(); // Sesuaikan dengan class DB framework Anda
 $lowStock = $db->query("SELECT nama_barang, stok FROM inventory WHERE stok <= batas_minimum")->fetchAll();
 
 if (empty($lowStock)) {
-    exit("Tidak ada stok kritis hari ini.\n");
+    // exit("Tidak ada stok kritis hari ini.\n");
+    customExit("Tidak ada stok kritis hari ini.\n");
 }
 
 // 2. Minta AI membuatkan pesan singkat untuk WhatsApp

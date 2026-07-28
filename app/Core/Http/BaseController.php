@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Core\Http;
@@ -18,7 +19,7 @@ class BaseController
 {
     public function __construct()
     {
-        
+
     }
 
     /**
@@ -42,7 +43,7 @@ class BaseController
         }
 
         extract($data);
-        if($trim) {
+        if ($trim) {
             ob_start();
             require $this->name($view);
             $output = ob_get_clean();
@@ -68,9 +69,9 @@ class BaseController
         }
 
         extract($dataExtra);
-        
-        
-        if($trim) {
+
+
+        if ($trim) {
             ob_start();
             include $this->name($view);
             $output = ob_get_clean();
@@ -140,9 +141,10 @@ class BaseController
 
         //check for the csrf token.
         if (!CSRF::match(Request::input('csrf_token'))) {
-            $this->response()->statusCode(419);
-            throw new Exception("CSRF token not found");
-            exit();
+            // $this->response()->statusCode(419);
+            // throw new Exception("CSRF token not found");
+            // exit();
+            customExit("CSRF token not found", 419);
         }
     }
 
@@ -228,7 +230,8 @@ class BaseController
         return new Request();
     }
 
-    protected function __isHtmxRequest() {
+    protected function __isHtmxRequest()
+    {
         return isset($_SERVER['HTTP_HX_REQUEST']) && $_SERVER['HTTP_HX_REQUEST'] === 'true';
     }
 }

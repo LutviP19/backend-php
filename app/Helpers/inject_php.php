@@ -28,6 +28,60 @@ function isSwoole(): bool
     return false;
 }
 
+if (!function_exists('customExit')) {
+    /**
+     * Custom exit helper that safely halts execution on PHP-FPM or OpenSwoole.
+     *
+     * @param string|int|array|null $output Message/payload to output before exiting.
+     * @param int $status HTTP status code (default 200).
+     * @return void
+     */
+    function customExit(mixed $output = null, int $status = 200): void
+    {
+        // 1. Handle Output if any payload is sent
+        if ($output !== null) {
+            if (is_array($output) || is_object($output)) {
+                if (isSwoole() && isset($GLOBALS['swoole_response'])) {
+                    $GLOBALS['swoole_response']->header('Content-Type', 'application/json; charset=UTF-8');
+                } elseif (!headers_sent()) {
+                    header('Content-Type: application/json; charset=UTF-8');
+                }
+                echo json_encode($output, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            } else {
+                echo (string) $output;
+            }
+        }
+
+        // 2. Set HTTP Status Code
+        if (isSwoole() && isset($GLOBALS['swoole_response']) && $GLOBALS['swoole_response'] instanceof \OpenSwoole\Http\Response) {
+            $GLOBALS['swoole_response']->status($status);
+        } elseif (!headers_sent()) {
+            http_response_code($status);
+        }
+
+        // 3. Process Termination Execution Based on Engine
+        if (!isSwoole()) {
+            // Native Mode /PHP-FPM: Safely use exit()
+            exit(0);
+        }
+
+        // Mode OpenSwoole: Lempar Custom Graceful Exit Exception
+        throw new \App\Core\Exceptions\SwooleExitException($status);
+    }
+
+    // // Example 1: Stop without output (e.g. after redirect)
+    // customExit();
+
+    // // Example 2: Stop by rendering a JSON error
+    // customExit([
+    //     'status' => false,
+    //     'message' => 'Unauthorized access'
+    // ], 401);
+
+    // // Example 3: Stop with HTML string
+    // customExit("<h1>Maintenance</h1>", 503);
+}
+
 /**
  * Check Rate Limit dengan Redis & Fallback File
  *

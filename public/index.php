@@ -12,7 +12,8 @@ $user_agent = trim($_SERVER['HTTP_USER_AGENT'] ?? '');
 foreach ($blocked_agents as $agent) { 
     if (str_contains(strtolower($user_agent), strtolower($agent))) {
         header('HTTP/1.0 403 Forbidden');
-        exit('Access denied.');
+        // exit('Access denied.');
+        customExit("Access denied.", 403);
     }
 }
 // END Blocked boot agent

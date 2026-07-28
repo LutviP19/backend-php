@@ -347,7 +347,8 @@ class DashboardController extends Controller
         // Berhasil: Kirim status 200 dengan body kosong
         // HTMX akan menghapus elemen <tr> target karena kita menggunakan hx-swap="outerHTML"
         http_response_code(200);
-        exit;
+        // exit;
+        customExit();
     }
 
     public function update_product(Request $request, Response $response)
@@ -607,7 +608,8 @@ class DashboardController extends Controller
         }
 
         fclose($output);
-        exit;
+        // exit;
+        customExit();
     }
     // ===== END GET DATA EXPORT
 

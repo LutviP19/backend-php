@@ -6,9 +6,9 @@
 namespace App\Controllers;
 
 use App\Core\Http\{Request, Response};
-use App\Core\Support\Session;
-use App\Core\Database\QueryBuilder;
-use App\Core\Validation\Validator;
+// use App\Core\Support\Session;
+// use App\Core\Database\QueryBuilder;
+// use App\Core\Validation\Validator;
 use App\Controllers\Controller;
 
 
@@ -77,7 +77,8 @@ class MyController extends Controller
             // Catatan: Redirect HTMX dilakukan via header
             header('HX-Redirect: /htmx');
             
-            exit();
+            // exit();
+            customExit();
 
         } else {
             // Jika gagal, kirim pesan error ke #error-area

@@ -59,13 +59,15 @@ if (empty($paged_data)) {
 </tr>
 
 <?php
-        // 2. Jika BUKAN Swoole (misal CLI/PHP-FPM biasa), boleh die/exit
-        if (!isSwoole()) {
-            exit(0);
-        }
+    // // 2. Jika BUKAN Swoole (misal CLI/PHP-FPM biasa), boleh die/exit
+    // if (!isSwoole()) {
+    //     exit(0);
+    // }
 
-    // 3. Jika Swoole, CUKUP RETURN agar Worker tidak mati/crash
-    return;
+    // // 3. Jika Swoole, CUKUP RETURN agar Worker tidak mati/crash
+    // return;
+
+    customExit();
 }
 
 // Render Fragment HTML

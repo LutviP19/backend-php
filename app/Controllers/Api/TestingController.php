@@ -6,7 +6,7 @@ use Amp;
 use Amp\CompositeException;
 use Amp\Future;
 use Amp\Http\Client\HttpClientBuilder;
-use Amp\Http\Client\Request as clientRequest;
+// use Amp\Http\Client\Request as clientRequest;
 use Amp\MultiReasonException;
 use App\Core\Database\QueryBuilder;
 use App\Core\Http\{Request, Response};
@@ -50,7 +50,8 @@ class TestingController extends ApiController
         $this->validateJwt();
 
         // Testing varian of models
-        function getData() {
+        function getData()
+        {
             $users = QueryBuilder::table('users')->select(['*'])->get();
             $roles = QueryBuilder::table('roles')->select(['id', 'slug', 'name'])->get();
             $role = Role::getRoleById(3);
@@ -63,7 +64,7 @@ class TestingController extends ApiController
 
             return ['employees' => $employees, 'users' => $users, 'roles' => $roles, 'role' => $role, 'userUlid' => $userUlid];
         }
-        
+
         // $output = getData();
         // dd($output, true);
 
@@ -76,7 +77,7 @@ class TestingController extends ApiController
         $cacheKeyId = "api-test:{$auth['uid']}:" . $queryString . ":p{$page}:l{$limit}";
         // dd($cacheKeyId);
         $expiry = 300; // null:default | in seconds
-        $output = $cache->remember($cacheKeyId, fn() => getData(), $expiry);
+        $output = $cache->remember($cacheKeyId, fn () => getData(), $expiry);
         // dd($output, true);
 
         // \App\Core\Support\Log::debug($output, 'TestingController.index.request');
@@ -109,7 +110,8 @@ class TestingController extends ApiController
                 $model = new OllamaExec($selectedModel);
                 if (!$model->checkModelExists()) {
                     echo "Error: Model belum terpasang di sistem.";
-                    exit;
+                    // exit;
+                    customExit();
                 }
 
                 // Calling the Wrapper class we created earlier
@@ -143,7 +145,8 @@ class TestingController extends ApiController
             echo "Stack trace:\n" . $e->getTraceAsString();
         }
 
-        exit;
+        // exit;
+        customExit();
 
         // dd([$responseAi], true);
 

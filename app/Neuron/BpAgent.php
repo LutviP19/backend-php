@@ -6,7 +6,7 @@ namespace App\Neuron;
 
 use NeuronAI\Agent;
 use NeuronAI\Providers\AIProviderInterface;
-use NeuronAI\SystemPrompt;
+// use NeuronAI\SystemPrompt;
 use NeuronAI\Tools\ToolInterface;
 use NeuronAI\Tools\Toolkits\ToolkitInterface;
 use NeuronAI\Providers\HttpClientOptions;
@@ -36,7 +36,8 @@ class BpAgent extends Agent
 
         } catch (\Exception $e) {
             echo "Error: " . $e->getMessage();
-            exit;
+            // exit;
+            customExit();
         }
     }
 

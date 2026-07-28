@@ -154,12 +154,13 @@ class Response
      */
     public function json($data = [], $code = 200)
     {
-        if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // Ignore OpenSwoole Server
+        if (! isSwoole()) { // Ignore OpenSwoole Server
 
             $this->header("Content-Type", "application/json; charset=utf-8", $code);
 
             print json_encode($data, JSON_UNESCAPED_SLASHES);
-            exit;
+            // exit;
+            customExit();
         } else {
 
             // print json_encode($data, JSON_UNESCAPED_SLASHES);

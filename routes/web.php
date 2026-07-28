@@ -63,3 +63,5 @@ $router->get('/data/asset-edit', 'DashboardController@assets_edit');
 $router->post('/data/asset-store', 'DashboardController@assets_store');
 $router->post('/data/asset-update', 'DashboardController@assets_update');
 
+// Report - data/bast/print-view/123
+$router->get('data/bast/print-view/{id}', 'DashboardController@printView');

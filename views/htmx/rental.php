@@ -66,40 +66,102 @@
                 <button @click="open = false" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
             </div>
 
-            <form class="space-y-5">
-                <div>
-                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Pilih Aset</label>
-                    <select class="w-full bg-slate-50 border-none rounded-2xl p-3 text-sm focus:ring-2 focus:ring-indigo-500">
-                        <option>Kubota L-Series A1 (Traktor)</option>
-                        <option>DJI Agras T40 (Drone)</option>
+            <form id="form-bast" class="space-y-5">
+               <div>
+                    <label for="item-id" class="block text-xs font-bold text-slate-400 uppercase mb-2">Pilih Aset</label>
+                    <select id="item-id" name="item_id" class="w-full bg-slate-50 border-none rounded-2xl p-3 text-sm focus:ring-2 focus:ring-indigo-500">
+                        <option value="KBT-1">Kubota L-Series A1 (Traktor)</option>
+                        <option value="DJI-1">DJI Agras T40 (Drone)</option>
                     </select>
                 </div>
                 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Nama Petani</label>
-                        <input type="text" placeholder="Contoh: Bp. Jajang" class="w-full bg-slate-50 border-none rounded-2xl p-3 text-sm focus:ring-2 focus:ring-indigo-500">
+                        <label for="nama-petani" class="block text-xs font-bold text-slate-400 uppercase mb-2">Nama Petani</label>
+                        <input 
+                            type="text" 
+                            id="nama-petani" 
+                            name="nama_petani" 
+                            placeholder="Contoh: Bp. Jajang" 
+                            required 
+                            class="w-full bg-slate-50 border-none rounded-2xl p-3 text-sm focus:ring-2 focus:ring-indigo-500"
+                        >
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Estimasi Durasi (Jam)</label>
-                        <input type="number" x-model="durasi" class="w-full bg-slate-50 border-none rounded-2xl p-3 text-sm focus:ring-2 focus:ring-indigo-500">
+                        <label for="durasi" class="block text-xs font-bold text-slate-400 uppercase mb-2">Estimasi Durasi (Jam)</label>
+                        <input 
+                            type="number" 
+                            id="durasi" 
+                            name="durasi" 
+                            min="1" 
+                            x-model.number="durasi" 
+                            class="w-full bg-slate-50 border-none rounded-2xl p-3 text-sm focus:ring-2 focus:ring-indigo-500"
+                        >
                     </div>
                 </div>
 
+                <!-- BOX ESTIMASI BIAYA (ALPINE.JS) -->
                 <div class="p-6 bg-indigo-50 rounded-3xl border border-indigo-100">
                     <div class="flex justify-between items-center mb-2">
                         <span class="text-sm text-indigo-900">Total Biaya Estimasi:</span>
-                        <span class="text-xl font-black text-indigo-600" x-text="'Rp ' + (durasi * hargaPerJam).toLocaleString()"></span>
+                        <span class="text-xl font-black text-indigo-600" x-text="'Rp ' + ((durasi || 0) * hargaPerJam).toLocaleString('id-ID')"></span>
                     </div>
                     <p class="text-[10px] text-indigo-400 italic leading-relaxed">
                         <i class="fas fa-info-circle mr-1"></i> Biaya akhir akan disesuaikan dengan jam kerja (engine hours) saat alat dikembalikan dan tertera di BAST.
                     </p>
                 </div>
 
-                <button type="submit" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition">
+                <button type="button" id="btn-cetak-bast" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition">
                     Konfirmasi & Cetak BAST Digital
                 </button>
             </form>
         </div>
     </div>
 </div>
+
+<script>
+    document.getElementById('btn-cetak-bast').addEventListener('click', function(e) {
+        // Panggil preventDefault di baris paling atas
+        e.preventDefault();
+
+        const selectElement = document.getElementById('item-id');
+        
+        // 1. Ambil Nilai Value (ID Produk)
+        const itemId = selectElement.value; // Hasil: "KBT-1"
+        
+        // 2. Ambil TEKS dari Option yang sedang dipilih (Nama Produk)
+        const namaProduk = selectElement.selectedOptions[0].text; // Hasil: "Kubota L-Series A1 (Traktor)"
+
+        const namaPetani = document.getElementById('nama-petani').value;
+
+        // Validasi Sederhana
+        if (!namaPetani.trim()) {
+            alert('Silakan isi Nama Petani terlebih dahulu!');
+            document.getElementById('nama-petani').focus();
+            return;
+        }
+
+        // 2. Gunakan Full Origin Dynamic Path agar kompatibel di Electron maupun Browser
+        const baseUrl = window.location.origin;
+        const printUrl = `${baseUrl}/data/bast/print-view/${itemId}?produk=${encodeURIComponent(namaProduk)}&petani=${encodeURIComponent(namaPetani)}`;
+
+        // 3. Eksekusi Print
+        if (window.electronAPI) {
+            // Mode Electron: Silent Print via IPC
+            window.electronAPI.printBastView(printUrl);
+        } else {
+            // Fallback Mode Browser Biasa
+            const printWin = window.open(printUrl, '_blank');
+            if (printWin) {
+                printWin.onload = function() {
+                    printWin.print();
+
+                    // Pasang listener 'afterprint' di window yang baru dibuka
+                    printWin.addEventListener('afterprint', function() {
+                        printWin.close(); // Tutup tab otomatis setelah selesai/batal print
+                    });
+                };
+            }
+        }
+    });
+</script>

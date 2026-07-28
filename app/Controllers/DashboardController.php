@@ -572,7 +572,7 @@ class DashboardController extends Controller
             // }
             // return;
 
-            // CONTOH BENAR JIKA KIRIM JSON
+            // CORRECT EXAMPLE IF SENDING JSON
             return endResponse($data);
         }
     }
@@ -889,6 +889,38 @@ class DashboardController extends Controller
 
     }
     // ===== END GET DATA ASSETS
+
+    // Sample print PDF
+    // public function printView(Request $request, Response $response)
+    public function printView(Request $request, Response $response, $id)
+    {
+        $id = $id ?: (int) $request->id;
+        $produk = $request->produk ?? 'Excavator Komatsu PC200-8M0 & Sparepart';
+        $petani = $request->petani ?? 'Petani';
+        // $bastData = $this->bastModel->find($id);
+
+        // Dummy data untuk $bastData = $this->bastModel->find($id);
+        $bastData = [
+            'id'           => $id ?? 1,
+            'no_bast'      => 'BAST/KOP/' . date('Y/m') . '/' . str_pad($id ?? 1, 3, '0', STR_PAD_LEFT),
+            'tanggal'      => date('Y-m-d'),
+            'title'        => $produk,
+            'kategori'     => 'assets', // assets, finance, atau inventory
+            'jumlah'       => '1 Unit',
+            'kondisi'      => 'Baik / Layak Operasional',
+            'penyerah'     => 'Lutvi (Admin Aset Koperasi)',
+            'penerima'     => $petani . ' (Anggota No. A-1092)',
+            'keterangan'   => 'Serah terima unit alat berat dalam kondisi lengkap beserta kunci kontak dan dokumen STNK/BPKB.',
+            'status'       => 'Selesai',
+            'member'       => 'Budi Santoso',
+            'time'         => date('d M Y, H:i') . ' WIB'
+        ];
+
+        // Render View Murni tanpa Layout Dashboard Utama
+        $this->view('pdf.bast-print-template', [
+            'bast' => $bastData
+        ]);
+    }
 
     private function __getPaginationRange($currentPage, $totalPages)
     {

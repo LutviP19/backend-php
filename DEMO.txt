@@ -42,7 +42,8 @@ php servers/web-server.php
 
 php servers/api-server.php
 
-
+- Dev Watcher
+php watcher.php
 
 
 Get app info (param: userid)

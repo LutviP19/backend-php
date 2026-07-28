@@ -7,10 +7,8 @@ use App\Core\Support\Session;
 use App\Core\Database\QueryBuilder;
 use App\Core\Validation\Validator;
 
-
 class DashboardController extends Controller
 {
-
     public function __construct()
     {
         parent::__construct();
@@ -21,7 +19,7 @@ class DashboardController extends Controller
                         'insomnia',
                     ];
         $agentAllow = false;
-        foreach ($dev_agents as $agent) { 
+        foreach ($dev_agents as $agent) {
             if (str_contains(strtolower($user_agent), strtolower($agent))) {
                 $agentAllow = true;
             }
@@ -29,13 +27,13 @@ class DashboardController extends Controller
         // dd($agentAllow);
 
         // Handler reload manual
-        if(!$agentAllow) {
+        if (!$agentAllow) {
             $ignore_uri = ['login', 'logout', 'htmx'];
             if (request()->method() === 'GET' && ! in_array(request()->uri(), $ignore_uri) && !$this->__isHtmxRequest()) {
                 response()->redirect('/htmx');
             }
         }
-        
+
     }
 
     /**
@@ -69,7 +67,7 @@ class DashboardController extends Controller
         $pass = $request->password ?? '';
 
         if ($user === 'admin' && $pass === 'desa2026') {
-            
+
             // Memakai method header() buatan kita di custom Response
             return $response
                 ->header('HX-Trigger', json_encode([
@@ -119,7 +117,7 @@ class DashboardController extends Controller
 
     public function assets(Request $request, Response $response)
     {
-        $dataViews = $this->assets_render($request,$response);
+        $dataViews = $this->assets_render($request, $response);
         $this->view('htmx.assets', $dataViews);
     }
 
@@ -134,7 +132,7 @@ class DashboardController extends Controller
     }
 
     // ===== GET DATA
-    protected function inventory_stats($category = 'all') 
+    protected function inventory_stats($category = 'all')
     {
         // Logika Query: Ambil data produk sorting berdasarkan terbaru/terakhir diupdate
         $query = "SELECT nama, stok FROM products ";
@@ -166,7 +164,7 @@ class DashboardController extends Controller
         $queryCat = "SELECT kategori, sum(stok) as ttl_stok FROM products GROUP BY kategori";
         $resultCat = QueryBuilder::table('products')
                     ->execQuery($queryCat, [], false, false, true);
-        
+
 
         // Create an empty generic object (Dummy data)
         $alat = [
@@ -187,8 +185,8 @@ class DashboardController extends Controller
         // Logika AI Insight sederhana
         $avgStok = count($values) > 0 ? $totalStok / count($values) : 0;
         $isKritis = $avgStok < 20; // Contoh: rata-rata stok di bawah 20 dianggap kritis
-        $msg = $isKritis 
-            ? "AI Alert: Stok rata-rata kategori $category sangat rendah ($avgStok). Segera cek gudang!" 
+        $msg = $isKritis
+            ? "AI Alert: Stok rata-rata kategori $category sangat rendah ($avgStok). Segera cek gudang!"
             : "AI Insight: Perputaran stok $category terpantau sehat.";
 
         $data = [
@@ -206,7 +204,7 @@ class DashboardController extends Controller
         return $data;
     }
 
-    public function inventory_list(Request $request, Response $response) 
+    public function inventory_list(Request $request, Response $response)
     {
         $category = $request->category ?? 'all';
 
@@ -254,10 +252,10 @@ class DashboardController extends Controller
         $products = QueryBuilder::table('products')->execQuery($sql, array_values($params), false, false, true);
 
         return [
-                'products' => $this->getProducts($products), 
+                'products' => $this->getProducts($products),
                 'category' => $kategori,
                 'search' => $search,
-                'currentPage' => $currentPage, 
+                'currentPage' => $currentPage,
                 'totalPages' => $totalPages,
                 'paginationItems' => $paginationItems,
             ];
@@ -267,7 +265,7 @@ class DashboardController extends Controller
     {
         // Di dalam inventory_list setelah query data
         // $kritisCount = count(array_filter($products, function($p) { return $p->stok <= 5; }));
-        $kritisCount = count(array_filter($products, fn($p) => $p->stok <= 5));
+        $kritisCount = count(array_filter($products, fn ($p) => $p->stok <= 5));
         $isKritis = ($kritisCount > 0);
         if ($isKritis) {
             $msg = "AI mendeteksi $kritisCount produk dengan stok KRITIS! Segera lakukan pengadaan ulang.";
@@ -281,7 +279,7 @@ class DashboardController extends Controller
         return $products;
     }
 
-    public function edit_product(Request $request, Response $response) 
+    public function edit_product(Request $request, Response $response)
     {
         $id = $request->id ?? null;
 
@@ -299,13 +297,13 @@ class DashboardController extends Controller
 
         $product = QueryBuilder::table('products')->execQuery('SELECT * FROM products WHERE id = ? LIMIT 1', array_values($payload), false, true);
 
-        $this->view('htmx.modals.inventory.form_edit',['data' => $product]);
+        $this->view('htmx.modals.inventory.form_edit', ['data' => $product]);
     }
     // ===== END GET DATA
 
     // ===== CRUD DATA
 
-    public function delete_product(Request $request, Response $response) 
+    public function delete_product(Request $request, Response $response)
     {
         // dd($request->all());
 
@@ -333,7 +331,7 @@ class DashboardController extends Controller
 
         $auth = false;
         // dd($auth);
-        if(false === $auth) {
+        if (false === $auth) {
             header("HTTP/1.1 403 Forbidden");
             die("Produk ini tidak bisa dihapus, mohon hubungi Admin.");
         }
@@ -341,7 +339,7 @@ class DashboardController extends Controller
         $callback = QueryBuilder::table('products')
                     ->execQuery('DELETE FROM products WHERE id = ?', array_values($payload));
 
-        if(false === $callback) {
+        if (false === $callback) {
             header("HTTP/1.1 500 Internal Server Error");
             die("Gagal menghapus data.");
         }
@@ -352,7 +350,7 @@ class DashboardController extends Controller
         exit;
     }
 
-    public function update_product(Request $request, Response $response) 
+    public function update_product(Request $request, Response $response)
     {
         // dd($request->all());
 
@@ -389,12 +387,12 @@ class DashboardController extends Controller
         $payload = $filter->sanitize($postData, ['nama', 'kategori', 'stok', 'harga', 'status_kritis', 'id']);
         // dd($payload);
         // dd(array_values($payload));
-        
+
         $lastId = QueryBuilder::table('products')
                     ->execQuery('UPDATE products SET  nama = ?,  kategori = ?,  stok = ?, harga = ?,  status_kritis = ?, updated_at = NOW() WHERE id = ?', array_values($payload));
 
         // dd($lastId);
-        if(false === $lastId) {
+        if (false === $lastId) {
             header("HTTP/1.1 500 Internal Server Error");
             die("Gagal menyimpan data.");
         }
@@ -402,7 +400,7 @@ class DashboardController extends Controller
         $this->include('htmx.data.inventory.row', $payload);
     }
 
-    public function save_product(Request $request, Response $response) 
+    public function save_product(Request $request, Response $response)
     {
         // dd($request->all());
 
@@ -437,13 +435,13 @@ class DashboardController extends Controller
         $payload = $filter->sanitize($postData, ['nama', 'kategori', 'stok', 'harga', 'status_kritis']);
         // dd($payload);
         // dd(array_values($payload));
-        
+
         $lastId = QueryBuilder::table('products')
                     ->execQuery('INSERT INTO products (nama, kategori, stok, harga, status_kritis) 
                                 VALUES (?, ?, ?, ?, ?)', array_values($payload), true);
 
         // dd($lastId);
-        if(false === $lastId || !is_numeric($lastId)) {
+        if (false === $lastId || !is_numeric($lastId)) {
             header("HTTP/1.1 500 Internal Server Error");
             die("Gagal menyimpan data.");
         }
@@ -454,7 +452,7 @@ class DashboardController extends Controller
     // ===== END CRUD DATA
 
     // ===== GET DATA CHART
-    public function data_dashboard_activities(Request $request, Response $response) 
+    public function data_dashboard_activities(Request $request, Response $response)
     {
         // Set header agar browser tahu ini konten dinamis
         // header('Content-Type: text/html; charset=utf-8');
@@ -506,18 +504,18 @@ class DashboardController extends Controller
 
 
         $dataViews = [
-            // 'filtered' => $filtered, 
-            'search' => $search, 
-            'category' => $category, 
-            'total_items' => $total_items, 
-            'total_pages' => $total_pages, 
-            'page' => $page, 
-            'offset' => $offset, 
-            'paged_data' => (array) $paged_data, 
+            // 'filtered' => $filtered,
+            'search' => $search,
+            'category' => $category,
+            'total_items' => $total_items,
+            'total_pages' => $total_pages,
+            'page' => $page,
+            'offset' => $offset,
+            'paged_data' => (array) $paged_data,
         ];
 
         // Hanya mengambil data tabelnya saja
-        if(!isset($request->search) && !isset($request->category)) {
+        if (!isset($request->search) && !isset($request->category)) {
             return $dataViews;
         }
 
@@ -526,7 +524,7 @@ class DashboardController extends Controller
             // Opsional: Berikan delay 300ms agar efek loading terlihat halus
             usleep(300000);
 
-            $this->include('htmx.data.dashboard.row_activities',  $dataViews);
+            $this->include('htmx.data.dashboard.row_activities', $dataViews);
         }
 
         // B. Endpoint untuk Data Chart (JSON)
@@ -581,33 +579,33 @@ class DashboardController extends Controller
 
 
     // ===== GET DATA EXPORT
-    public function data_dashboard_export(Request $request, Response $response) 
+    public function data_dashboard_export(Request $request, Response $response)
     {
         dd($request->all());
         $search = $request->search ?? '';
         $category = $request->category ?? '';
-    
+
         // 1. Ambil data dari database berdasarkan filter yang sama dengan tabel
         // $data = $db->query("SELECT ... WHERE category = '$category' AND title LIKE '%$search%'");
-        
+
         // 2. Set Header untuk Download CSV
         header('Content-Type: text/csv; charset=utf-8');
         header('Content-Disposition: attachment; filename=Laporan_Koperasi_' . date('Ymd_His') . '.csv');
-    
+
         $output = fopen('php://output', 'w');
-        
+
         // Header Kolom CSV
         fputcsv($output, ['ID', 'Aktivitas', 'Anggota', 'Kategori', 'Waktu', 'Status']);
-    
+
         // Dummy Data Loop (Ganti dengan hasil query database Anda)
         $filtered_data = [
             ['1', 'Sewa Traktor', 'Sukirman', 'Alat Berat', '10:00', 'Selesai']
         ];
-    
+
         foreach ($filtered_data as $row) {
             fputcsv($output, $row);
         }
-        
+
         fclose($output);
         exit;
     }
@@ -615,7 +613,7 @@ class DashboardController extends Controller
 
 
     // ===== GET DATA ASSETS
-    public function assets_render(Request $request, Response $response) 
+    public function assets_render(Request $request, Response $response)
     {
         $search = $request->search ?? '';
         $status = $request->status_filter ?? '';
@@ -625,8 +623,8 @@ class DashboardController extends Controller
         $limit    = 5; // Jumlah data per halaman
         $offset   = ($page - 1) * $limit;
 
-        // $sql = "SELECT a.asset_id, a.name, a.status, a.health, a.icon, a.color, a.updated_at, c.category_name 
-        //         FROM assets a 
+        // $sql = "SELECT a.asset_id, a.name, a.status, a.health, a.icon, a.color, a.updated_at, c.category_name
+        //         FROM assets a
         //         LEFT JOIN asset_categories c ON a.category_id = c.id
         //         ORDER BY c.category_name ASC, a.asset_id ASC, a.updated_at DESC;";
 
@@ -666,19 +664,19 @@ class DashboardController extends Controller
 
         // dd($viewMode);
         $dataViews = [
-            'filtered' => $filtered, 
-            'viewMode' => $viewMode, 
+            'filtered' => $filtered,
+            'viewMode' => $viewMode,
         ];
 
         // Hanya mengambil data tabelnya saja
-        if($_SERVER['REQUEST_METHOD'] === 'POST' || (!isset($request->search) && !isset($request->status_filter) && !isset($request->view_mode))) {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' || (!isset($request->search) && !isset($request->status_filter) && !isset($request->view_mode))) {
             return $dataViews;
         }
 
-        $this->include('htmx.data.assets.assets-render',  $dataViews);
+        $this->include('htmx.data.assets.assets-render', $dataViews);
     }
 
-    public function assets_logs(Request $request, Response $response) 
+    public function assets_logs(Request $request, Response $response)
     {
         // $unitId = $_GET['id'] ?? 'Unknown';
 
@@ -701,19 +699,19 @@ class DashboardController extends Controller
 
         // Convert Object menjadi Array
         $json_string = json_encode($object_data);
-        $logs = json_decode($json_string, true);        
+        $logs = json_decode($json_string, true);
 
         // $logs = [];
         $unitId = $unitName = '';
-        if(isset($logs[0])) {
+        if (isset($logs[0])) {
             $unitId = $logs[0]['unit_id'] ?: '';
             $unitName = $logs[0]['unit_name'] ?: '';
         }
-        
+
         $this->include('htmx.modals.assets.logs', ['unitId' => $unitId, 'unitName' => $unitName, 'logs' => $logs]);
     }
 
-    public function assets_edit(Request $request, Response $response) 
+    public function assets_edit(Request $request, Response $response)
     {
         $filter = new \App\Core\Validation\Filter();
         // Filter & Sanitize Input
@@ -723,7 +721,7 @@ class DashboardController extends Controller
         $payload = $filter->sanitize($postData);
         // dd($payload);
 
-        $unitId = $payload['id'];
+        $unitId = $payload['id'] ?? null;
 
         // // Dummy data asset - di proyek nyata ambil dari database
         // $asset = ['id' => $id, 'name' => 'Excavator Cat 320', 'health' => 85, 'status' => 'ready'];
@@ -736,17 +734,21 @@ class DashboardController extends Controller
         $json_string = json_encode($object_data);
         $asset = json_decode($json_string, true);
 
-        $this->include('htmx.modals.assets.edit', ['id' => $unitId, 'asset' => $asset]);
+        if ($unitId && $asset) {
+            $this->include('htmx.modals.assets.edit', ['id' => $unitId, 'asset' => $asset]);
+        }
+
+        return;
     }
 
-    public function assets_update(Request $request, Response $response) 
+    public function assets_update(Request $request, Response $response)
     {
         // dd($request->all());
 
         // Validate Input
         Session::unset('errors'); // Clean Errors MessageBag
         $validator = new Validator();
-        $validator->validate($request->all(), [            
+        $validator->validate($request->all(), [
             'asset_id' => 'required|string|min:3|max:100|unique:assets,asset_id,'.$request->id,
             'name' => 'required|string|min:3|max:100',
             'status'  => 'required|string',
@@ -798,7 +800,7 @@ class DashboardController extends Controller
         $lastId = QueryBuilder::table('assets')->execQuery($sql, array_values($params));
 
         // dd($lastId);
-        if(false === $lastId) {
+        if (false === $lastId) {
             header("HTTP/1.1 500 Internal Server Error");
             die("Gagal menyimpan data.");
         }
@@ -806,15 +808,15 @@ class DashboardController extends Controller
         // http_response_code(200);
         $dataViews = $this->assets_render($request, $response);
         // dd($dataViews);
-        $this->include('htmx.data.assets.assets-render',  $dataViews);
+        $this->include('htmx.data.assets.assets-render', $dataViews);
     }
 
-    public function assets_add(Request $request, Response $response) 
+    public function assets_add(Request $request, Response $response)
     {
         $this->include('htmx.modals.assets.add');
     }
 
-    public function assets_store(Request $request, Response $response) 
+    public function assets_store(Request $request, Response $response)
     {
         // dd($request->all());
 
@@ -846,10 +848,10 @@ class DashboardController extends Controller
             'asset_id' => 'trim|sanitize_string',
             'name'  => 'trim|sanitize_string',
             'category_id'  => 'trim|sanitize_numbers',
-            'status'  => 'trim|sanitize_string',            
+            'status'  => 'trim|sanitize_string',
             'icon'  => 'trim|sanitize_string',
             'color'  => 'trim|sanitize_string',
-            'health'  => 'trim|sanitize_numbers',            
+            'health'  => 'trim|sanitize_numbers',
             'action'  => 'trim|sanitize_string',
             'status_kritis'  => 'trim|sanitize_string',
             'view_mode'  => 'trim|sanitize_string',
@@ -869,7 +871,7 @@ class DashboardController extends Controller
                                 VALUES (?, ?, ?, ?, ?, ?, ?)', array_values($payload), true);
 
         // dd($lastId);
-        if(false === $lastId || !is_numeric($lastId)) {
+        if (false === $lastId || !is_numeric($lastId)) {
             header("HTTP/1.1 500 Internal Server Error");
             die("Gagal menyimpan data.");
         }
@@ -881,42 +883,43 @@ class DashboardController extends Controller
         $dataViews['filtered'] = [0 => $payload];
         $dataViews['viewMode'] = $viewMode;
         // dd($dataViews['filtered']);
-        $this->include('htmx.data.assets.assets-row',  $dataViews);
+        $this->include('htmx.data.assets.assets-row', $dataViews);
 
     }
     // ===== END GET DATA ASSETS
 
-    private function __getPaginationRange($currentPage, $totalPages) 
+    private function __getPaginationRange($currentPage, $totalPages)
     {
         $delta = 1; // Jumlah halaman di kiri & kanan halaman aktif
         $range = [];
         $rangeWithDots = [];
         $l = null;
-    
+
         for ($i = 1; $i <= $totalPages; $i++) {
             // Tampilkan: Halaman 1, Halaman Terakhir, dan Halaman di sekitar Current
             if ($i == 1 || $i == $totalPages || ($i >= $currentPage - $delta && $i <= $currentPage + $delta)) {
                 $range[] = $i;
             }
         }
-    
+
         foreach ($range as $i) {
             if ($l) {
                 if ($i - $l === 2) {
                     $rangeWithDots[] = $l + 1;
-                } else if ($i - $l !== 1) {
+                } elseif ($i - $l !== 1) {
                     $rangeWithDots[] = '...';
                 }
             }
             $rangeWithDots[] = $i;
             $l = $i;
         }
-    
+
         return $rangeWithDots;
     }
 }
 
-class AssetHelper {
+class AssetHelper
+{
     // 1. Mapping Kategori (Ikon & Warna Dasar)
     public static $categories = [
         'heavy-equipment' => ['icon' => 'fa-tractor', 'color' => 'emerald', 'label' => 'Alat Berat'],
@@ -936,7 +939,8 @@ class AssetHelper {
     /**
      * Menghitung visual Health Bar dan efek khusus
      */
-    public static function getHealthInfo($health) {
+    public static function getHealthInfo($health)
+    {
         $info = [
             'color'    => 'emerald',
             'is_critical' => false,

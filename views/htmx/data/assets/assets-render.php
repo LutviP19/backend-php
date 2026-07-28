@@ -1,4 +1,4 @@
-<?php 
+<?php
 if (empty($filtered)) {
     // Tampilan jika data tidak ditemukan
     echo '
@@ -41,8 +41,8 @@ if ($viewMode === 'list'): ?>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-50" id="asset-container-body">
-            <?php foreach ($filtered as $u): 
-                
+            <?php foreach ($filtered as $u):
+
                 // Di dalam loop foreach ($filtered as $u)
                 $statusMap = [
                     'ready'       => ['label' => 'Ready', 'class' => 'text-emerald-500 bg-emerald-50'],
@@ -51,13 +51,17 @@ if ($viewMode === 'list'): ?>
                 ];
 
                 $currentStatus = $statusMap[$u['status']];
+                $healthTextColor = $u['color'];
 
                 // Logic warna progress bar berdasarkan health
                 $healthColor = 'bg-emerald-500';
-                if ($u['health'] < 40) $healthColor = 'bg-rose-500';
-                elseif ($u['health'] < 75) $healthColor = 'bg-amber-500';
-                
-            ?>
+                if ($u['health'] < 40) {
+                    $healthColor = 'bg-rose-500';
+                } elseif ($u['health'] < 75) {
+                    $healthColor = 'bg-amber-500';
+                }
+
+                ?>
             <tr class="hover:bg-slate-50 transition-all group">
                 <td class="px-8 py-4">
                     <div class="flex items-center gap-3">
@@ -96,19 +100,22 @@ if ($viewMode === 'list'): ?>
 <?php else: ?>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in duration-500"  id="asset-container-body">
     <?php foreach ($filtered as $u): ?>
-        <?php 
-            // Logika Warna Status
-            $statusStyle = [
-                'ready'       => 'bg-emerald-50 text-emerald-600',
-                'working'     => 'bg-blue-50 text-blue-600',
-                'maintenance' => 'bg-rose-50 text-rose-600'
-            ];
-            $currentStyle = $statusStyle[$u['status']] ?? 'bg-slate-50 text-slate-600';
+        <?php
+                // Logika Warna Status
+                $statusStyle = [
+                    'ready'       => 'bg-emerald-50 text-emerald-600',
+                    'working'     => 'bg-blue-50 text-blue-600',
+                    'maintenance' => 'bg-rose-50 text-rose-600'
+                ];
+        $currentStyle = $statusStyle[$u['status']] ?? 'bg-slate-50 text-slate-600';
 
-            // Logika Warna Progress Bar (Health)
-            $healthColor = 'bg-emerald-500';
-            if ($u['health'] < 40) $healthColor = 'bg-rose-500';
-            elseif ($u['health'] < 75) $healthColor = 'bg-amber-500';
+        // Logika Warna Progress Bar (Health)
+        $healthColor = 'bg-emerald-500';
+        if ($u['health'] < 40) {
+            $healthColor = 'bg-rose-500';
+        } elseif ($u['health'] < 75) {
+            $healthColor = 'bg-amber-500';
+        }
         ?>
         <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:border-indigo-500 hover:shadow-md transition-all duration-300 group animate-in zoom-in duration-300">
             <div class="flex justify-between items-start mb-4">
@@ -176,9 +183,9 @@ if ($viewMode === 'list'): ?>
 
 <?php
 $stats = [
-    'ready'   => (string)count(array_filter($filtered, fn($u) => $u['status'] === 'ready')),
-    'maint'   => (string)count(array_filter($filtered, fn($u) => $u['status'] === 'maintenance')),
-    'working' => (string)count(array_filter($filtered, fn($u) => $u['status'] === 'working')),
+    'ready'   => (string)count(array_filter($filtered, fn ($u) => $u['status'] === 'ready')),
+    'maint'   => (string)count(array_filter($filtered, fn ($u) => $u['status'] === 'maintenance')),
+    'working' => (string)count(array_filter($filtered, fn ($u) => $u['status'] === 'working')),
     'unitNames' => array_column($filtered, 'asset_id'),
     'unitHealths' => array_column($filtered, 'health'),
 ];

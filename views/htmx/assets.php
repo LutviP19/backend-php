@@ -105,7 +105,7 @@
                 <button 
                     @click="
                         viewMode = 'grid'; 
-                        htmx.ajax('GET', '<?= url('/data/assets-render') ?>', {
+                        htmx.ajax('GET', '<?= url('/data/assets-render-view') ?>', {
                             target: '#asset-container',
                             values: { view_mode: 'grid', search: search, status_filter: status }
                         })
@@ -118,7 +118,7 @@
                 <button 
                     @click="
                         viewMode = 'list'; 
-                        htmx.ajax('GET', '<?= url('/data/assets-render') ?>', {
+                        htmx.ajax('GET', '<?= url('/data/assets-render-view') ?>', {
                             target: '#asset-container',
                             values: { view_mode: 'list', search: search, status_filter: status }
                         })
@@ -138,7 +138,7 @@
                     x-model="search"
                     name="search"
                     id="asset-search-input"
-                    hx-get="<?= url('/data/assets-render') ?>"
+                    hx-get="<?= url('/data/assets-render-view') ?>"
                     hx-trigger="keyup changed delay:500ms, reload"
                     hx-target="#asset-container"
                     hx-include="[name='status_filter'], [name='view_mode']" 

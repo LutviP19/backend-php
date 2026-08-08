@@ -332,8 +332,31 @@ class DashboardController extends Controller
             $msg = "Stok pada kategori ini terpantau AMAN. Belum diperlukan tindakan restock.";
         }
 
-        // Kirimkan event ke Alpine.js dengan detail pesan dan status kritis
-        header('HX-Trigger: {"update-ai-insight": {"msg": "' . $msg . '", "isKritis": ' . ($isKritis ? 'true' : 'false') . '}}');
+        // // Kirimkan event ke Alpine.js dengan detail pesan dan status kritis/
+        // header('HX-Trigger: {"update-ai-insight": {"msg": "' . $msg . '", "isKritis": ' . ($isKritis ? 'true' : 'false') . '}}');
+
+        $triggerPayload = json_encode([
+            'update-ai-insight' => [
+                'msg'      => $msg,
+                'isKritis' => (bool) $isKritis
+            ]
+        ], JSON_UNESCAPED_SLASHES);
+
+        // Cek dan set di lingkungan OpenSwoole
+        if (\isSwoole()) {
+            /** @var \OpenSwoole\Http\Response|null $swooleResponse */
+            $swooleResponse = $GLOBALS['swoole_response'] 
+                ?? (function_exists('app') && app()->has('swoole_response') ? app('swoole_response') : null);
+
+            if ($swooleResponse) {
+                $swooleResponse->header('HX-Trigger', $triggerPayload);
+            }
+        } else {
+            // Fallback untuk PHP-FPM / Standard HTTP
+            if (!headers_sent()) {
+                header('HX-Trigger: ' . $triggerPayload);
+            }
+        }
 
         return $products;
     }
@@ -431,10 +454,11 @@ class DashboardController extends Controller
         $errors = Session::get('errors');
 
         if ($errors) {
-            header('Content-Type: application/json', true, 422);
-            dd($errors, true);
-            // die("Gagal menyimpan data.");
-            customExit("Gagal menyimpan data.");
+            // 1. Standard use (Status 422)
+            htmx_json_response($errors);
+
+            // 2. Or with a custom HTTP status code & special HTMX header
+            // htmx_json_response($errors, 422, ['HX-Retarget' => '#error-display']);
         }
 
         $filter = new \App\Core\Validation\Filter();
@@ -482,9 +506,11 @@ class DashboardController extends Controller
         $errors = Session::get('errors');
 
         if ($errors) {
-            header('Content-Type: application/json', true, 422);
-            dd($errors, true);
-            die("Gagal menyimpan data.");
+            // 1. Standard use (Status 422)
+            htmx_json_response($errors);
+
+            // 2. Or with a custom HTTP status code & special HTMX header
+            // htmx_json_response($errors, 422, ['HX-Retarget' => '#error-display']);
         }
 
         $filter = new \App\Core\Validation\Filter();
@@ -757,7 +783,8 @@ class DashboardController extends Controller
         $payload = $filter->sanitize($postData);
         // dd($payload);
 
-        $unitId = $payload['id'];
+        // Use null coalescing (??) to be safe from undefined index
+        $unitId = $payload['id'] ?? null;
 
         $sql = "SELECT a.asset_id as unit_id, a.name as unit_name, l.maintenance_date as date, l.task, l.status 
             FROM asset_maintenance_logs l
@@ -830,10 +857,11 @@ class DashboardController extends Controller
         $errors = Session::get('errors');
 
         if ($errors) {
-            header('Content-Type: application/json', true, 422);
-            dd($errors, true);
-            // die("Gagal menyimpan data.");
-            customExit("Gagal menyimpan data.");
+            // 1. Standard use (Status 422)
+            htmx_json_response($errors);
+
+            // 2. Or with a custom HTTP status code & special HTMX header
+            // htmx_json_response($errors, 422, ['HX-Retarget' => '#error-display']);
         }
 
         $filter = new \App\Core\Validation\Filter();
@@ -902,10 +930,11 @@ class DashboardController extends Controller
         $errors = Session::get('errors');
 
         if ($errors) {
-            header('Content-Type: application/json', true, 422);
-            dd($errors, true);
-            // die("Gagal menyimpan data.");
-            customExit("Gagal menyimpan data.");
+            // 1. Standard use (Status 422)
+            htmx_json_response($errors);
+
+            // 2. Or with a custom HTTP status code & special HTMX header
+            // htmx_json_response($errors, 422, ['HX-Retarget' => '#error-display']);
         }
 
         $filter = new \App\Core\Validation\Filter();

@@ -18,7 +18,7 @@ $watchDirectories = [
 $allowedExtensions = ['php', 'js', 'css', 'html', 'json', 'sql'];
 
 // 3. Folders that MUST be ignored (prevents infinite loop/high CPU)
-$ignoredDirectories = ['vendor', 'storage', 'node_modules', '.git'];
+$ignoredDirectories = ['vendor', 'storage', 'node_modules', '.git', '.vscode'];
 
 $lastMtime = time();
 

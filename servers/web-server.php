@@ -131,17 +131,51 @@ $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse 
         $bufferedOutput = ob_get_clean();
         $finalOutput = !empty($output) ? $output : $bufferedOutput;
 
-        // If the controller returns your custom Response instance
-        if ($output instanceof Response) {
-            // Apply HTTP Status Code (IMPORTANT! This is what changes 200 to 302)
-            $response->status($output->getStatusCode());
+        // if (isJson($finalOutput)) {
+        //     var_dump($finalOutput);
+        // }
 
-            // Transfer header dari custom Response ke OpenSwoole Response
-            foreach ($output->getHeaders() as $name => $value) {
+        // If the controller returns your custom Response instance
+        // if ($output instanceof Response) {
+        //     // Apply HTTP Status Code (IMPORTANT! This is what changes 200 to 302)
+        //     $response->status($output->getStatusCode());
+
+        //     // Transfer header dari custom Response ke OpenSwoole Response
+        //     foreach ($output->getHeaders() as $name => $value) {
+        //         $response->header($name, $value);
+        //     }
+
+        //     $statusCode = $output->getStatusCode() ?: 302;
+        //     $content = $output->getContent() ?? '';
+        //     var_dump($content);
+        //     if(isJson($content)) {
+        //         // $json = $content
+
+        //         // $output->getContent();
+        //         // $output->getContent();
+        //         $response->header('Content-Type', 'application/json');
+        //     }
+        //     $response->status($statusCode);
+        //     $response->end($content);
+        //     return;
+        // }
+
+        if ($finalOutput instanceof Response) {
+            $statusCode = $finalOutput->getStatusCode() ?: 200;
+            $content = $finalOutput->getContent() ?? '';
+
+            // Copy semua Header dari Response Instance ke OpenSwoole
+            foreach ($finalOutput->getHeaders() as $name => $value) {
                 $response->header($name, $value);
             }
-            $response->status($output->getStatusCode() ?: 302);
-            $response->end($output->getContent() ?? '');
+
+            // Jika belum ada header Content-Type dan bodynya JSON valid
+            if (is_string($content) && isJson($content)) {
+                $response->header('Content-Type', 'application/json; charset=UTF-8');
+            }
+
+            $response->status($statusCode);
+            $response->end((string)$content);
             return;
         }
 
@@ -158,38 +192,70 @@ $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse 
         }
 
         // 2. If the output is a valid JSON string or the request requests JSON
-        if (is_json($finalOutput) || is_json_request()) {
-            // echo "2. If the output is a valid JSON string or the request requests JSON";
+        // if (isJson($finalOutput) || is_json_request()) {
+        //     // echo "2. If the output is a valid JSON string or the request requests JSON";
 
+        //     $contents = explode('@|@', $finalOutput);
+        //     if ($response->isWritable() && !empty($contents[0])) {
+        //         // 1. Take the first part (Index 0)
+        //         $content = $contents[0];
+        //         $convertArr = json_decode($content, true);
+
+        //         if (json_last_error() === JSON_ERROR_NONE) {
+        //             // 2. If there is a key "0" (containing Set-Cookie) included, delete it to clean the JSON
+        //             unset($convertArr['0']);
+
+        //             // Set statusCode
+        //             // Retrieve statusCode safely using the Null Coalescing Operator (??)
+        //             $rawStatus = $convertArr['data']['statusCode'] ?? $convertArr['code'] ?? $convertArr['statusCode'] ?? 200;
+
+        //             // Make sure the status code value is a valid integer type (between 100 and 599)
+        //             $statusCode = (is_numeric($rawStatus) && (int)$rawStatus >= 100 && (int)$rawStatus <= 599)
+        //                 ? (int)$rawStatus
+        //                 : 200;
+
+        //             $response->status($statusCode);
+
+        //             // 3. Encode it back as final output
+        //             $finalOutput = json_encode($convertArr, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        //         }
+        //     }
+
+        //     $response->header('Content-Type', 'application/json; charset=UTF-8');
+        //     $response->end($finalOutput);
+        //     return;
+        // }
+
+        if (is_string($finalOutput)) {
+            
+            // Clean string jika ada delimiter @|@
             $contents = explode('@|@', $finalOutput);
-            if ($response->isWritable() && !empty($contents[0])) {
-                // 1. Take the first part (Index 0)
-                $content = $contents[0];
-                $convertArr = json_decode($content, true);
+            $rawContent = $contents[0] ?? $finalOutput;
 
-                if (json_last_error() === JSON_ERROR_NONE) {
-                    // 2. If there is a key "0" (containing Set-Cookie) included, delete it to clean the JSON
+            // CEK APAKAH STRING MERUPAKAN JSON VALID (Sangat Kunci!)
+            if (isJson($rawContent)) {
+                $convertArr = json_decode($rawContent, true);
+
+                if (json_last_error() === JSON_ERROR_NONE && is_array($convertArr)) {
+                    // Cleanup key '0' jika ada bekas Set-Cookie/Buffer
                     unset($convertArr['0']);
 
-                    // Set statusCode
-                    // Retrieve statusCode safely using the Null Coalescing Operator (??)
-                    $rawStatus = $convertArr['data']['statusCode'] ?? $convertArr['code'] ?? $convertArr['statusCode'] ?? 200;
-
-                    // Make sure the status code value is a valid integer type (between 100 and 599)
+                    // Ambil HTTP StatusCode dinamis dari JSON jika ada (misal: 422, 400, 500)
+                    $rawStatus = $convertArr['statusCode'] ?? $convertArr['status'] ?? $convertArr['code'] ?? 200;
+                    
                     $statusCode = (is_numeric($rawStatus) && (int)$rawStatus >= 100 && (int)$rawStatus <= 599)
                         ? (int)$rawStatus
                         : 200;
 
                     $response->status($statusCode);
-
-                    // 3. Encode it back as final output
-                    $finalOutput = json_encode($convertArr, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                    $rawContent = json_encode($convertArr, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
                 }
-            }
 
-            $response->header('Content-Type', 'application/json; charset=UTF-8');
-            $response->end($finalOutput);
-            return;
+                // Wajib paksa Content-Type ke application/json
+                $response->header('Content-Type', 'application/json; charset=UTF-8');
+                $response->end($rawContent);
+                return;
+            }
         }
 
         // 3. Fallback to regular HTML Response
@@ -199,12 +265,48 @@ $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse 
         }
 
     } catch (\App\Core\Exceptions\SwooleExitException $e) {
-        // Catch Graceful Exit dari customExit()
-        $bufferedOutput = ob_get_clean();
+        // // Catch Graceful Exit dari customExit()
+        // $bufferedOutput = ob_get_clean();
 
-        // Set the status code of the exception if it is not already set
-        $response->status($e->getCode() ?: 200);
+        // // Set the status code of the exception if it is not already set
+        // $response->status($e->getCode() ?: 200);
+        // $response->end($bufferedOutput);
+
+        // Ambil semua isi buffer dari ob_start()
+        $bufferedOutput = '';
+        while (ob_get_level() > 0) {
+            $bufferedOutput = ob_get_clean() . $bufferedOutput;
+        }
+
+        $bufferedOutput = trim($bufferedOutput);
+
+        // Cek jika buffer berisi JSON - Validator Errors
+        if (!empty($bufferedOutput) && isJson($bufferedOutput)) {
+            $jsonArr = json_decode($bufferedOutput, true);
+
+            // Tentukan status code dari Exception atau dari payload JSON (misal 422)
+            $statusCode = $e->getCode();
+            if (!$statusCode || $statusCode === 200) {
+                $statusCode = $jsonArr['statusCode'] ?? $jsonArr['status'] ?? $jsonArr['code'] ?? 200;
+            }
+
+            if (!is_numeric($statusCode) || (int)$statusCode < 100 || (int)$statusCode > 599) {
+                $statusCode = 422; // Fallback jika validasi error
+            }
+
+            // PERINTAH KRUSIAL OPENSWOOLE:
+            // Wajib set status & header SEBELUM memanggil end()
+            $response->status((int)$statusCode);
+            $response->header('Content-Type', 'application/json; charset=UTF-8');
+            $response->end($bufferedOutput);
+            return;
+        }
+
+        // Default non-JSON exit
+        $code = $e->getCode() ?: 200;
+        $response->status((int)$code);
         $response->end($bufferedOutput);
+        return;
 
     } catch (\Throwable $e) {
         // Catch Exception WITHOUT shutting down the server

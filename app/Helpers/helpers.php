@@ -265,80 +265,128 @@ function endResponse($response, $status = 200, $headers = [])
 }
 
 /**
- * Cek apakah request JSON.
+ * Check whether the request is JSON.
  */
-if (!function_exists("is_json_request")) {
-    function is_json_request()
-    {
-        // 1. Cek dari $_SERVER (Standard)
-        if (
-            isset($_SERVER["CONTENT_TYPE"]) &&
-            stripos((string) $_SERVER["CONTENT_TYPE"], "application/json") !== false
-        ) {
-            return true;
-        }
+function is_json_request()
+{
+    if (
+        isset($_SERVER["CONTENT_TYPE"]) &&
+        stripos((string) $_SERVER["CONTENT_TYPE"], "application/json") !== false
+    ) {
+        return true;
+    }
 
-        // 2. Cek dari HTTP_CONTENT_TYPE (Fallback beberapa konfigurasi FastCGI/Worker)
-        if (
-            isset($_SERVER["HTTP_CONTENT_TYPE"]) &&
-            stripos((string) $_SERVER["HTTP_CONTENT_TYPE"], "application/json") !== false
-        ) {
-            return true;
-        }
+    if (
+        isset($_SERVER["HTTP_CONTENT_TYPE"]) &&
+        stripos((string) $_SERVER["HTTP_CONTENT_TYPE"], "application/json") !== false
+    ) {
+        return true;
+    }
 
-        // 3. Cek langsung ke Header (Paling Akurat di Worker Mode)
-        if (function_exists("getallheaders")) {
-            $headers = getallheaders();
-            // Normalisasi key menjadi lowercase karena header bisa bervariasi (Content-Type vs content-type)
-            foreach ($headers as $name => $value) {
-                if (
-                    strtolower((string) $name) === "content-type" &&
-                    stripos((string) $value, "application/json") !== false
-                ) {
-                    return true;
-                }
+    // Check directly to the Header (Most Accurate in Worker Mode)
+    if (function_exists("getallheaders")) {
+        $headers = getallheaders();
+        // Normalize keys to lowercase because headers can vary (Content-Type vs content-type)
+        foreach ($headers as $name => $value) {
+            if (
+                strtolower((string) $name) === "content-type" &&
+                stripos((string) $value, "application/json") !== false
+            ) {
+                return true;
             }
         }
-
-        return false;
     }
+
+    return false;
+}
+
+
+/**
+ * Sends a standard JSON response and stops script execution.
+ */
+function json_response($data, $status = 200, $message = "", $errors = [])
+{
+    header("Content-Type: application/json");
+    http_response_code($status);
+
+    // Format output JSON
+    if ($message !== "") {
+        $data = [
+            "statusCode" => $status,
+            "message" => $message,
+            "data" => $data,
+        ];
+    } else {
+        $data = [
+            "statusCode" => $status,
+            "data" => $data,
+        ];
+    }
+    // Remove errors if any
+    if (!empty($errors)) {
+        unset($data["data"]);
+        $data["errors"] = $errors;
+    }
+    // Unset data if status >= 300
+    if ($status >= 300) {
+        unset($data["data"]);
+    }
+
+    echo json_encode($data, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+    customExit();
 }
 
 /**
- * Mengirimkan respons JSON yang standar dan menghentikan eksekusi script.
+ * Send custom JSON response to HTMX /API client
+ * dengan HTTP Status Code dinamis (default: 422 Unprocessable Entity).
+ * 
+ * Compatible for OpenSwoole & PHP-FPM.
+ *
+ * @param mixed $data Data payload / errors array
+ * @param int $statusCode HTTP Status Code (misal: 422, 400, 500)
+ * @param array $extraHeaders Additional HTTP Headers (e.g. ['HX-Retarget' => '#error-box'])
+ * @return void
  */
-if (!function_exists("json_response")) {
-    function json_response($data, $status = 200, $message = "", $errors = [])
-    {
-        header("Content-Type: application/json");
-        http_response_code($status);
+function htmx_json_response(mixed $data, int $statusCode = 422, array $extraHeaders = []): void
+{
+    $payload = is_string($data) ? $data : json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    
+    if (\isSwoole()) {
+        /** @var \OpenSwoole\Http\Response|null $swooleResponse */
+        $swooleResponse = $GLOBALS['swoole_response'] ?? (function_exists('app') && app()->has('swoole_response') ? app('swoole_response') : null);
 
-        // Format output JSON
-        if ($message !== "") {
-            $data = [
-                "statusCode" => $status,
-                "message" => $message,
-                "data" => $data,
-            ];
-        } else {
-            $data = [
-                "statusCode" => $status,
-                "data" => $data,
-            ];
-        }
-        // Keluarkan errors jika ada
-        if (!empty($errors)) {
-            unset($data["data"]);
-            $data["errors"] = $errors;
-        }
-        // Unset data jika status >= 300
-        if ($status >= 300) {
-            unset($data["data"]);
-        }
+        if ($swooleResponse && method_exists($swooleResponse, 'end')) {
+            $swooleResponse->status($statusCode);
+            $swooleResponse->header('Content-Type', 'application/json; charset=UTF-8');
 
-        echo json_encode($data, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
-        die();
+            foreach ($extraHeaders as $key => $value) {
+                $swooleResponse->header((string)$key, (string)$value);
+            }
+            
+            $swooleResponse->end($payload);
+
+            // Terminate the Router flow with a Swoole specific Exception
+            if (class_exists('\App\Core\Exceptions\SwooleExitException')) {
+                throw new \App\Core\Exceptions\SwooleExitException('HTMX JSON Sent', $statusCode);
+            }
+            
+            return;
+        }
     }
+
+    // -------------------------------------------------------------
+    // STANDARD PHP-FPM /CGI PATH
+    // -------------------------------------------------------------
+    if (!headers_sent()) {
+        http_response_code($statusCode);
+        header('Content-Type: application/json; charset=UTF-8');
+
+        foreach ($extraHeaders as $key => $value) {
+            header("{$key}: {$value}");
+        }
+    }
+
+    customExit($payload, $statusCode);
 }
 
 

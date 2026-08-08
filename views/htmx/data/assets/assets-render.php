@@ -14,7 +14,7 @@ if (empty($filtered)) {
 
         <h3 class="text-xl font-bold text-slate-700 mb-2">Unit Tidak Ditemukan</h3>
         <p class="text-sm text-slate-400 max-w-xs mx-auto leading-relaxed italic">
-            Maaf, kami tidak menemukan armada dengan ID <span class="text-indigo-600 font-bold">"'.htmlspecialchars($search).'"</span> atau status tersebut.
+            Maaf, kami tidak menemukan armada dengan ID <span class="text-indigo-600 font-bold">"'.htmlspecialchars($search ?? '').'"</span> atau status tersebut.
         </p>
 
         <button 

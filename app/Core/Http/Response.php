@@ -150,31 +150,26 @@ class Response
      */
     public function send($swooleResponse = null): void
     {
-        if ($swooleResponse && is_object($swooleResponse) && method_exists($swooleResponse, 'header')) {
-            // Set Status Code Swoole
+        if ($swooleResponse && is_object($swooleResponse) && method_exists($swooleResponse, 'end')) {
             $swooleResponse->status($this->statusCode);
 
-            // Set Headers Swoole
             foreach ($this->headers as $name => $value) {
                 $swooleResponse->header($name, $value);
             }
 
-            // Output / End Response Swoole
             $swooleResponse->end($this->content);
             return;
         }
 
+        // --- PHP-FPM PATH / STANDARD HTTP ---
         if (!headers_sent()) {
-            // Set HTTP Status Code
             http_response_code($this->statusCode);
 
-            // Set HTTP Headers
             foreach ($this->headers as $name => $value) {
                 header("{$name}: {$value}");
             }
         }
 
-        // Output Body untuk FPM
         echo $this->content;
     }
 

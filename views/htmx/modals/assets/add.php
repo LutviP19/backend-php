@@ -50,11 +50,11 @@
 <div x-show="openModal" 
     x-data="{
                 resetForm() {
-                        this.$refs.form.reset();
-                        // Memicu reset pada custom select (kembali ke pupuk)
-                        this.$dispatch('reset-select');
-                        count=0;
-                        errors = {};
+                    this.$refs.form.reset();
+                    // Memicu reset pada custom select (kembali ke pupuk)
+                    this.$dispatch('reset-select');
+                    count=0;
+                    errors = {};
                 }
             }" 
     class="p-8 antialiased">

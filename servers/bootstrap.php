@@ -70,12 +70,16 @@ $serverport = 8008;
 $sessionName = '';
 $sessionId = '';
 
-function initializeServerConstant($request): void
+function initializeServerConstant($request, $response = null): void
 {
     global $serverip, $serverport;
 
     // \App\Core\Support\Log::debug(gettype($request), 'Bootstrap.initializeServerConstant.$request.gettype');
     // \App\Core\Support\Log::debug($request, 'Bootstrap.initializeServerConstant.$request');
+
+    // Inject into GLOBALS to be detected by isSwoole() & ApiController
+    $GLOBALS['requestServer'] = $request;
+    $GLOBALS['swoole_response'] = $response;
 
     $_SERVER = [];
     // Clean up $_SERVER dari request sebelumnya
@@ -127,9 +131,11 @@ function initializeServerConstant($request): void
         }
     }
 
-    foreach ($request->header as $key => $value) {
-        $serverKey = 'HTTP_' . strtoupper(str_replace('-', '_', $key));
-        $_SERVER[$serverKey] = $value;
+    if (isset($request->header)) {
+        foreach ($request->header as $key => $value) {
+            $serverKey = 'HTTP_' . strtoupper(str_replace('-', '_', $key));
+            $_SERVER[$serverKey] = $value;
+        }
     }
 }
 

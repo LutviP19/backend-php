@@ -3,12 +3,12 @@
 namespace App\Controllers;
 
 use App\Core\Database\Model;
-use App\Models\User;
+// use App\Models\User;
 use App\Core\Events\Event;
 use App\Core\Http\{Request, Response};
 use App\Core\Message\Broker;
-use App\Core\Support\Config;
-use App\Core\Support\Session;
+// use App\Core\Support\Config;
+// use App\Core\Support\Session;
 // Events
 use App\Core\Events\EventDispatcher;
 use App\Services\OrderService;
@@ -29,7 +29,7 @@ class PagesHtmlController extends Controller
         $users = Model::table('users')->select(['*'])->get();
         // dd($users);
         // Session::set('users', generateUlid());
-        $server = \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port')) ? "OpenSwoole" : "PHP FPM";
+        $server = \isSwoole() ? "OpenSwoole" : "PHP FPM";
 
         $this->view('home', ['users' => $users, 'server' => $server]);
     }

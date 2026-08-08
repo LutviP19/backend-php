@@ -26,15 +26,23 @@ $server = new Server("127.0.0.1", 8009);
 
 $server->set([
     'worker_num'            => 2,
-    'document_root'         => realpath(__DIR__ . '/../public'), // Path mutlak ke folder public
-    'enable_static_handler' => true,                             // <--- TAMBAHKAN INI
-    'static_handler_locations' => ['/css', '/js', '/assets', '/images', '/favicon.ico'], // <--- (Opsional) Folder asset kamu
+    'document_root'         => realpath(__DIR__ . '/../public'), // path related folders public
+    'enable_static_handler' => true,                             // <--- LOAD ASSETS
+    'static_handler_locations' => ['/css', '/js', '/assets', '/images', '/favicon.ico', '/backend-php-sw.js'], // <--- (Opsional) Folder/File asset
 ]);
+
+// Start Server
+$server->on("Start", function (Server $server) {
+    global $serverip, $serverport, $sessionId, $sessionName;
+
+    echo "Swoole web server is started at http://" . $serverip . ":" . $serverport . "\n";
+});
 
 // Pre-load router ke memory 1x
 $router = Router::load(BASEPATH . '/routes/routes.php');
 
 $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse $response) use ($router) {
+    global $server, $clientInfo, $ignoredUri, $sessionId, $sessionName;
 
     // Clear Output Buffer if any
     while (ob_get_level() > 0) {
@@ -118,6 +126,7 @@ $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse 
         ob_start();
 
         // Dispatch route
+        $router->setSwooleResponse($response);
         $output = $router->dispatch(Request::uri(), Request::method());
         $bufferedOutput = ob_get_clean();
         $finalOutput = !empty($output) ? $output : $bufferedOutput;
@@ -139,8 +148,7 @@ $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse 
         // -------------------------------------------------------------
         // HANDLER RESPONSE JSON
         // -------------------------------------------------------------
-        $isJsonRequest = isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json');
-
+        
         // 1. If the output is an Array or Object (Automatically encode to JSON)
         if (is_array($finalOutput) || is_object($finalOutput)) {
             // echo "1. If the output is an Array or Object (Automatically encode to JSON)";
@@ -150,7 +158,7 @@ $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse 
         }
 
         // 2. If the output is a valid JSON string or the request requests JSON
-        if (is_string($finalOutput) && (is_json($finalOutput) || $isJsonRequest)) {
+        if (is_json($finalOutput) || is_json_request()) {
             // echo "2. If the output is a valid JSON string or the request requests JSON";
 
             $contents = explode('@|@', $finalOutput);
@@ -185,14 +193,16 @@ $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse 
         }
 
         // 3. Fallback to regular HTML Response
-        $response->header('Content-Type', 'text/html; charset=UTF-8');
-        $response->end((string)$finalOutput);
+        if ($response->isWritable()) {
+            $response->header('Content-Type', 'text/html; charset=UTF-8');
+            $response->end((string)$finalOutput);
+        }
 
     } catch (\App\Core\Exceptions\SwooleExitException $e) {
         // Catch Graceful Exit dari customExit()
         $bufferedOutput = ob_get_clean();
 
-        // Tetapkan status code dari exception jika belum diset
+        // Set the status code of the exception if it is not already set
         $response->status($e->getCode() ?: 200);
         $response->end($bufferedOutput);
 

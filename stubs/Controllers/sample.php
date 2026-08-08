@@ -51,7 +51,7 @@ class MyController extends Controller
         // $users = Model::table('users')->select(['*'])->get();
         // dd($users);
         // Session::set('users', generateUlid());
-        $server = \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port')) ? "OpenSwoole" : "PHP FPM";
+        $server = \isSwoole() ? "OpenSwoole" : "PHP FPM";
 
         $this->view('index-htmx', ['server' => $server]);
     }

@@ -38,7 +38,12 @@
                 <p class="text-[11px] text-slate-400 text-center leading-relaxed">
                     Unit ini belum pernah tercatat melakukan servis atau pemeliharaan berkala.
                 </p>
-                <button @click="/* Logic tambah log */" class="mt-5 px-5 py-2 bg-white border border-slate-200 text-[10px] font-bold text-slate-600 rounded-xl hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-all">
+                <button 
+                    @click="
+                        alert('Form pembuatan jadwal servis sedang disiapkan!'); 
+                        $dispatch('open-add-log-modal', { assetId: '<?= $u['id'] ?? '' ?>' });
+                    "
+                    class="mt-5 px-5 py-2 bg-white border border-slate-200 text-[10px] font-bold text-slate-600 rounded-xl hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-all">
                     Buat Jadwal Servis
                 </button>
             </div>

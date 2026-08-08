@@ -108,31 +108,74 @@ class Response
      */
     public function getStatusCode()
     {
-        // return http_response_code();
-
         // Provide a fallback of 200 if the value is somehow cast to false/empty
         return (is_int($this->statusCode) && $this->statusCode > 0) ? $this->statusCode : 200;
     }
 
     /**
-     * Redirect to a specific url or pass
-     * a status code to generate an error.
+     * Redirect to a specific URL or pass a status code to trigger an error status.
      *
-     * @param string|int $url (url or status code)
-     * @return Response
+     * @param string|int $url URL destination or HTTP status code error
+     * @param int $statusCode
+     * @return self
      */
-    public function redirect(string $url, int $statusCode = 302): self
+    public function redirect(string|int $url, int $statusCode = 302): self
     {
+        // Handle if the first parameter is passed an integer status code (eg: redirect(404))
         if (is_int($url)) {
             $this->httpError($url);
-        } else {
-            // $this->header("Location", $url, 302);
-            $this->status($statusCode);
-            $this->header("Location", $url);
-            // JIKA dipanggil via HTMX, gunakan HX-Redirect agar HTMX tahu harus mengalihkan halaman
-            $this->header("HX-Redirect", $url);
+            return $this;
         }
+
+        // Set HTTP Status Code untuk Redirect (default 302)
+        $this->status($statusCode);
+
+        // Set standard HTTP Location header
+        $this->header('Location', $url);
+
+        // If the request comes from HTMX, add HX-Redirect
+        // HTMX will perform a seamless client-side redirect without full page reload if desired
+        if (\isHtmx()) {
+            $this->header('HX-Redirect', $url);
+        }
+
         return $this;
+    }
+
+    /**
+     * Send Response to Client (FPM & OpenSwoole Compatible)
+     *
+     * @param mixed $swooleResponse Objek OpenSwoole\Http\Response (Optional if in Swoole environment)
+     * @return void
+     */
+    public function send($swooleResponse = null): void
+    {
+        if ($swooleResponse && is_object($swooleResponse) && method_exists($swooleResponse, 'header')) {
+            // Set Status Code Swoole
+            $swooleResponse->status($this->statusCode);
+
+            // Set Headers Swoole
+            foreach ($this->headers as $name => $value) {
+                $swooleResponse->header($name, $value);
+            }
+
+            // Output / End Response Swoole
+            $swooleResponse->end($this->content);
+            return;
+        }
+
+        if (!headers_sent()) {
+            // Set HTTP Status Code
+            http_response_code($this->statusCode);
+
+            // Set HTTP Headers
+            foreach ($this->headers as $name => $value) {
+                header("{$name}: {$value}");
+            }
+        }
+
+        // Output Body untuk FPM
+        echo $this->content;
     }
 
     /**

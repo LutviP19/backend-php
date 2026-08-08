@@ -22,7 +22,7 @@
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.store('router', {
-                // Mapping Utama (Sinkronisasi Label)
+                // Main Mapping (Label Synchronization)
                 map: {
                     'dashboard': 'Dashboard',
                     'inventory': 'Pupuk & Benih',
@@ -30,7 +30,7 @@
                     'rental': 'Sewa Alat Berat',
                     'rental-drone': 'Sewa Drone'
                 },
-                // Fungsi pembantu untuk breadcrumb
+                // Helper function for breadcrumb
                 getLabel(segment) {
                     return this.map[segment] || segment.replace(/-/g, ' ');
                 }
@@ -46,28 +46,21 @@
     <div x-data="{ 
             sidebarOpen: true, 
             mobileMenuOpen: false,
-            // Kita simpan path saat ini ke dalam state Alpine
             currentPath: window.location.pathname,
 
             isActive(path) {
-                // Menghapus query string jika ada (seperti ?id=1) untuk perbandingan bersih
+                // Remove query strings if present (such as ?id=1) for clean comparison
                 const cleanPath = this.currentPath.split('?')[0];
                 //console.log(cleanPath);
 
-                // Memastikan path diakhiri dengan string rute tersebut
-                // Contoh: '/htmx/rental2' akan cocok dengan 'rental2' tapi tidak dengan 'rental'
                 return cleanPath.endsWith('/' + path) || cleanPath === path;
-
-                // Cek apakah path yang diminta ada di dalam URL saat ini
-                //console.log(this.currentPath.includes(path));
-                //return this.currentPath.includes(path);
             },
 
             updatePath() {
                 this.currentPath = window.location.pathname;
             }
         }" 
-        @htmx:pushed-into-history.window="currentPath = window.location.pathname"
+        @htmx:pushed-into-history.window="updatePath()"
         @popstate.window="updatePath()"
         class="min-h-screen">
 
@@ -362,14 +355,14 @@
                 <nav x-data="{ 
                         segments: [],
                         updateSegments() {
-                            this.segments = window.location.pathname.split('/').filter(p => p && p !== 'htmx' && p !== 'smartstock');
+                            this.segments = window.location.pathname.split('/').filter(p => p && p !== 'htmx');
                         }
                     }" 
                     x-init="updateSegments()"
                     @htmx:after-settle.window="updateSegments()"
                     class="flex items-center gap-2 mb-6 text-[10px] font-black uppercase tracking-[0.15em] text-indigo-600/80">
                     
-                    <a hx-get="<?= url('/htmx') ?>" hx-push-url="true" hx-target="#main-content" class="cursor-pointer hover:text-indigo-900 transition flex items-center gap-2">
+                    <a hx-get="<?= url('/htmx/dashboard') ?>" hx-push-url="true" hx-target="#main-content" class="cursor-pointer hover:text-indigo-900 transition flex items-center gap-2">
                        <i class="fas fa-home text-[9px]"></i> DASHBOARD
                     </a>
 
@@ -388,13 +381,13 @@
                     $this->include(
                         'htmx.dashboard',
                         [
-                        'isHome' => true,
-                        'total_items' => $total_items,
-                        'total_pages' => $total_pages,
-                        'page' => $page,
-                        'offset' => $offset,
-                        'paged_data' => $paged_data,
-                    ]
+                            'isHome' => true,
+                            'total_items' => $total_items,
+                            'total_pages' => $total_pages,
+                            'page' => $page,
+                            'offset' => $offset,
+                            'paged_data' => $paged_data,
+                        ]
                     ); ?>
                 </div>
             </main>

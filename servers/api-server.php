@@ -264,13 +264,6 @@ $dispatcher = include __DIR__ .'/../routes/api-server.php';
 
 class RouteMiddleware implements MiddlewareInterface
 {
-    // private $dispatcher;
-
-    // public function __construct($dispatcher)
-    // {
-    //     $this->dispatcher = $dispatcher;
-    // }
-
     public function __construct(private $dispatcher)
     {
 
@@ -279,46 +272,95 @@ class RouteMiddleware implements MiddlewareInterface
     //\OpenSwoole\Core\Psr\ServerRequest ServerRequestInterface
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        // Init $_SERVER attributes
-        $serverParams = $request->getServerParams() ?? [];
-        initializeServerConstant(array_merge($serverParams, $request->getHeaders() ?? []));
-        // \App\Core\Support\Log::debug($_SERVER, 'ApiServer.RouteMiddleware.process.$_SERVER');
+        // Buka Output Buffering untuk menangkap echo dari dd() / var_dump()
+        ob_start();
 
-        // Only accept valid JSON content
-        $contentType = $request->headers['content-type'];
-        if (! is_null($contentType) && str_contains($contentType, 'application/json')) {
-            // Get JSON
-            $body = $request->getBody();
-            $body->rewind();
-            $rawBody = $body->getContents();
-            $jsonData = json_decode($rawBody, true);
+        try {
+            // Init $_SERVER attributes
+            $serverParams = $request->getServerParams() ?? [];
+            $req = array_merge($serverParams, $request->getHeaders() ?? []);
+            // $response = $handler->handle($request);
+            initializeServerConstant($req);
+            // \App\Core\Support\Log::debug($_SERVER, 'ApiServer.RouteMiddleware.process.$_SERVER');
 
-            // Check valid JSON
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                // Handle JSON decoding error
-                $error = json_last_error_msg();
-                // Log or display the error message
-                // \App\Core\Support\Log::debug($error, 'ApiServer.RouteMiddleware.addRoute.json_last_error_msg');
-                return new Response('Invalid Json data!,'.$error, 406, '', ['Content-Type' => 'text/plain']);
+            // Only accept valid JSON content
+            $contentType = $request->headers['content-type'];
+            if (! is_null($contentType) && str_contains($contentType, 'application/json')) {
+                // Get JSON
+                $body = $request->getBody();
+                $body->rewind();
+                $rawBody = $body->getContents();
+                $jsonData = json_decode($rawBody, true);
+
+                // Check valid JSON
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    // Handle JSON decoding error
+                    $error = json_last_error_msg();
+                    // Log or display the error message
+                    // \App\Core\Support\Log::debug($error, 'ApiServer.RouteMiddleware.addRoute.json_last_error_msg');
+                    return new Response('Invalid Json data!,'.$error, 406, '', ['Content-Type' => 'text/plain']);
+                }
+
+                // Dispatch Route
+                $routeInfo = $this->dispatcher->dispatch($request->getMethod(), $request->getUri()->getPath());
+
+                switch ($routeInfo[0]) {
+                    case \FastRoute\Dispatcher::NOT_FOUND:
+                        ob_end_clean();
+                        return new Response('Not found', 404, '', ['Content-Type' => 'text/plain']);
+                    case \FastRoute\Dispatcher::METHOD_NOT_ALLOWED:
+                        ob_end_clean();
+                        return new Response('Method not allowed', 405, '', ['Content-Type' => 'text/plain']);
+                    case \FastRoute\Dispatcher::FOUND:
+                        foreach ($routeInfo[2] as $key => $value) {
+                            $request = $request->withAttribute($key, $value);
+                        }
+                        return $routeInfo[1]($request);
+                }
+
+            } else {
+                ob_end_clean();
+                return new Response('Not Acceptable content type.', 406, '', ['Content-Type' => 'text/plain']);
             }
-
-            // Dispatch Route
-            $routeInfo = $this->dispatcher->dispatch($request->getMethod(), $request->getUri()->getPath());
-
-            switch ($routeInfo[0]) {
-                case \FastRoute\Dispatcher::NOT_FOUND:
-                    return new Response('Not found', 404, '', ['Content-Type' => 'text/plain']);
-                case \FastRoute\Dispatcher::METHOD_NOT_ALLOWED:
-                    return new Response('Method not allowed', 405, '', ['Content-Type' => 'text/plain']);
-                case \FastRoute\Dispatcher::FOUND:
-                    foreach ($routeInfo[2] as $key => $value) {
-                        $request = $request->withAttribute($key, $value);
-                    }
-                    return $routeInfo[1]($request);
+        } catch (\OpenSwoole\ExitException | \App\Core\Exceptions\SwooleExitException $e) {
+            // Handler dd() || customExit()
+            $bufferedOutput = '';
+            if (ob_get_level() > 0) {
+                $bufferedOutput = ob_get_clean();
             }
+            
+            $status = 200;
+            if (method_exists($e, 'getStatus')) {
+                $status = $e->getStatus();
+            } elseif (property_exists($e, 'status')) {
+                $status = $e->status;
+            }
+            
+            $contentType = str_contains($bufferedOutput, '<pre>') 
+                ? 'text/html; charset=utf-8' 
+                : 'application/json; charset=utf-8';
 
-        } else {
-            return new Response('Not Acceptable content type.', 406, '', ['Content-Type' => 'text/plain']);
+            return (new Response($bufferedOutput))->withHeaders(["Content-Type" => $contentType])->withStatus(200);
+        } catch (\Throwable $e) {
+            if (ob_get_level() > 0) {
+                ob_end_clean();
+            }
+            
+            $statusCode = 500;
+            $errorMessage = env('APP_DEBUG', false) 
+                ? $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine()
+                : 'Internal Server Error';
+            $json = [
+                        'status' => false,
+                        'statusCode' => $statusCode,
+                        'message' => $errorMessage,
+                    ];            
+
+            return (new Response(\json_encode($json)))->withHeaders(["Content-Type" => "application/json"])->withStatus($statusCode);
+        } finally {
+            if (ob_get_level() > 0) {
+                ob_end_clean();
+            }
         }
     }
 }

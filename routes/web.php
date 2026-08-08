@@ -56,6 +56,7 @@ $router->post('/data/update-product', 'DashboardController@update_product');
 $router->delete('/data/delete-product', 'DashboardController@delete_product');
 
 // Assets
+$router->get('/data/assets-render-view', 'DashboardController@assets_render_view');
 $router->get('/data/assets-render', 'DashboardController@assets_render');
 $router->get('/data/asset-logs', 'DashboardController@assets_logs');
 $router->get('/data/asset-add', 'DashboardController@assets_add');
@@ -64,4 +65,4 @@ $router->post('/data/asset-store', 'DashboardController@assets_store');
 $router->post('/data/asset-update', 'DashboardController@assets_update');
 
 // Report - data/bast/print-view/123
-$router->get('data/bast/print-view/{id}', 'DashboardController@printView');
+$router->get('data/bast/print-view/{id}', 'PagesController@printView');

@@ -3,6 +3,7 @@
 namespace App\Core\Http;
 
 use Exception;
+use App\Core\Exceptions\RedirectException;
 
 /**
  * Router for our MVC Application.
@@ -52,6 +53,14 @@ class Router
      * @var string
      */
     private $routeAction;
+
+
+    /**
+     * instance Swoole Response
+     *
+     * @var string
+     */
+    protected $swooleResponse = null;
 
     /**
      * Matched route parameters
@@ -159,18 +168,17 @@ class Router
         } else {
             //no route registered with the uri.
             if (! \isSwoole()) { // non OpenSwoole Server
-                // throw new Exception("Route not Found!");
                 $this->notFound();
             } else {
                 return endResponse(
                     [
-                            'status' => false,
-                            'statusCode' => 405,
-                            'message' => 'Method Not Allowed',
-                            'errors' => [
-                                'Invalid method to access '.$_SERVER['REQUEST_URI']
-                            ]
-                        ],
+                        'status' => false,
+                        'statusCode' => 405,
+                        'message' => 'Method Not Allowed',
+                        'errors' => [
+                            'Invalid method to access '.$_SERVER['REQUEST_URI']
+                        ]
+                    ],
                     405
                 );
             }
@@ -191,11 +199,32 @@ class Router
 
         $controller = $this->actionExists($controller, $action);
 
+        if ($controller === null) {
+            return null;
+        }
+
         $params = $this->hasRouteParams()
             ? $this->getRouteParams()
             : $this->getDefaultRouteParams();
 
         return $controller->$action(...$params);
+    }
+
+    /**
+     * Set Swoole Response instance
+     */
+    public function setSwooleResponse($response): self
+    {
+        $this->swooleResponse = $response;
+        return $this;
+    }
+
+    /**
+     * Get Swoole Response instance
+     */
+    public function getSwooleResponse()
+    {
+        return $this->swooleResponse;
     }
 
     /**
@@ -207,17 +236,27 @@ class Router
      */
     protected function actionExists($controller, $action)
     {
-        if (!$controller = new $controller()) {
-            throw new Exception("Controller Not Found");
-            $this->notFound(false);
-        }
+        try {
+            if (!$controllerInstance = new $controller()) {
+                throw new Exception("Controller Not Found");
+            }
 
-        if (!method_exists($controller, $action)) {
-            throw new Exception("Controller Method not Found");
-            $this->notFound(false);
-        }
+            if (!method_exists($controllerInstance, $action)) {
+                throw new Exception("Controller Method not Found");
+            }
 
-        return $controller;
+            return $controllerInstance;
+
+        } catch (RedirectException $e) {
+            // Panggil response redirect dan langsung eksekusi send()
+            // Pada OpenSwoole, operkan instance Swoole Response jika disimpan di Container/Router
+            $swooleResponse = $this->swooleResponse ?? null;
+            
+            response()->redirect($e->getUrl())->send($swooleResponse);
+
+            // Kembalikan null agar Router tahu proses dispatch terhenti karena redirect
+            return null;
+        }
     }
 
     /**

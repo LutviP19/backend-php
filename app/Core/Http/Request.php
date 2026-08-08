@@ -244,11 +244,16 @@ class Request
     public static function isJsonRequest()
     {
         // \App\Core\Support\Log::debug($_SERVER['HTTP_ACCEPT'] == 'application/json', 'isJsonRequest.HTTP_ACCEPT');
+        
+        $acceptHeader = $_SERVER['HTTP_ACCEPT'] ?? '';
 
-        if(isset($_SERVER['HTTP_ACCEPT'][0]) && \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port')))
-            return $_SERVER['HTTP_ACCEPT'][0] == 'application/json' ? true : false;
-        else
-            return isset($_SERVER['HTTP_ACCEPT']) && $_SERVER['HTTP_ACCEPT'] == 'application/json' ? true : false;
+        if (empty($acceptHeader)) {
+            return false;
+        }
+
+        // Uses str_contains to remain true if the header contains
+        // "application/json, text/plain, */*"
+        return str_contains(strtolower($acceptHeader), 'application/json');
     }
 
     /**

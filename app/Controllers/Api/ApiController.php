@@ -42,10 +42,7 @@ class ApiController extends BaseController
         $this->headers = [];
         $this->jsonData = [];
 
-        
-        // if ( \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // on OpenSwoole Server
-        // Pastikan requestServer BUKAN null sebelum mengakses method/property-nya
-        if ($this->requestServer instanceof \OpenSwoole\Http\Request) { // atau Swoole\Http\Request
+        if (\isSwoole() || $this->requestServer instanceof \OpenSwoole\Http\Request) { // on OpenSwoole Server
 
             // // Format Headers
             // foreach($this->requestServer->header as $key => $value) {

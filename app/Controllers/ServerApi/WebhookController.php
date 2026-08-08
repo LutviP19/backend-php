@@ -65,6 +65,7 @@ class WebhookController extends ServerApiController
         // Sanitize Input
         $jsonData = $this->filter->sanitize($jsonData, ['email', 'password', 'credentials']);
         // \App\Core\Support\Log::debug($jsonData, 'APIWebhookController.indexAction.sanitize.$jsonData');
+        // dd($jsonData, true);
 
         // If Session not set
         if (false === Session::has('indexAction')) {

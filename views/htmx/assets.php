@@ -33,7 +33,7 @@
                 // 2. Trigger HTMX untuk memuat ulang data bersih
                 this.$nextTick(() => {
                     // Gunakan htmx.ajax untuk memastikan request bersih terkirim ke server
-                    htmx.ajax('GET', '<?= url('/data/assets-render') ?>', {
+                    htmx.ajax('GET', '<?= url('/data/assets-render-view') ?>', {
                         target: '#asset-container',
                         values: { 
                             search: '', 
@@ -229,7 +229,7 @@
     </div>
 
     <div id="asset-container" 
-         hx-get="<?= url('/data/assets-render') ?>" 
+         hx-get="<?= url('/data/assets-render-view') ?>" 
          hx-trigger="load"
          hx-include="[name='view_mode'], #asset-search-input, [name='status_filter']"
          class="min-h-[400px]">

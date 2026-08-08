@@ -13,7 +13,7 @@ use App\Core\Security\Hash;
 use App\Core\Security\Encryption;
 use App\Core\Validation\Validator;
 use Exception;
-use ReallySimpleJWT\Token;
+// use ReallySimpleJWT\Token;
 
 class WebhookController extends ApiController
 {
@@ -62,7 +62,7 @@ class WebhookController extends ApiController
     {
         // global $requestServer;
 
-        // if ( \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // on OpenSwoole Server
+        // if(\isSwoole()) { // on OpenSwoole Server
 
         //     $headers = $requestServer->header;
         //     $jsonData = \is_string($requestServer->rawContent()) ? \json_decode($requestServer->rawContent(), true) : [];
@@ -154,6 +154,7 @@ class WebhookController extends ApiController
 
         // generate ULID
         $ulid = generateUlid();
+        // dd($ulid, true);
 
         // JWT
         $userId = $clientId;
@@ -172,6 +173,7 @@ class WebhookController extends ApiController
         $token_api = encryptData($this->getPass());
         $output = $this->getOutput(true, 200, [
                 'message' => 'Hello world!',
+                'server' =>  \isSwoole() ? "OpenSwoole" : "PHP FPM",
                 'client_ip' => clientIP(),
                 'session_id' => session_id(),
                 'ulid' => $ulid,

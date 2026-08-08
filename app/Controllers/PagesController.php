@@ -2,19 +2,20 @@
 
 namespace App\Controllers;
 
-use App\Core\Database\Model;
+// use App\Core\Database\Model;
 use App\Models\User;
-use App\Models\Role;
-use App\Core\Events\Event;
+// use App\Models\Role;
+// use App\Core\Events\Event;
 use App\Core\Http\{Request, Response};
-use App\Core\Message\Broker;
-use App\Core\Support\Config;
-use App\Core\Support\Session;
-// Events
-use App\Core\Events\EventDispatcher;
-use App\Services\OrderService;
 
-use function Amp\async;
+// use App\Core\Message\Broker;
+// use App\Core\Support\Config;
+// use App\Core\Support\Session;
+// // Events
+// use App\Core\Events\EventDispatcher;
+// use App\Services\OrderService;
+
+// use function Amp\async;
 
 class PagesController extends Controller
 {
@@ -44,7 +45,7 @@ class PagesController extends Controller
 
         // // Session::set('jwtId', generateUlid());
         // dd(Session::get('jwtId'));
-        $server = \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port')) ? "OpenSwoole" : "PHP FPM";
+        $server = \isSwoole() ? "OpenSwoole" : "PHP FPM";
 
         $this->view('spa.index', ['users' => $users, 'server' => $server]);
     }
@@ -57,6 +58,37 @@ class PagesController extends Controller
     public function demoSpa(Request $request, Response $response)
     {
         $this->view('spa.pages.main');
+    }
+
+    // Sample print PDF
+    public function printView(Request $request, Response $response, $id = null)
+    {
+        $id = $id ?: (int) $request->id;
+        $produk = $request->produk ?? 'Excavator Komatsu PC200-8M0 & Sparepart';
+        $petani = $request->petani ?? 'Petani';
+        // $bastData = $this->bastModel->find($id);
+
+        // Dummy data untuk $bastData = $this->bastModel->find($id);
+        $bastData = [
+            'id'           => $id ?? 1,
+            'no_bast'      => 'BAST/KOP/' . date('Y/m') . '/' . str_pad($id ?? 1, 3, '0', STR_PAD_LEFT),
+            'tanggal'      => date('Y-m-d'),
+            'title'        => $produk,
+            'kategori'     => 'assets', // assets, finance, atau inventory
+            'jumlah'       => '1 Unit',
+            'kondisi'      => 'Baik / Layak Operasional',
+            'penyerah'     => 'Lutvi (Admin Aset Koperasi)',
+            'penerima'     => $petani . ' (Anggota No. A-1092)',
+            'keterangan'   => 'Serah terima unit alat berat dalam kondisi lengkap beserta kunci kontak dan dokumen STNK/BPKB.',
+            'status'       => 'Selesai',
+            'member'       => 'Budi Santoso',
+            'time'         => date('d M Y, H:i') . ' WIB'
+        ];
+
+        // Render View Murni tanpa Layout Dashboard Utama
+        $this->view('pdf.bast-print-template', [
+            'bast' => $bastData
+        ]);
     }
 
 }

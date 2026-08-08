@@ -183,7 +183,6 @@ function endResponse($response, $status = 200, $headers = [])
     $csrfHeader[] = ['Set-Cookie' => "XSRF-TOKEN={$csrfToken}; Max-Age={$expired_seconds}; Path={$path}; Domain={$domain}; HttpOnly; SameSite=Lax; Secure;"];
     $headers = array_merge($csrfHeader, $headers);
 
-    // if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // non OpenSwoole Server
     if (! isSwoole()) {
         if (count($headers)) {
             foreach ($headers as $header) {
@@ -198,7 +197,7 @@ function endResponse($response, $status = 200, $headers = [])
         // die(response()->json($response, $status));
         response()->json($response, $status);
     } else {
-        // Langsung set status code ke Swoole Response
+        // Direct to Swoole Response
         if (isset($GLOBALS['swoole_response']) && $GLOBALS['swoole_response'] instanceof \OpenSwoole\Http\Response) {
             $GLOBALS['swoole_response']->status($status);
         }
@@ -401,14 +400,27 @@ function assets_path($filePath)
 }
 
 /**
- * Helper untuk memanggil file di folder public/
+ * Helpers (alias - old version) to call files in the public/folder
  */
 if (!function_exists("asset")) {
     function asset($path)
     {
-        $baseUrl = rtrim(config("app.url"), "/");
-        return $baseUrl . "/" . ltrim((string) $path, "/");
+        return assets($path);
     }
+}
+
+function assets(string $uri = ''): string
+{
+    $uri = sanitizeUri($uri);
+    
+    if (\isSwoole()) { // OpenSwoole Server
+        // Use null coalescing (??) to be safe from undefined index
+        $host = $_SERVER['HTTP_HOST'] ?? request()->header('host') ?? 'localhost';
+        return "//{$host}/{$uri}";
+    }
+
+    $baseUrl = rtrim(config('app.url') ?? '', '/');
+    return "{$baseUrl}/{$uri}";
 }
 
 /**
@@ -438,11 +450,10 @@ function isHtmx()
 function dd($data = [], $json = false)
 {
     if ($json) {
-        die(json_encode($data, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
+        customExit(json_encode($data, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
     }
 
-    echo "<pre>", var_dump($data), "</pre>";
-    die();
+    customExit("<pre>". var_dump($data) . "</pre>");
 }
 
 /**
@@ -454,16 +465,6 @@ function dd($data = [], $json = false)
 function url($uri = '')
 {
     $uri = sanitizeUri($uri);
-    return config('app.url')."/{$uri}";
-}
-
-function assets($uri = '')
-{
-    $uri = sanitizeUri($uri);
-    if ($_SERVER['SERVER_PORT'] === 9501) { // OpenSwoole Server
-        return "//{$_SERVER['HTTP_HOST']}/{$uri}";
-    }
-
     return config('app.url')."/{$uri}";
 }
 
@@ -484,18 +485,6 @@ function delCache($id, $prefix = null)
     (new \App\Core\Support\Cache(null, null, $prefix))->deleteData($id);
 }
 
-// function setupRedisConnection()
-// {
-//     // Connect to Redis
-//     return new \Predis\Client([
-//         'host' => Config::get('redis.cache.host'),
-//         'port' => Config::get('redis.cache.port'),
-//         'username' => Config::get('redis.cache.username'),
-//         'password' => Config::get('redis.cache.password'),
-//         'database' => Config::get('redis.cache.database')
-//     ]);
-// }
-
 /**
  * Setup Redis Connection Helper
  *
@@ -504,14 +493,12 @@ function delCache($id, $prefix = null)
  */
 function setupRedisConnection()
 {
-    // 1. Ambil config dan berikan tipe data yang aman (Mencegah null-offset error di PHP 8.1+)
     $host     = (string) Config::get('redis.cache.host');
     $port     = (int)    Config::get('redis.cache.port');
-    $username = Config::get('redis.cache.username'); // Boleh null jika Redis tanpa user (default)
-    $password = Config::get('redis.cache.password'); // Boleh null jika Redis tanpa password
+    $username = Config::get('redis.cache.username');
+    $password = Config::get('redis.cache.password');
     $database = (int)    Config::get('redis.cache.database');
 
-    // Amankan parameter username/password agar tidak membawa string kosong yang mengganggu koneksi
     $parameters = [
         'host'     => $host,
         'port'     => $port,
@@ -525,33 +512,30 @@ function setupRedisConnection()
         $parameters['password'] = (string)$password;
     }
 
-    // // 2. Muted E_DEPRECATED jika library Predis Anda belum versi terbaru
+    // // 2. Muted E_DEPRECATED if your Predis library is not the latest version
     // $oldErrorReporting = error_reporting();
     // error_reporting($oldErrorReporting & ~E_DEPRECATED);
 
     try {
-        // Buat instance client Redis
         $redis = new \Predis\Client($parameters);
 
-        // 3. TES KONEKSI NYATA: Karena Predis bersifat 'lazy',
-        // kita panggil ping() di dalam try-catch untuk memastikan servernya hidup.
+        // 3. REAL CONNECTION TEST: Since Predis is 'lazy',
+        // we call ping() inside try-catch to make sure the server is up.
         // $redis->ping();
 
         return $redis;
 
     } catch (\Throwable $e) {
-        // Tulis log error internal agar memudahkan debugging di Docker/Ubuntu Anda
+        // Write an internal error log to make debugging easier on your Docker/Ubuntu
         if (class_exists('\App\Core\Support\Log')) {
             \App\Core\Support\Log::error("Redis Connection Failed: " . $e->getMessage(), "Helpers.setupRedisConnection");
         }
 
-        // Skenario penanganan: Anda bisa melempar Exception atau mengembalikan null
-        // agar script utama bisa mendeteksinya dan melakukan fallback ke database/file biasa.
         throw new \Exception("Could not connect to Redis server: " . $e->getMessage(), 0, $e);
-        // return null; // Aktifkan ini jika ingin fallback tanpa crash
+        // return null; // Enable this if you want fallback without crashes
 
     } finally {
-        // // Kembalikan error reporting asli aplikasi
+        // // Restore the application's original error reporting
         // error_reporting($oldErrorReporting);
 
         return $redis;
@@ -611,7 +595,6 @@ function clearRedisDataByPrefix($prefix = null)
     do {
         // Perform a SCAN operation to find keys matching the pattern
         // The 'MATCH' option specifies the pattern, and 'COUNT' suggests how many keys to return per iteration
-        // $scanResult = $redis->scan($cursor, 'MATCH', $pattern, 'COUNT', 1000);
         $scanResult = $redis->scan($cursor, 'MATCH');
 
         $cursor = $scanResult[0]; // Update the cursor for the next iteration
@@ -736,7 +719,7 @@ function e($str, $doubleEncode = true)
     // return htmlentities($str, ENT_QUOTES, 'UTF-8');
     // // return htmlspecialchars($str ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8', $doubleEncode);
 
-    // Pilihan Terbaik & Paling Kompatibel
+    // The Best and Most Compatible Choice
     return htmlspecialchars($str ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8', $doubleEncode);
 }
 
@@ -809,8 +792,6 @@ function old($key)
  */
 function clientIP()
 {
-    // return (new \App\Core\Security\Middleware\EnsureIpIsValid)->ip();
-
     // Get real visitor IP behind CDN such as Cloudflare
     if (isset($_SERVER["HTTP_CF_CONNECTING_IP"])) {
         $_SERVER['REMOTE_ADDR'] = $_SERVER["HTTP_CF_CONNECTING_IP"];
@@ -1171,13 +1152,13 @@ function get_short_ua(bool $is_hash = false): string
 
 
 /**
- * Mendapatkan sidik jari perangkat yang stabil.
- * @param bool $is_hash Jika true, mengembalikan MD5 hash (32 char).
+ * Get stable device fingerprinting.
+ * @param bool $is hash If true, returns MD5 hash (32 characters).
  * @return string
  */
 function get_device_fingerprint(bool $is_hash = true): string
 {
-    // Gabungkan Platform + UA + IP (Opsional: tambahkan IP agar lebih ketat)
+    // Combine Platform + UA + IP (Optional: add IP to make it tighter)
     $fingerprint = get_short_ua() . "_" . clientIP();
 
     return $is_hash ? md5($fingerprint) : $fingerprint;

@@ -41,8 +41,8 @@ bp_minimum_php_version(config('app.php_version'));
 
 date_default_timezone_set(env('APP_TIMEZONE', 'Asia/Jakarta'));
 
-// dd(config('app.ignore_port'), true);
-if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // Ignore OpenSwoole Server
+// dd(\isSwoole() ? "OpenSwoole" : "PHP FPM");
+if (! \isSwoole()) { // Ignore OpenSwoole Server
 
     // Gunakan Throwable untuk menangkap Error.
     set_exception_handler(function (\Throwable $exception) {
@@ -174,6 +174,6 @@ if (Request::isJsonRequest() && is_string($output)) {
  * and that way we can save the current uri and use it in
  * the next request as the previous uri.
  */
-if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) {
+if (! \isSwoole()) {
     Session::setPreviousUri(Request::uri());
 }

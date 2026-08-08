@@ -52,7 +52,7 @@
                 <button class="text-indigo-600 text-sm font-bold hover:underline">Detail Aset</button>
             </div>
         </div>
-        </div>
+    </div>
 
     <div x-data="{ open: false, durasi: 1, hargaPerJam: 150000 }" 
          x-show="open" 

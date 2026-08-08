@@ -13,24 +13,77 @@ class DashboardController extends Controller
     {
         parent::__construct();
 
-        // Allow insomnia, etc...
-        $user_agent = trim($_SERVER['HTTP_USER_AGENT'] ?? '');
-        $dev_agents = [
-                        'insomnia',
-                    ];
+        // // Allow insomnia, etc...
+        // $user_agent = trim($_SERVER['HTTP_USER_AGENT'] ?? '');
+        // $dev_agents = [
+        //                 'insomnia',
+        //             ];
+        // $agentAllow = false;
+        // foreach ($dev_agents as $agent) {
+        //     if (str_contains(strtolower($user_agent), strtolower($agent))) {
+        //         $agentAllow = true;
+        //     }
+        // }
+        // // dd($agentAllow);
+
+        // // Handler reload manual
+        // if (!$agentAllow) {
+        //     $ignore_uri = ['login', 'logout', 'htmx'];
+        //     $uri = trim(request()->uri(), '/');
+        //     // dd($uri);
+        //     // dd(isHtmx());
+
+        //     if ((request()->method() === 'GET' && ! in_array($uri, $ignore_uri)) || ! isHtmx()) {
+        //         // dd($uri);
+        //         response()->redirect('/htmx');
+        //     }
+        // }
+
+        // 1. Allow dev tools (Insomnia, Postman, dll)
+        $user_agent = strtolower(trim($_SERVER['HTTP_USER_AGENT'] ?? ''));
+        $dev_agents = ['insomnia', 'postman'];
+        
         $agentAllow = false;
         foreach ($dev_agents as $agent) {
-            if (str_contains(strtolower($user_agent), strtolower($agent))) {
+            if (str_contains($user_agent, $agent)) {
                 $agentAllow = true;
+                break;
             }
         }
-        // dd($agentAllow);
 
-        // Handler reload manual
+        // 2. Handler Reload Manual / Direct Browser Access
         if (!$agentAllow) {
-            $ignore_uri = ['login', 'logout', 'htmx'];
-            if (request()->method() === 'GET' && ! in_array(request()->uri(), $ignore_uri) && !$this->__isHtmxRequest()) {
-                response()->redirect('/htmx');
+            $uri = trim(request()->uri(), '/');
+            
+            // Retrieve the main path from the URI (example: "htmx/inventory" -> "htmx")
+            $segment1 = explode('/', $uri)[0] ?? '';
+
+            // Ignore excluded routes
+            $ignore_uri = ['login', 'logout'];
+
+            // KONDISI REDIRECT:
+            // 1. Request berupa GET
+            // 2. URI bukan daftar yang diabaikan (login/logout)
+            // 3. URI berada di dalam ruang lingkup htmx (misal: htmx/inventory, htmx/assets)
+            // 4. URI bukan persis halaman root "htmx"
+            // 5. Bukan AJAX HTMX Request (berarti user menekan F5 / hard refresh di browser)
+            if (
+                request()->method() === 'GET' &&
+                ! in_array($uri, $ignore_uri) &&
+                $segment1 === 'htmx' &&
+                $uri !== 'htmx' &&
+                ! isHtmx()
+            ) {
+                // Eksekusi redirect dan kembalikan response langsung
+                response()->redirect('/htmx')->send();
+                
+                // Pada OpenSwoole, lemparkan exception ringan/exit handler framework 
+                // agar proses instansiasi controller terhenti tanpa mematikan Worker Swoole.
+                if (function_exists('fastcgi_finish_request')) {
+                    exit; // Aman untuk FPM
+                } else {
+                    throw new \App\Core\Exceptions\RedirectException('/htmx'); // Aman untuk OpenSwoole
+                }
             }
         }
 
@@ -48,7 +101,6 @@ class DashboardController extends Controller
         // $users = Model::table('users')->select(['*'])->get();
         // dd($users);
         // Session::set('users', generateUlid());
-        // $server = \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port')) ? "OpenSwoole" : "PHP FPM";
         $server = \isSwoole() ? "OpenSwoole" : "PHP FPM";
 
         $dataViews = $this->data_dashboard_activities($request, $response);
@@ -58,6 +110,11 @@ class DashboardController extends Controller
 
     public function login(Request $request, Response $response)
     {
+        // dd(Session::all());
+        if(Session::has('userdata')) {
+            $response->redirect('/htmx')->send();
+        }
+
         $this->view('login');
     }
 
@@ -68,7 +125,9 @@ class DashboardController extends Controller
 
         if ($user === 'admin' && $pass === 'desa2026') {
 
-            // Memakai method header() buatan kita di custom Response
+            Session::set('userdata', ['username' => $user]);
+
+            // Using custom header() method in the custom Response
             return $response
                 ->header('HX-Trigger', json_encode([
                     'show-toast' => 'Login Berhasil! Mengalihkan...'
@@ -117,7 +176,7 @@ class DashboardController extends Controller
 
     public function assets(Request $request, Response $response)
     {
-        $dataViews = $this->assets_render($request, $response);
+        $dataViews = $this->assets_render($request, $response, true);
         $this->view('htmx.assets', $dataViews);
     }
 
@@ -285,7 +344,8 @@ class DashboardController extends Controller
 
         if (!is_numeric($id)) {
             header('Content-Type: text/html', true, 422);
-            die("ID tidak valid.");
+            // die("ID tidak valid.");
+            customExit("ID tidak valid.");
         }
 
         $filter = new \App\Core\Validation\Filter();
@@ -317,7 +377,8 @@ class DashboardController extends Controller
 
         if ($errors) {
             header('Content-Type: text/html', true, 422);
-            die("ID tidak valid.");
+            // die("ID tidak valid.");
+            customExit("ID tidak valid.");
         }
 
         $filter = new \App\Core\Validation\Filter();
@@ -333,7 +394,8 @@ class DashboardController extends Controller
         // dd($auth);
         if (false === $auth) {
             header("HTTP/1.1 403 Forbidden");
-            die("Produk ini tidak bisa dihapus, mohon hubungi Admin.");
+            // die("Produk ini tidak bisa dihapus, mohon hubungi Admin.");
+            customExit("Produk ini tidak bisa dihapus, mohon hubungi Admin.");
         }
 
         $callback = QueryBuilder::table('products')
@@ -341,13 +403,13 @@ class DashboardController extends Controller
 
         if (false === $callback) {
             header("HTTP/1.1 500 Internal Server Error");
-            die("Gagal menghapus data.");
+            // die("Gagal menghapus data.");
+            customExit("Gagal menyimpan data.");
         }
 
         // Berhasil: Kirim status 200 dengan body kosong
         // HTMX akan menghapus elemen <tr> target karena kita menggunakan hx-swap="outerHTML"
         http_response_code(200);
-        // exit;
         customExit();
     }
 
@@ -371,7 +433,8 @@ class DashboardController extends Controller
         if ($errors) {
             header('Content-Type: application/json', true, 422);
             dd($errors, true);
-            die("Gagal menyimpan data.");
+            // die("Gagal menyimpan data.");
+            customExit("Gagal menyimpan data.");
         }
 
         $filter = new \App\Core\Validation\Filter();
@@ -395,7 +458,8 @@ class DashboardController extends Controller
         // dd($lastId);
         if (false === $lastId) {
             header("HTTP/1.1 500 Internal Server Error");
-            die("Gagal menyimpan data.");
+            // die("Gagal menyimpan data.");
+            customExit("Gagal menyimpan data.");
         }
 
         $this->include('htmx.data.inventory.row', $payload);
@@ -566,7 +630,6 @@ class DashboardController extends Controller
             // // header('Content-Type: application/json');
             // echo json_encode($data);
 
-            // // if (! \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) {
             // if (!isSwoole()) {
             //     exit;
             // }
@@ -615,7 +678,7 @@ class DashboardController extends Controller
 
 
     // ===== GET DATA ASSETS
-    public function assets_render(Request $request, Response $response)
+    public function assets_render(Request $request, Response $response, $isData = false)
     {
         $search = $request->search ?? '';
         $status = $request->status_filter ?? '';
@@ -670,11 +733,15 @@ class DashboardController extends Controller
             'viewMode' => $viewMode,
         ];
 
-        // Hanya mengambil data tabelnya saja
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' || (!isset($request->search) && !isset($request->status_filter) && !isset($request->view_mode))) {
-            return $dataViews;
-        }
+        // Just take the table data - POST Update data
+        return $dataViews;
+    }
 
+    public function assets_render_view(Request $request, Response $response)
+    {
+    // http_response_code(200);
+        $dataViews = $this->assets_render($request, $response, true);
+        // dd($dataViews);
         $this->include('htmx.data.assets.assets-render', $dataViews);
     }
 
@@ -706,8 +773,8 @@ class DashboardController extends Controller
         // $logs = [];
         $unitId = $unitName = '';
         if (isset($logs[0])) {
-            $unitId = $logs[0]['unit_id'] ?: '';
-            $unitName = $logs[0]['unit_name'] ?: '';
+            $unitId = $logs[0]['unit_id'] ?? '';
+            $unitName = $logs[0]['unit_name'] ?? '';
         }
 
         $this->include('htmx.modals.assets.logs', ['unitId' => $unitId, 'unitName' => $unitName, 'logs' => $logs]);
@@ -765,7 +832,8 @@ class DashboardController extends Controller
         if ($errors) {
             header('Content-Type: application/json', true, 422);
             dd($errors, true);
-            die("Gagal menyimpan data.");
+            // die("Gagal menyimpan data.");
+            customExit("Gagal menyimpan data.");
         }
 
         $filter = new \App\Core\Validation\Filter();
@@ -804,13 +872,9 @@ class DashboardController extends Controller
         // dd($lastId);
         if (false === $lastId) {
             header("HTTP/1.1 500 Internal Server Error");
-            die("Gagal menyimpan data.");
+            // die("Gagal menyimpan data.");
+            customExit("Gagal menyimpan data.");
         }
-
-        // http_response_code(200);
-        $dataViews = $this->assets_render($request, $response);
-        // dd($dataViews);
-        $this->include('htmx.data.assets.assets-render', $dataViews);
     }
 
     public function assets_add(Request $request, Response $response)
@@ -840,7 +904,8 @@ class DashboardController extends Controller
         if ($errors) {
             header('Content-Type: application/json', true, 422);
             dd($errors, true);
-            die("Gagal menyimpan data.");
+            // die("Gagal menyimpan data.");
+            customExit("Gagal menyimpan data.");
         }
 
         $filter = new \App\Core\Validation\Filter();
@@ -875,7 +940,8 @@ class DashboardController extends Controller
         // dd($lastId);
         if (false === $lastId || !is_numeric($lastId)) {
             header("HTTP/1.1 500 Internal Server Error");
-            die("Gagal menyimpan data.");
+            // die("Gagal menyimpan data.");
+            customExit("Gagal menyimpan data.");
         }
         // Push id ke payload
         $payload['id'] = $lastId;
@@ -889,38 +955,6 @@ class DashboardController extends Controller
 
     }
     // ===== END GET DATA ASSETS
-
-    // Sample print PDF
-    // public function printView(Request $request, Response $response)
-    public function printView(Request $request, Response $response, $id)
-    {
-        $id = $id ?: (int) $request->id;
-        $produk = $request->produk ?? 'Excavator Komatsu PC200-8M0 & Sparepart';
-        $petani = $request->petani ?? 'Petani';
-        // $bastData = $this->bastModel->find($id);
-
-        // Dummy data untuk $bastData = $this->bastModel->find($id);
-        $bastData = [
-            'id'           => $id ?? 1,
-            'no_bast'      => 'BAST/KOP/' . date('Y/m') . '/' . str_pad($id ?? 1, 3, '0', STR_PAD_LEFT),
-            'tanggal'      => date('Y-m-d'),
-            'title'        => $produk,
-            'kategori'     => 'assets', // assets, finance, atau inventory
-            'jumlah'       => '1 Unit',
-            'kondisi'      => 'Baik / Layak Operasional',
-            'penyerah'     => 'Lutvi (Admin Aset Koperasi)',
-            'penerima'     => $petani . ' (Anggota No. A-1092)',
-            'keterangan'   => 'Serah terima unit alat berat dalam kondisi lengkap beserta kunci kontak dan dokumen STNK/BPKB.',
-            'status'       => 'Selesai',
-            'member'       => 'Budi Santoso',
-            'time'         => date('d M Y, H:i') . ' WIB'
-        ];
-
-        // Render View Murni tanpa Layout Dashboard Utama
-        $this->view('pdf.bast-print-template', [
-            'bast' => $bastData
-        ]);
-    }
 
     private function __getPaginationRange($currentPage, $totalPages)
     {

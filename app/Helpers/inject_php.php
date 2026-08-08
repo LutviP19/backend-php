@@ -67,6 +67,10 @@ if (!function_exists('customExit')) {
 
         // Mode OpenSwoole: Lempar Custom Graceful Exit Exception
         throw new \App\Core\Exceptions\SwooleExitException($status);
+
+        if (class_exists(\OpenSwoole\ExitException::class)) {
+            throw new \OpenSwoole\ExitException();
+        }
     }
 
     // // Example 1: Stop without output (e.g. after redirect)

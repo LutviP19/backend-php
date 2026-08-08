@@ -43,8 +43,10 @@
         @htmx:after-request="if(event.detail.successful) { 
             count++;
             window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Unit Berhasil Diperbaharui', type: 'success' } }));
+            window.dispatchEvent(new CustomEvent('reset-filter')); // Trigger event reset
             openModal = false;
             resetForm();
+            resetAssets();
         }"
         class="space-y-5">
         
@@ -72,59 +74,6 @@
                 <p x-text="errors.name[0]" class="text-[10px] font-bold text-rose-600 mt-1 ml-1"></p>
             </template>
         </div>
-
-        <!-- <div x-data="{ 
-                openStatus: false, 
-                selectedStatus: '<?= $asset['status'] ?>',
-                statusLabel: '<?= ucfirst($asset['status']) ?>' 
-            }">
-            <label class="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Status Operasional</label>
-            
-            <div class="relative mt-1">
-                <button 
-                    @click="openStatus = !openStatus"
-                    type="button"
-                    class="w-full flex items-center justify-between px-5 py-3 bg-slate-50 rounded-2xl text-sm font-bold text-slate-700 hover:bg-slate-100 transition-all border-2 border-transparent focus:border-indigo-500"
-                >
-                    <span class="flex items-center gap-3">
-                        <div class="w-2.5 h-2.5 rounded-full" 
-                             :class="selectedStatus === 'ready' ? 'bg-emerald-500' : (selectedStatus === 'maintenance' ? 'bg-rose-500' : 'bg-blue-500')">
-                        </div>
-                        <span x-text="statusLabel"></span>
-                    </span>
-                    <i class="fas fa-chevron-down text-[10px] text-slate-400 transition-transform" :class="openStatus ? 'rotate-180' : ''"></i>
-                </button>
-
-                <div 
-                    x-show="openStatus"
-                    @click.outside="openStatus = false"
-                    x-transition:enter="transition ease-out duration-100"
-                    x-transition:enter-start="opacity-0 scale-95"
-                    x-transition:enter-end="opacity-100 scale-100"
-                    class="absolute z-[110] w-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-xl p-2"
-                >
-                    <button type="button" 
-                        @click="selectedStatus = 'ready'; statusLabel = 'Ready'; openStatus = false"
-                        class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-emerald-50 hover:text-emerald-600 transition-all">
-                        <div class="w-2 h-2 rounded-full bg-emerald-500"></div> Ready
-                    </button>
-
-                    <button type="button" 
-                        @click="selectedStatus = 'working'; statusLabel = 'Working'; openStatus = false"
-                        class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-all">
-                        <div class="w-2 h-2 rounded-full bg-blue-500"></div> Working
-                    </button>
-
-                    <button type="button" 
-                        @click="selectedStatus = 'maintenance'; statusLabel = 'Maintenance'; openStatus = false"
-                        class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold text-slate-600 hover:bg-rose-50 hover:text-rose-600 transition-all">
-                        <div class="w-2 h-2 rounded-full bg-rose-500"></div> Maintenance
-                    </button>
-                </div>
-
-                <input type="hidden" name="status" :value="selectedStatus">
-            </div>
-        </div> -->
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div x-data="{ 

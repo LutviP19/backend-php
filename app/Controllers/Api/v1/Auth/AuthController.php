@@ -129,7 +129,7 @@ class AuthController extends ApiController
                 // \App\Core\Support\Log::debug($headers, 'AuthController.login.$headers');
 
                 // Cache session data by uid
-                if (\in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) {
+                if (\isSwoole()) {
 
                     // Clean old keys
                     delCache($_SESSION['uid'].'*', 'bp_session');
@@ -318,7 +318,7 @@ class AuthController extends ApiController
                 $validateClient->delToken();
 
                 // Delete Cache session data by uid
-                if (\in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) {
+                if(\isSwoole()) {
 
                     // Clean old keys
                     delCache($userId.'*', 'bp_session');

@@ -388,52 +388,40 @@ class DashboardController extends Controller
 
     public function delete_product(Request $request, Response $response)
     {
-        // dd($request->all());
-
-        // Validate Input
-        Session::unset('errors'); // Clean Errors MessageBag
+        Session::unset('errors');
         $validator = new Validator();
         $validator->validate($request->all(), [
-            'id'  => 'required|numeric',
+            'id' => 'required|numeric',
         ]);
         $errors = Session::get('errors');
 
         if ($errors) {
-            header('Content-Type: text/html', true, 422);
-            // die("ID tidak valid.");
-            customExit("ID tidak valid.");
+            if (function_exists('htmx_json_response')) {
+                htmx_json_response("ID tidak valid.", 422);
+            }
+            return $this->sendSwooleOutput("ID tidak valid.", 422);
         }
 
         $filter = new \App\Core\Validation\Filter();
-        // Filter & Sanitize Input
         $postData = $filter->filter($request->all(), [
-            'id'  => 'trim|sanitize_numbers',
+            'id' => 'trim|sanitize_numbers',
         ]);
         $payload = $filter->sanitize($postData, ['id']);
-        // dd($payload);
-        // dd(array_values($payload));
-
-        $auth = false;
-        // dd($auth);
+        
+        $auth = false; // Change it according to your auth logic
         if (false === $auth) {
-            header("HTTP/1.1 403 Forbidden");
-            // die("Produk ini tidak bisa dihapus, mohon hubungi Admin.");
-            customExit("Produk ini tidak bisa dihapus, mohon hubungi Admin.");
+            return $this->sendSwooleOutput("Produk ini tidak bisa dihapus, mohon hubungi Admin.", 403);
         }
 
         $callback = QueryBuilder::table('products')
                     ->execQuery('DELETE FROM products WHERE id = ?', array_values($payload));
 
         if (false === $callback) {
-            header("HTTP/1.1 500 Internal Server Error");
-            // die("Gagal menghapus data.");
-            customExit("Gagal menyimpan data.");
+            return $this->sendSwooleOutput("Gagal menghapus data.", 500);
         }
 
-        // Berhasil: Kirim status 200 dengan body kosong
-        // HTMX akan menghapus elemen <tr> target karena kita menggunakan hx-swap="outerHTML"
-        http_response_code(200);
-        customExit();
+        // SUCCESSFUL: Send status 200 with empty body for HTMX to delete the row (outerHTML swap)
+        return $this->sendSwooleOutput("", 200);
     }
 
     public function update_product(Request $request, Response $response)
@@ -1012,6 +1000,35 @@ class DashboardController extends Controller
         }
 
         return $rangeWithDots;
+    }
+
+    /**
+     * Built-in helper to send responses directly to OpenSwoole & close the stream
+     */
+    private function sendSwooleOutput(string $content, int $statusCode = 200): void
+    {
+        if (\isSwoole()) {
+            /** @var \OpenSwoole\Http\Response|null $swooleResponse */
+            $swooleResponse = $GLOBALS['swoole_response'] 
+                ?? (function_exists('app') && app()->has('swoole_response') ? app('swoole_response') : null);
+
+            if ($swooleResponse && method_exists($swooleResponse, 'end')) {
+                $swooleResponse->status($statusCode);
+                $swooleResponse->end($content);
+
+                if (class_exists('\App\Core\Exceptions\SwooleExitException')) {
+                    throw new \App\Core\Exceptions\SwooleExitException($statusCode);
+                }
+                return;
+            }
+        }
+
+        // Fallback FPM / Native HTTP
+        http_response_code($statusCode);
+        echo $content;
+        if (function_exists('customExit')) {
+            customExit();
+        }
     }
 }
 

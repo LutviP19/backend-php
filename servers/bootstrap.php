@@ -81,6 +81,23 @@ function initializeServerConstant($request, $response = null): void
     $GLOBALS['requestServer'] = $request;
     $GLOBALS['swoole_response'] = $response;
 
+    // -------------------------------------------------------------
+    // HANDLER CORS & OPTIONS PREFLIGHT
+    // -------------------------------------------------------------
+    $method = $request->server['request_method'] ?? 'GET';
+    
+    // Set Header CORS
+    $response->header('Access-Control-Allow-Origin', '*');
+    $response->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    $response->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, HX-Request, HX-Target, HX-Current-URL, HX-Trigger');
+
+    // Jika browser mengirimkan Preflight OPTIONS, langsung kembalikan 204 No Content
+    if ($method === 'OPTIONS') {
+        $response->status(204);
+        $response->end('');
+        return;
+    }
+
     $_SERVER = [];
     // Clean up $_SERVER dari request sebelumnya
     $_SERVER = array_filter($_SERVER, function ($key) {

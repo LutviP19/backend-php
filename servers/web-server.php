@@ -131,35 +131,6 @@ $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse 
         $bufferedOutput = ob_get_clean();
         $finalOutput = !empty($output) ? $output : $bufferedOutput;
 
-        // if (isJson($finalOutput)) {
-        //     var_dump($finalOutput);
-        // }
-
-        // If the controller returns your custom Response instance
-        // if ($output instanceof Response) {
-        //     // Apply HTTP Status Code (IMPORTANT! This is what changes 200 to 302)
-        //     $response->status($output->getStatusCode());
-
-        //     // Transfer header dari custom Response ke OpenSwoole Response
-        //     foreach ($output->getHeaders() as $name => $value) {
-        //         $response->header($name, $value);
-        //     }
-
-        //     $statusCode = $output->getStatusCode() ?: 302;
-        //     $content = $output->getContent() ?? '';
-        //     var_dump($content);
-        //     if(isJson($content)) {
-        //         // $json = $content
-
-        //         // $output->getContent();
-        //         // $output->getContent();
-        //         $response->header('Content-Type', 'application/json');
-        //     }
-        //     $response->status($statusCode);
-        //     $response->end($content);
-        //     return;
-        // }
-
         if ($finalOutput instanceof Response) {
             $statusCode = $finalOutput->getStatusCode() ?: 200;
             $content = $finalOutput->getContent() ?? '';
@@ -190,41 +161,6 @@ $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse 
             $response->end(json_encode($finalOutput, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
             return;
         }
-
-        // 2. If the output is a valid JSON string or the request requests JSON
-        // if (isJson($finalOutput) || is_json_request()) {
-        //     // echo "2. If the output is a valid JSON string or the request requests JSON";
-
-        //     $contents = explode('@|@', $finalOutput);
-        //     if ($response->isWritable() && !empty($contents[0])) {
-        //         // 1. Take the first part (Index 0)
-        //         $content = $contents[0];
-        //         $convertArr = json_decode($content, true);
-
-        //         if (json_last_error() === JSON_ERROR_NONE) {
-        //             // 2. If there is a key "0" (containing Set-Cookie) included, delete it to clean the JSON
-        //             unset($convertArr['0']);
-
-        //             // Set statusCode
-        //             // Retrieve statusCode safely using the Null Coalescing Operator (??)
-        //             $rawStatus = $convertArr['data']['statusCode'] ?? $convertArr['code'] ?? $convertArr['statusCode'] ?? 200;
-
-        //             // Make sure the status code value is a valid integer type (between 100 and 599)
-        //             $statusCode = (is_numeric($rawStatus) && (int)$rawStatus >= 100 && (int)$rawStatus <= 599)
-        //                 ? (int)$rawStatus
-        //                 : 200;
-
-        //             $response->status($statusCode);
-
-        //             // 3. Encode it back as final output
-        //             $finalOutput = json_encode($convertArr, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        //         }
-        //     }
-
-        //     $response->header('Content-Type', 'application/json; charset=UTF-8');
-        //     $response->end($finalOutput);
-        //     return;
-        // }
 
         if (is_string($finalOutput)) {
             
@@ -303,9 +239,11 @@ $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse 
         }
 
         // Default non-JSON exit
-        $code = $e->getCode() ?: 200;
-        $response->status((int)$code);
-        $response->end($bufferedOutput);
+        if ($response->isWritable()) {
+            $code = $e->getCode() ?: 200;
+            $response->status((int)$code);
+            $response->end($bufferedOutput);
+        }
         return;
 
     } catch (\Throwable $e) {
@@ -325,8 +263,10 @@ $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse 
             write_log("error", $e->getMessage() . "\n" . $e->getTraceAsString(), "Swoole.Request");
         }
 
-        $response->status(500);
-        $response->end("500 Internal Server Error");
+        if ($response->isWritable()) {
+            $response->status(500);
+            $response->end("500 Internal Server Error");
+        }
     }
 });
 

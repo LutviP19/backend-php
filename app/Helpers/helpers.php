@@ -367,7 +367,7 @@ function htmx_json_response(mixed $data, int $statusCode = 422, array $extraHead
 
             // Terminate the Router flow with a Swoole specific Exception
             if (class_exists('\App\Core\Exceptions\SwooleExitException')) {
-                throw new \App\Core\Exceptions\SwooleExitException('HTMX JSON Sent', $statusCode);
+                throw new \App\Core\Exceptions\SwooleExitException($statusCode);
             }
             
             return;

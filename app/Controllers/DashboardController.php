@@ -396,10 +396,7 @@ class DashboardController extends Controller
         $errors = Session::get('errors');
 
         if ($errors) {
-            if (function_exists('htmx_json_response')) {
-                htmx_json_response("ID tidak valid.", 422);
-            }
-            return $this->sendSwooleOutput("ID tidak valid.", 422);
+            htmx_response("ID tidak valid.", 422);
         }
 
         $filter = new \App\Core\Validation\Filter();
@@ -410,18 +407,18 @@ class DashboardController extends Controller
         
         $auth = false; // Change it according to your auth logic
         if (false === $auth) {
-            return $this->sendSwooleOutput("Produk ini tidak bisa dihapus, mohon hubungi Admin.", 403);
+            htmx_response("Produk ini tidak bisa dihapus, mohon hubungi Admin.", 403);
         }
 
         $callback = QueryBuilder::table('products')
                     ->execQuery('DELETE FROM products WHERE id = ?', array_values($payload));
 
         if (false === $callback) {
-            return $this->sendSwooleOutput("Gagal menghapus data.", 500);
+            htmx_response("Gagal menghapus data.", 500);
         }
 
         // SUCCESSFUL: Send status 200 with empty body for HTMX to delete the row (outerHTML swap)
-        return $this->sendSwooleOutput("", 200);
+        htmx_response("", 200);
     }
 
     public function update_product(Request $request, Response $response)
@@ -443,10 +440,10 @@ class DashboardController extends Controller
 
         if ($errors) {
             // 1. Standard use (Status 422)
-            htmx_json_response($errors);
+            htmx_response($errors);
 
             // 2. Or with a custom HTTP status code & special HTMX header
-            // htmx_json_response($errors, 422, ['HX-Retarget' => '#error-display']);
+            // htmx_response($errors, 422, ['HX-Retarget' => '#error-display']);
         }
 
         $filter = new \App\Core\Validation\Filter();
@@ -495,10 +492,10 @@ class DashboardController extends Controller
 
         if ($errors) {
             // 1. Standard use (Status 422)
-            htmx_json_response($errors);
+            htmx_response($errors);
 
             // 2. Or with a custom HTTP status code & special HTMX header
-            // htmx_json_response($errors, 422, ['HX-Retarget' => '#error-display']);
+            // htmx_response($errors, 422, ['HX-Retarget' => '#error-display']);
         }
 
         $filter = new \App\Core\Validation\Filter();
@@ -846,10 +843,10 @@ class DashboardController extends Controller
 
         if ($errors) {
             // 1. Standard use (Status 422)
-            htmx_json_response($errors);
+            htmx_response($errors);
 
             // 2. Or with a custom HTTP status code & special HTMX header
-            // htmx_json_response($errors, 422, ['HX-Retarget' => '#error-display']);
+            // htmx_response($errors, 422, ['HX-Retarget' => '#error-display']);
         }
 
         $filter = new \App\Core\Validation\Filter();
@@ -919,10 +916,10 @@ class DashboardController extends Controller
 
         if ($errors) {
             // 1. Standard use (Status 422)
-            htmx_json_response($errors);
+            htmx_response($errors);
 
             // 2. Or with a custom HTTP status code & special HTMX header
-            // htmx_json_response($errors, 422, ['HX-Retarget' => '#error-display']);
+            // htmx_response($errors, 422, ['HX-Retarget' => '#error-display']);
         }
 
         $filter = new \App\Core\Validation\Filter();
@@ -1000,35 +997,6 @@ class DashboardController extends Controller
         }
 
         return $rangeWithDots;
-    }
-
-    /**
-     * Built-in helper to send responses directly to OpenSwoole & close the stream
-     */
-    private function sendSwooleOutput(string $content, int $statusCode = 200): void
-    {
-        if (\isSwoole()) {
-            /** @var \OpenSwoole\Http\Response|null $swooleResponse */
-            $swooleResponse = $GLOBALS['swoole_response'] 
-                ?? (function_exists('app') && app()->has('swoole_response') ? app('swoole_response') : null);
-
-            if ($swooleResponse && method_exists($swooleResponse, 'end')) {
-                $swooleResponse->status($statusCode);
-                $swooleResponse->end($content);
-
-                if (class_exists('\App\Core\Exceptions\SwooleExitException')) {
-                    throw new \App\Core\Exceptions\SwooleExitException($statusCode);
-                }
-                return;
-            }
-        }
-
-        // Fallback FPM / Native HTTP
-        http_response_code($statusCode);
-        echo $content;
-        if (function_exists('customExit')) {
-            customExit();
-        }
     }
 }
 

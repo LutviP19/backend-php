@@ -337,17 +337,17 @@ function json_response($data, $status = 200, $message = "", $errors = [])
 }
 
 /**
- * Send custom JSON response to HTMX /API client
- * dengan HTTP Status Code dinamis (default: 422 Unprocessable Entity).
+ * Send custom String | JSON response to HTMX /API client
+ * with dynamic HTTP Status Code (default: 422 Unprocessable Entity).
  * 
  * Compatible for OpenSwoole & PHP-FPM.
  *
  * @param mixed $data Data payload / errors array
- * @param int $statusCode HTTP Status Code (misal: 422, 400, 500)
+ * @param int $statusCode HTTP Status Code (Example: 422, 400, 500)
  * @param array $extraHeaders Additional HTTP Headers (e.g. ['HX-Retarget' => '#error-box'])
  * @return void
  */
-function htmx_json_response(mixed $data, int $statusCode = 422, array $extraHeaders = []): void
+function htmx_response(mixed $data, int $statusCode = 422, array $extraHeaders = []): void
 {
     $payload = is_string($data) ? $data : json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     

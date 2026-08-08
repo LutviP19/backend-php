@@ -116,6 +116,7 @@ $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse 
     // --- FASE POPULATE: Environment Synchronization ---
     $_GET     = $request->get ?? [];
     $_POST    = $request->post ?? [];
+    $_REQUEST = array_merge($_GET, $_POST);
     $_COOKIE  = $request->cookie ?? [];
     $_SERVER['REQUEST_URI']    = $request->server['request_uri'] ?? '/';
     $_SERVER['REQUEST_METHOD'] = $request->server['request_method'] ?? 'GET';

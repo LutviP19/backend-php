@@ -24,6 +24,8 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use OpenSwoole\HTTP\Server;
+use OpenSwoole\Coroutine;
+use App\Core\Database\DatabasePoolManager;
 
 // use OpenSwoole\Http\Request as OpenSwooleRequest;
 // use OpenSwoole\Http\Response as OpenSwooleResponse;
@@ -73,8 +75,9 @@ $server->set([
     'http_compression_level' => 3, // 1 - 9
     'compression_min_length' => 20,
 
-    // // Coroutine
-    // 'enable_coroutine' => false,
+    // Coroutine
+    'enable_coroutine' => true,
+    'task_enable_coroutine' => true,
 
     // // Protocol
     // 'open_http_protocol' => true,
@@ -117,6 +120,17 @@ $server->on('WorkerStart', function (Server $server, int $workerId) {
     require_once __DIR__ . '/../routes/api-server.php';
 
     echo "Worker #{$workerId} is ready.\n";
+
+    // Jalankan Inisialisasi Pool DI DALAM Coroutine Context
+    Coroutine::create(function () use ($workerId) {
+        try {
+            DatabasePoolManager::init(10);
+            echo "[" . date('Y-m-d H:i:s') . "] [OK] Connection Pool initialized for Worker #{$workerId}\n";
+        } catch (\Throwable $e) {
+            echo "[" . date('Y-m-d H:i:s') . "] [ERROR] Failed to initialize Database Pool on Worker #{$workerId}: " . $e->getMessage() . "\n";
+            echo $e->getTraceAsString() . "\n";
+        }
+    });
 });
 
 $server->on('Task', function (Swoole\Server $server, $task_id, $reactorId, $data) {

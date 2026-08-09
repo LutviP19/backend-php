@@ -52,7 +52,11 @@ class Connection
 
             return $pdo;
         } catch (PDOException $e) {
-            die($e->getMessage());
+            if (config('app.debug')) {
+                write_log('error', '[DB Connection Error] ' . $e->getMessage(), '/Core/Database/Connection.make', false);
+            }
+
+            return null;
         }
     }
 

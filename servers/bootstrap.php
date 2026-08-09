@@ -86,16 +86,20 @@ function initializeServerConstant($request, $response = null): void
     // -------------------------------------------------------------
     $method = $request->server['request_method'] ?? 'GET';
     
-    // Set Header CORS
-    $response->header('Access-Control-Allow-Origin', '*');
-    $response->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    $response->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, HX-Request, HX-Target, HX-Current-URL, HX-Trigger');
+    // Set CORS Headers
+    // Check if $response is available before calling the header() method
+    if ($response !== null) {
+        $response->header('Access-Control-Allow-Origin', '*');
+        $response->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        $response->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, HX-Request, HX-Target, HX-Current-URL, HX-Trigger');
 
-    // Jika browser mengirimkan Preflight OPTIONS, langsung kembalikan 204 No Content
-    if ($method === 'OPTIONS') {
-        $response->status(204);
-        $response->end('');
-        return;
+
+        // Jika browser mengirimkan Preflight OPTIONS, langsung kembalikan 204 No Content
+        if ($method === 'OPTIONS') {
+            $response->status(204);
+            $response->end('');
+            return;
+        }
     }
 
     $_SERVER = [];

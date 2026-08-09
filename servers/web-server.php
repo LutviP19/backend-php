@@ -18,6 +18,7 @@ use App\Core\Http\Request;
 use App\Core\Http\Response;
 use App\Core\Http\Router;
 use App\Core\Support\App;
+use App\Core\Database\DatabasePoolManager;
 
 // 1. APPLICATION BOOTSTRAP (Only executed once when the server is turned on)
 require_once __DIR__ . '/../app/Core/swoole_init.php';
@@ -29,6 +30,7 @@ $server->set([
     'document_root'         => realpath(__DIR__ . '/../public'), // path related folders public
     'enable_static_handler' => true,                             // <--- LOAD ASSETS
     'static_handler_locations' => ['/css', '/js', '/assets', '/images', '/favicon.ico', '/backend-php-sw.js'], // <--- (Opsional) Folder/File asset
+    'enable_coroutine' => true,
 ]);
 
 // Start Server
@@ -38,10 +40,23 @@ $server->on("Start", function (Server $server) {
     echo "Swoole web server is started at http://" . $serverip . ":" . $serverport . "\n";
 });
 
+// PENTING: Inisialisasi Pool DI DALAM WorkerStart (Per Worker Process)
+$server->on('WorkerStart', function ($server, int $workerId) {
+    try {
+        // Setiap worker akan membuat ClientPool-nya sendiri
+        DatabasePoolManager::init(10);
+        echo "[" . date('Y-m-d H:i:s') . "] [OK] Connection Pool initialized for Worker #{$workerId}\n";
+    } catch (\Throwable $e) {
+        // Tangkap fatal error agar worker tidak exit status 255
+        echo "[" . date('Y-m-d H:i:s') . "] [ERROR] Failed to initialize Database Pool on Worker #{$workerId}: " . $e->getMessage() . "\n";
+        echo $e->getTraceAsString() . "\n";
+    }
+});
+
 // Pre-load router ke memory 1x
 $router = Router::load(BASEPATH . '/routes/routes.php');
 
-$server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse $response) use ($router) {
+$server->on('Request', function (OpenSwooleRequest $request, OpenSwooleResponse $response) use ($router) {
     global $server, $clientInfo, $ignoredUri, $sessionId, $sessionName;
 
     // Clear Output Buffer if any

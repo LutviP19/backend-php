@@ -91,7 +91,9 @@ function initializeServerConstant($request, $response): void
             }
         }
         // Clean the native PHP header list so that it doesn't pile up in subsequent requests
-        header_remove();
+        if(! headers_sent()) {
+            header_remove();
+        }
     }
 
     // Inject into GLOBALS to be detected by isSwoole() & ApiController

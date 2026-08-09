@@ -36,6 +36,7 @@ class QueryBuilder
      * @var \PDO
      */
     private $pdo = null;
+    private $conn = null;
 
     /**
      * Current table to query from.
@@ -88,9 +89,9 @@ class QueryBuilder
     public function __construct(?PDO $pdo = null)
     {
         //if we have a different db connection.
-        $conn = $pdo ?? Connection::make();
+        $this->conn = $pdo ?? Connection::make();
 
-        $this->setPDO($conn);
+        $this->setPDO($this->conn);
     }
 
     /**
@@ -423,21 +424,38 @@ class QueryBuilder
      */
     protected function query()
     {
-        try {
-            $query = $this->getPDO()->prepare($this->getSQL());
+        if(\isSwoole()) {
+            // Jalankan eksekusi query di dalam Connection Pool Manager
+            return DatabasePoolManager::run(function (\PDO $pdo) {
+                $query = $pdo->prepare($this->getSQL());
 
-            // \App\Core\Support\Log::debug($query, 'QueryBuilder.query');
-            // \App\Core\Support\Log::debug($this->getSQL(), 'QueryBuilder.query.getSQL');
+                // \App\Core\Support\Log::debug($query, 'QueryBuilder.query');
+                // \App\Core\Support\Log::debug($this->getSQL(), 'QueryBuilder.query.getSQL');
 
-            if($query->execute($this->getParams())) {
-                $this->params = [];
-                return $query;
+                if ($query->execute($this->getParams())) {
+                    $this->params = [];
+                    return $query;
+                }
+
+                return false;
+            });
+        } else {
+            try {
+                $query = $this->getPDO()->prepare($this->getSQL());
+
+                // \App\Core\Support\Log::debug($query, 'QueryBuilder.query');
+                // \App\Core\Support\Log::debug($this->getSQL(), 'QueryBuilder.query.getSQL');
+
+                if($query->execute($this->getParams())) {
+                    $this->params = [];
+                    return $query;
+                }
+
+                return false;
+
+            } catch (PDOException $e) {
+                throw $e;
             }
-
-            return false;
-
-        } catch (PDOException $e) {
-            throw $e;
         }
     }
 

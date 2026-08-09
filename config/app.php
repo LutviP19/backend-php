@@ -81,6 +81,9 @@ return [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ,
 
+                // PENTING: Batasi timeout koneksi PDO agar tidak membuat HTTP request hang
+                PDO::ATTR_TIMEOUT => 2,
+
                 // Tambahan: Jika Anda menggunakan fitur Unbuffered (Optional)
                 // (defined('\Pdo\Mysql::ATTR_USE_BUFFERED_QUERY') ? \Pdo\Mysql::ATTR_USE_BUFFERED_QUERY : PDO::MYSQL_ATTR_USE_BUFFERED_QUERY)
                 //    => true,

@@ -268,20 +268,39 @@ $server->on('Request', function (OpenSwooleRequest $request, OpenSwooleResponse 
             ob_end_clean();
         }
 
-        // Print error to Swoole terminal for debugging
-        echo "=== FATAL ERROR AT " . Request::uri() . " ===\n";
-        echo $e->getMessage() . "\n";
-        echo $e->getTraceAsString() . "\n";
-        echo "=========================================\n";
+        if(config('app.debug')) {
+            // Print error to Swoole terminal for debugging
+            echo "=== FATAL ERROR AT " . Request::uri() . " ===\n";
+            echo $e->getMessage() . "\n";
+            echo $e->getTraceAsString() . "\n";
+            echo "=========================================\n";
 
-        // Write log manual
-        if (function_exists('write_log')) {
-            write_log("error", $e->getMessage() . "\n" . $e->getTraceAsString(), "Swoole.Request");
-        }
+            // Write log manual
+            if (function_exists('write_log')) {
+                write_log("error", $e->getMessage() . "\n" . $e->getTraceAsString(), "Swoole.Request");
+            }
+        }        
 
         if ($response->isWritable()) {
-            $response->status(500);
-            $response->end("500 Internal Server Error");
+            $statusCode = 500;
+            $errorMessage = config('app.debug') 
+                ? $e->getMessage() . " in " . str_replace(BASE_PATH, '', $e->getFile()) . ":" . $e->getLine()
+                : 'Internal Server Error';
+
+            $response->status($statusCode);
+
+            if(is_json_request()) {
+                $json = [
+                        'status' => false,
+                        'statusCode' => $statusCode,
+                        'message' => "Exception",
+                        'errors' => [$errorMessage],
+                    ];
+                $response->header('Content-Type', 'application/json; charset=UTF-8');
+                $response->end(json_encode($json, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+            } else {                
+                $response->end($errorMessage);
+            }            
         }
     }
 });

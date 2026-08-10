@@ -56,7 +56,7 @@ class Connection
                 write_log('error', '[DB Connection Error] ' . $e->getMessage(), '/Core/Database/Connection.make', false);
             }
 
-            return null;
+            throw $e;
         }
     }
 
@@ -100,7 +100,6 @@ class Connection
 
             return $pdo;
         } catch (PDOException $e) {
-            // die($e->getMessage());
             if (config("app.env") === "production") {
                 if (config("app.debug")) {
                     \write_log($e->getMessage(), \App\Core\Database\Connection::class, "error", "error_DB.log");
@@ -110,7 +109,12 @@ class Connection
             } else {
                 json_response([], 403, "Auth errors", ["auth" => $e->getMessage()]);
             }
-            die();
+            
+            if (config('app.debug')) {
+                write_log('error', '[DB Connection Error] ' . $e->getMessage(), '/Core/Database/Connection.custom', false);
+            }
+
+            throw $e;
         }
     }
 }

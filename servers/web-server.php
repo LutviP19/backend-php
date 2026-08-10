@@ -216,13 +216,41 @@ $server->on('Request', function (OpenSwooleRequest $request, OpenSwooleResponse 
             $response->end((string)$finalOutput);
         }
 
-    } catch (\App\Core\Exceptions\SwooleExitException $e) {
-        // // Catch Graceful Exit dari customExit()
-        // $bufferedOutput = ob_get_clean();
+    } catch (\PDOException $e) {
+        // Log detail error untuk internal debugging
+        if (config('app.debug')) {
+            write_log('error', '[Database Error] ' . $e->getMessage(), '/servers/api-server');
+        }
 
-        // // Set the status code of the exception if it is not already set
-        // $response->status($e->getCode() ?: 200);
-        // $response->end($bufferedOutput);
+        // Set HTTP Status 503
+        if ($response->isWritable()) {
+            $statusCode = 503;
+            $errorMessage = 'Layanan database sedang tidak merespons. Silakan coba lagi.';
+
+            $response->status($statusCode);
+            
+            if(is_json_request($request)) {
+                $json = [
+                        'status' => false,
+                        'statusCode' => $statusCode,
+                        'message' => "Exception",
+                        'errors' => [$errorMessage],
+                    ];
+                $response->header('Content-Type', 'application/json; charset=UTF-8');
+                $response->end(json_encode($json, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+            } else {
+                $response->status($statusCode);
+
+                // Kirim HX-Trigger khusus untuk toast HTMX Alpine.js Anda
+                $response->header('HX-Trigger', json_encode([
+                    'dbError' => $errorMessage
+                ]));
+
+                $response->end('Database Connection Error');
+            }
+        }
+
+    } catch (\App\Core\Exceptions\SwooleExitException $e) {
 
         // Ambil semua isi buffer dari ob_start()
         $bufferedOutput = '';
@@ -279,7 +307,7 @@ $server->on('Request', function (OpenSwooleRequest $request, OpenSwooleResponse 
             if (function_exists('write_log')) {
                 write_log("error", $e->getMessage() . "\n" . $e->getTraceAsString(), "Swoole.Request");
             }
-        }        
+        }
 
         if ($response->isWritable()) {
             $statusCode = 500;
@@ -289,7 +317,7 @@ $server->on('Request', function (OpenSwooleRequest $request, OpenSwooleResponse 
 
             $response->status($statusCode);
 
-            if(is_json_request()) {
+            if(is_json_request($request)) {
                 $json = [
                         'status' => false,
                         'statusCode' => $statusCode,
@@ -300,7 +328,7 @@ $server->on('Request', function (OpenSwooleRequest $request, OpenSwooleResponse 
                 $response->end(json_encode($json, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
             } else {                
                 $response->end($errorMessage);
-            }            
+            }
         }
     }
 });

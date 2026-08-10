@@ -265,39 +265,60 @@ function endResponse($response, $status = 200, $headers = [])
 }
 
 /**
- * Check whether the request is JSON.
+ * Check whether the request expects or sends JSON content.
+ * Accurate for Global Superglobals ($_SERVER) and OpenSwoole / PSR Requests.
+ *
+ * @param mixed|null $request Optional OpenSwoole\Http\Request or PSR-7 Requests instance
+ * @return bool
  */
-function is_json_request()
+function is_json_request($request = null): bool
 {
-    if (
-        isset($_SERVER["CONTENT_TYPE"]) &&
-        stripos((string) $_SERVER["CONTENT_TYPE"], "application/json") !== false
-    ) {
-        return true;
+    // 1. Special OpenSwoole Request /PSR-7 Support
+    if ($request !== null) {
+        if (method_exists($request, 'getHeaderLine')) {
+            // PSR-7 Request Object
+            $contentType = $request->getHeaderLine('content-type');
+            $accept = $request->getHeaderLine('accept');
+        } elseif (isset($request->header) && is_array($request->header)) {
+            // OpenSwoole\Http\Request
+            $headers = array_change_key_case($request->header, CASE_LOWER);
+            $contentType = $headers['content-type'] ?? '';
+            $accept = $headers['accept'] ?? '';
+        } else {
+            $contentType = '';
+            $accept = '';
+        }
+
+        return (
+            str_contains(strtolower($contentType), 'json') ||
+            str_contains(strtolower($accept), 'json')
+        );
     }
 
-    if (
-        isset($_SERVER["HTTP_CONTENT_TYPE"]) &&
-        stripos((string) $_SERVER["HTTP_CONTENT_TYPE"], "application/json") !== false
-    ) {
-        return true;
-    }
+    // 2. Check Content-Type (Body Payload: e.g., application/json, application/problem+json)
+    $contentType = $_SERVER['CONTENT_TYPE'] 
+        ?? $_SERVER['HTTP_CONTENT_TYPE'] 
+        ?? $_SERVER['REDIRECT_HTTP_CONTENT_TYPE'] 
+        ?? '';
 
-    // Check directly to the Header (Most Accurate in Worker Mode)
-    if (function_exists("getallheaders")) {
-        $headers = getallheaders();
-        // Normalize keys to lowercase because headers can vary (Content-Type vs content-type)
-        foreach ($headers as $name => $value) {
-            if (
-                strtolower((string) $name) === "content-type" &&
-                stripos((string) $value, "application/json") !== false
-            ) {
-                return true;
-            }
+    // 3. Check Accept Header (Respons Expectation: e.g., application/json, */*)
+    $accept = $_SERVER['HTTP_ACCEPT'] ?? '';
+
+    // 4. Fallback: Checking via getallheaders() (Case-Insensitive)
+    if (empty($contentType) && function_exists('getallheaders')) {
+        $allHeaders = array_change_key_case(getallheaders(), CASE_LOWER);
+        $contentType = $allHeaders['content-type'] ?? '';
+        if (empty($accept)) {
+            $accept = $allHeaders['accept'] ?? '';
         }
     }
 
-    return false;
+    // Normalize to lowercase
+    $contentType = strtolower((string) $contentType);
+    $accept = strtolower((string) $accept);
+
+    // 5. Evaluate the 'json' substring (Includes 'application/json', 'application/vnd.api+json', etc)
+    return str_contains($contentType, 'json') || str_contains($accept, 'json');
 }
 
 

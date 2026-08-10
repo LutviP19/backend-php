@@ -73,6 +73,9 @@
                         <option value="KBT-1">Kubota L-Series A1 (Traktor)</option>
                         <option value="DJI-1">DJI Agras T40 (Drone)</option>
                     </select>
+
+                    <!-- Hidden input untuk menyimpan Teks Nama Produk tanpa js:eval -->
+                    <input type="hidden" id="nama-produk-hidden" name="produk">
                 </div>
                 
                 <div class="grid grid-cols-2 gap-4">
@@ -111,7 +114,15 @@
                     </p>
                 </div>
 
-                <button type="button" id="btn-cetak-bast" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition">
+                <!-- Tombol HTMX (Bebas dari js:eval) -->
+                <button type="submit"
+                        id="btn-cetak-bast"
+                        class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition"
+                        hx-get="/data/bast/print-view"
+                        hx-include="#nama-petani, #item-id, #nama-produk-hidden"
+                        hx-target="this"
+                        hx-swap="none"
+                        hx-on::after-request="handleBastPrint(event)">
                     Konfirmasi & Cetak BAST Digital
                 </button>
             </form>
@@ -120,48 +131,43 @@
 </div>
 
 <script>
-    document.getElementById('btn-cetak-bast').addEventListener('click', function(e) {
-        // Panggil preventDefault di baris paling atas
-        e.preventDefault();
+// Update hidden input 'nama-produk' saat dropdown berubah (Aman dari eval)
+document.getElementById('item-id').addEventListener('change', function() {
+    document.getElementById('nama-produk-hidden').value = this.selectedOptions[0]?.text || '';
+});
 
-        const selectElement = document.getElementById('item-id');
-        
-        // 1. Ambil Nilai Value (ID Produk)
-        const itemId = selectElement.value; // Hasil: "KBT-1"
-        
-        // 2. Ambil TEKS dari Option yang sedang dipilih (Nama Produk)
-        const namaProduk = selectElement.selectedOptions[0].text; // Hasil: "Kubota L-Series A1 (Traktor)"
+// Set nilai awal nama produk saat halaman dimuat
+document.addEventListener('DOMContentLoaded', function() {
+    const select = document.getElementById('item-id');
+    if (select) {
+        document.getElementById('nama-produk-hidden').value = select.selectedOptions[0]?.text || '';
+    }
+});
 
-        const namaPetani = document.getElementById('nama-petani').value;
+// Callback setelah request HTMX selesai
+function handleBastPrint(evt) {
+    if (!evt.detail.successful) return;
 
-        // Validasi Sederhana
-        if (!namaPetani.trim()) {
-            alert('Silakan isi Nama Petani terlebih dahulu!');
-            document.getElementById('nama-petani').focus();
-            return;
-        }
+    const printUrl = evt.detail.xhr.responseURL;
 
-        // 2. Gunakan Full Origin Dynamic Path agar kompatibel di Electron maupun Browser
-        const baseUrl = window.location.origin;
-        const printUrl = `${baseUrl}/data/bast/print-view/${itemId}?produk=${encodeURIComponent(namaProduk)}&petani=${encodeURIComponent(namaPetani)}`;
+    // Mode Electron
+    if (window.electronAPI) {
+        window.electronAPI.printBastView(printUrl);
+    }
 
-        // 3. Eksekusi Print
-        if (window.electronAPI) {
-            // Mode Electron: Silent Print via IPC
-            window.electronAPI.printBastView(printUrl);
-        } else {
-            // Fallback Mode Browser Biasa
-            const printWin = window.open(printUrl, '_blank');
-            if (printWin) {
-                printWin.onload = function() {
-                    printWin.print();
-
-                    // Pasang listener 'afterprint' di window yang baru dibuka
-                    printWin.addEventListener('afterprint', function() {
-                        printWin.close(); // Tutup tab otomatis setelah selesai/batal print
-                    });
-                };
-            }
-        }
-    });
+    // Fallback Mode Browser Biasa
+    const printWin = window.open(printUrl, '_blank');
+    if (printWin) {
+        printWin.onload = function() {
+            printWin.print();
+            printWin.addEventListener('afterprint', function() {
+                setTimeout(function() {
+                    printWin.close();
+                    if (window.htmx) window.htmx.process(document.body);
+                    window.focus();
+                }, 500);
+            });
+        };
+    }
+}
 </script>

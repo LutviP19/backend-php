@@ -176,7 +176,7 @@ class DashboardController extends Controller
 
     public function assets(Request $request, Response $response)
     {
-        $dataViews = $this->assets_render($request, $response, true);
+        $dataViews = $this->assets_render($request);
         $this->view('htmx.assets', $dataViews);
     }
 
@@ -689,7 +689,7 @@ class DashboardController extends Controller
 
 
     // ===== GET DATA ASSETS
-    public function assets_render(Request $request, Response $response, $isData = false)
+    public function assets_render($request)
     {
         $search = $request->search ?? '';
         $status = $request->status_filter ?? '';
@@ -751,7 +751,7 @@ class DashboardController extends Controller
     public function assets_render_view(Request $request, Response $response)
     {
     // http_response_code(200);
-        $dataViews = $this->assets_render($request, $response, true);
+        $dataViews = $this->assets_render($request);
         // dd($dataViews);
         $this->include('htmx.data.assets.assets-render', $dataViews);
     }

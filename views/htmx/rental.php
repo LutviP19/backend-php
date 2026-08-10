@@ -148,11 +148,13 @@ document.addEventListener('DOMContentLoaded', function() {
 function handleBastPrint(evt) {
     if (!evt.detail.successful) return;
 
+    const originalTitle = document.title;
     const printUrl = evt.detail.xhr.responseURL;
 
     // Mode Electron
     if (window.electronAPI) {
         window.electronAPI.printBastView(printUrl);
+        document.title = originalTitle;
     }
 
     // Fallback Mode Browser Biasa
@@ -161,6 +163,7 @@ function handleBastPrint(evt) {
         printWin.onload = function() {
             printWin.print();
             printWin.addEventListener('afterprint', function() {
+                document.title = originalTitle;
                 setTimeout(function() {
                     printWin.close();
                     if (window.htmx) window.htmx.process(document.body);
@@ -168,6 +171,9 @@ function handleBastPrint(evt) {
                 }, 500);
             });
         };
+    } else {
+        // Jika pop-up diblokir browser, kembalikan title
+        document.title = originalTitle;
     }
 }
 </script>

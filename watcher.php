@@ -9,8 +9,10 @@
 // 1. The folder you want to monitor
 $watchDirectories = [
     __DIR__ . '/app',
+    __DIR__ . '/config',
+    __DIR__ . '/routes',    
     __DIR__ . '/servers',
-    __DIR__ . '/views',
+    __DIR__ . '/views',    
     __DIR__ . '/public', // Place to store .js, .css, etc. files.
 ];
 
@@ -18,7 +20,7 @@ $watchDirectories = [
 $allowedExtensions = ['php', 'js', 'css', 'html', 'json', 'sql'];
 
 // 3. Folders that MUST be ignored (prevents infinite loop/high CPU)
-$ignoredDirectories = ['vendor', 'storage', 'node_modules', '.git', '.vscode'];
+$ignoredDirectories = ['vendor', 'storage', 'node_modules', 'examples', '.git', '.vscode'];
 
 $lastMtime = time();
 
@@ -63,31 +65,21 @@ while (true) {
         }
     }
 
-    // // If any file changes, send signal SIGUSR1 to OpenSwoole Master
-    // if ($fileChanged) {
-    //     $lastMtime = time();
-
-    //     // Sends SIGUSR1 signal to reload worker gracefully (Zero-Downtime)
-    //     exec("pkill -SIGUSR1 -f servers/web-server.php", $output, $returnCode);
-
-    //     if ($returnCode === 0) {
-    //         echo "\033[32m[OpenSwoole]\033[0m Worker berhasil di-reload!\n";
-    //     } else {
-    //         echo "\033[31m[Warning]\033[0m Server OpenSwoole (web-server.php) tidak ditemukan/belum berjalan.\n";
-    //     }
-    // }
-
     if ($fileChanged) {
         $lastMtime = time();
 
-        // 1. Search for OpenSwoole Master Process PID only (using pgrep)
-        $masterPid = trim(shell_exec("pgrep -f 'php servers/web-server.php' | head -n 1"));
+        // Cache PID master agar tidak perlu pgrep berulang kali
+        static $masterPid = null;
+
+        if ($masterPid === null || !posix_kill($masterPid, 0)) { // Sinyal 0 mengecek apakah proses masih hidup
+            $masterPid = trim(shell_exec("pgrep -f 'php servers/web-server.php' | head -n 1"));
+        }
 
         if (!empty($masterPid) && is_numeric($masterPid)) {
-            // 2. Send the SIGUSR1 signal ONLY to the Master Process PID
             posix_kill((int)$masterPid, SIGUSR1);
             echo "\033[32m[OpenSwoole]\033[0m Signal SIGUSR1 terkirim ke Master PID ({$masterPid}). Worker di-reload!\n";
         } else {
+            $masterPid = null; // Reset cache jika tidak ditemukan
             echo "\033[31m[Warning]\033[0m Server OpenSwoole (web-server.php) tidak ditemukan/belum berjalan.\n";
         }
     }

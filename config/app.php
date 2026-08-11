@@ -26,6 +26,7 @@ return [
         'debug' => (bool) env('APP_DEBUG', false),
         'logdir' => __DIR__ . '/../storage/logs/',
         'ignore_port' => [8009, 8080, 9501, 9502], // OpenSwoole Server port
+        'cache_driver' => env('CACHE_DRIVER', 'files'),
     ],
 
     'trusted_ips' => [

@@ -226,7 +226,7 @@ $server->on('request', function (OpenSwooleRequest $request, OpenSwooleResponse 
 
         if (isset($_COOKIE[$sessionName])) {
             // Try get session data from Redis
-            $_SESSION = cacheContent('get', $_COOKIE[$sessionName], 'bp_session') ?: [];
+            $_SESSION = cacheContent('get', $_COOKIE[$sessionName]) ?: [];
 
             // \App\Core\Support\Log::debug($sessionData, 'HttpServer.fetchDataAsynchronously.first.$sessionData');
             // \App\Core\Support\Log::debug($_SESSION, 'HttpServer.fetchDataAsynchronously.first.$_SESSION');
@@ -294,7 +294,7 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
     if (! in_array($uri, $ignoredUri)) {
         // Try get session data from Redis
         $_SESSION['app'] = 'web';
-        // $_SESSION = array_merge($_SESSION, $sessionData, cacheContent('get', $_COOKIE[$sessionName], 'bp_session') ?: []);
+        // $_SESSION = array_merge($_SESSION, $sessionData, cacheContent('get', $_COOKIE[$sessionName]) ?: []);
         $_SESSION = array_merge($_SESSION, $sessionData);
     }
 
@@ -423,12 +423,12 @@ function fetchDataAsynchronously(OpenSwooleRequest $request, OpenSwooleResponse 
     // // \App\Core\Support\Log::debug(\App\Core\Support\Session::all(), 'HttpServer.fetchDataAsynchronously.Session::all()');
 
     if (isset($_COOKIE[$sessionName]) && count($_SESSION) > 1) {
-        cacheContent('set', $_COOKIE[$sessionName], 'bp_session', $_SESSION);
+        cacheContent('set', $_COOKIE[$sessionName], $_SESSION);
 
         // Delete old session_id()
         $getSessionId = explode("-", (string) $_COOKIE[$sessionName]);
         if (count($getSessionId) == 2) {
-            delCache($getSessionId[1], 'bp_session');
+            delCache($getSessionId[1]);
         }
     }
 

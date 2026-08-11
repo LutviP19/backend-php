@@ -403,15 +403,6 @@
     <?php $this->include('htmx.modals.confirm_delete'); ?>
     <?php $this->include('htmx.modals.alert'); ?>
 
-    <script>
-        document.body.addEventListener('htmx:afterOnLoad', function(evt) {
-            // Cari elemen yang punya x-data dengan fungsi updatePath
-            const sidebar = document.querySelector('[x-data]');
-            if (sidebar && sidebar.__x_data_stack) {
-                // Panggil fungsi updatePath milik Alpine secara manual
-                sidebar._x_dataStack[0].updatePath();
-            }
-        });
-    </script>
+    <script src="<?= assets('/js/app.js') ?>"></script>
 </body>
 </html>

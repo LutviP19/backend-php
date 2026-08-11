@@ -12,6 +12,7 @@
 Caddyfile
 NOTES.txt
 SNIP.txt
+/examples
 /tools
 /bin/ffi/source*
 /node_modules

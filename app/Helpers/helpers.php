@@ -214,7 +214,7 @@ function endResponse($response, $status = 200, $headers = [])
 
     //
     if (isset($_SESSION['uid'])) {
-        delCache($_SESSION['uid'].'*', 'bp_session');
+        delCache($_SESSION['uid'].'*');
         $sessionId = $_SESSION['uid'] . '-' . session_id();
     } else {
         if ($cookieSessID) {
@@ -223,7 +223,7 @@ function endResponse($response, $status = 200, $headers = [])
             if (count($getSessionId) == 2) {
 
                 if (isset($_SESSION['uid']) && $getSessionId[0] !== $_SESSION['uid']) {
-                    delCache($_SESSION['uid'].'*', 'bp_session');
+                    delCache($_SESSION['uid'].'*');
                     $sessionId = $_SESSION['uid'] . '-' . session_id();
                 } else {
                     $sessionId = $_COOKIE[session_name()];
@@ -232,7 +232,7 @@ function endResponse($response, $status = 200, $headers = [])
         }
     }
 
-    cacheContent('set', $sessionId, 'bp_session', $_SESSION);
+    cacheContent('set', $sessionId, $_SESSION);
 
     $response = array_merge($response, ['sessionId' => $sessionId]);
 
@@ -537,21 +537,21 @@ function url($uri = '')
     return config('app.url')."/{$uri}";
 }
 
-function cacheContent($method, $id, $prefix = null, $content = null)
+function cacheContent($method, $id, $content = null, $expiry = 3600)
 {
     if ($method === 'set') {
-        (new \App\Core\Support\Cache(null, null, $prefix))->saveData($id, $content);
+        (new \App\Core\Support\Cache())->set($id, $content, $expiry);
     }
     if ($method === 'get') {
-        return (new \App\Core\Support\Cache(null, null, $prefix))->getData($id);
+        return (new \App\Core\Support\Cache())->get($id);
     }
 
     return $content;
 }
 
-function delCache($id, $prefix = null)
+function delCache($id)
 {
-    (new \App\Core\Support\Cache(null, null, $prefix))->deleteData($id);
+    (new \App\Core\Support\Cache())->flush($id);
 }
 
 /**

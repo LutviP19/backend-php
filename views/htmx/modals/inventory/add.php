@@ -64,7 +64,8 @@
                             resetForm();
                         }
                     }
-                  "
+                  " 
+                  data-idempotency-prefix="Inventory-Add" 
                   class="p-6 space-y-4">
                 
                 <div>

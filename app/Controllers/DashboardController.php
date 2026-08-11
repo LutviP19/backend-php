@@ -7,6 +7,9 @@ use App\Core\Support\Session;
 use App\Core\Database\QueryBuilder;
 use App\Core\Validation\Validator;
 
+use App\Core\Http\IdempotencyHandler;
+use App\Core\Security\IdempotencyManager;
+
 class DashboardController extends Controller
 {
     public function __construct()
@@ -425,53 +428,118 @@ class DashboardController extends Controller
     {
         // dd($request->all());
 
-        // Validate Input
-        Session::unset('errors'); // Clean Errors MessageBag
-        $validator = new Validator();
-        $validator->validate($request->all(), [
-            'nama' => 'required|string|min:3|max:100',
-            'kategori'  => 'required|string',
-            'stok'  => 'required|numeric',
-            'harga'  => 'required|numeric',
-            'status_kritis'  => 'optional|numeric',
-            'id'  => 'required|numeric',
-        ]);
-        $errors = Session::get('errors');
+        // // Tes apakah header terbaca:
+        // $key = IdempotencyHandler::extractIdempotencyKey($request);
+        // htmx_response($key);
 
-        if ($errors) {
-            // 1. Standard use (Status 422)
-            htmx_response($errors);
+        // 1. Check & Lock Request Idempotency
+        $idempotencyData = IdempotencyHandler::simpleCheck($request);
+        
+        
+        if ($idempotencyData) {
+            // A. Jika request SUDAH selesai sebelumnya (COMPLETED) -> Replay Cache Response
+            if (!empty($idempotencyData['cached'])) {
+                if (!headers_sent()) {
+                    header('X-Cache-Idempotent: true');
+                }
+                return $idempotencyData['response'];
+            }
 
-            // 2. Or with a custom HTTP status code & special HTMX header
-            // htmx_response($errors, 422, ['HX-Retarget' => '#error-display']);
+            // B. Jika request SEDANG diproses (PROCESSING) -> Return partial view error
+            if (!headers_sent()) {
+                http_response_code(429);
+            }
+
+            $resultDefault =    ['errors' => [
+                                    'idempotency' => $idempotencyData['message'] ?? 'Permintaan Anda sedang diproses.'],
+                                ];
+            // return $this->include('error.406', [
+            //     'resultDefault' =>  $resultDefault
+            // ]);
+
+            // dd($idempotencyData['message'] ?? 'Permintaan Anda sedang diproses.');
+            htmx_response($resultDefault['errors']);
         }
 
-        $filter = new \App\Core\Validation\Filter();
-        // Filter & Sanitize Input
-        $request->status_kritis = isset($request->status_kritis) ? 1 : 0;
-        $postData = $filter->filter($request->all(), [
-            'nama' => 'trim|sanitize_string',
-            'kategori'  => 'trim|sanitize_string',
-            'stok'  => 'trim|sanitize_numbers',
-            'harga'  => 'trim|sanitize_numbers',
-            'status_kritis'  => 'trim|sanitize_numbers',
-            'id'  => 'trim|sanitize_numbers',
-        ]);
-        $payload = $filter->sanitize($postData, ['nama', 'kategori', 'stok', 'harga', 'status_kritis', 'id']);
-        // dd($payload);
-        // dd(array_values($payload));
+        // 2. Ekstraksi Key
+        $idempotencyKey = IdempotencyHandler::extractIdempotencyKey($request);
 
-        $lastId = QueryBuilder::table('products')
-                    ->execQuery('UPDATE products SET  nama = ?,  kategori = ?,  stok = ?, harga = ?,  status_kritis = ?, updated_at = NOW() WHERE id = ?', array_values($payload));
+        try {
+            // Validate Input
+            Session::unset('errors'); // Clean Errors MessageBag
+            $validator = new Validator();
+            $validator->validate($request->all(), [
+                'nama' => 'required|string|min:3|max:100',
+                'kategori'  => 'required|string',
+                'stok'  => 'required|numeric',
+                'harga'  => 'required|numeric',
+                'status_kritis'  => 'optional|numeric',
+                'id'  => 'required|numeric',
+            ]);
+            $errors = Session::get('errors');
 
-        // dd($lastId);
-        if (false === $lastId) {
-            header("HTTP/1.1 500 Internal Server Error");
-            // die("Gagal menyimpan data.");
-            customExit("Gagal menyimpan data.");
+            if ($errors) {
+                // SANGAT PENTING: Lepas lock agar user bisa memperbaiki input & submit ulang
+                if ($idempotencyKey) {
+                    IdempotencyManager::unlock($idempotencyKey);
+                }
+
+                // 1. Standard use (Status 422)
+                htmx_response($errors);
+
+                // 2. Or with a custom HTTP status code & special HTMX header
+                // htmx_response($errors, 422, ['HX-Retarget' => '#error-display']);
+            }
+
+            $filter = new \App\Core\Validation\Filter();
+            // Filter & Sanitize Input
+            $request->status_kritis = isset($request->status_kritis) ? 1 : 0;
+            $postData = $filter->filter($request->all(), [
+                'nama' => 'trim|sanitize_string',
+                'kategori'  => 'trim|sanitize_string',
+                'stok'  => 'trim|sanitize_numbers',
+                'harga'  => 'trim|sanitize_numbers',
+                'status_kritis'  => 'trim|sanitize_numbers',
+                'id'  => 'trim|sanitize_numbers',
+            ]);
+            $payload = $filter->sanitize($postData, ['nama', 'kategori', 'stok', 'harga', 'status_kritis', 'id']);
+            // dd($payload);
+            // dd(array_values($payload));
+
+            $lastId = QueryBuilder::table('products')
+                        ->execQuery('UPDATE products SET  nama = ?,  kategori = ?,  stok = ?, harga = ?,  status_kritis = ?, updated_at = NOW() WHERE id = ?', array_values($payload));
+
+            // dd($lastId);
+            if (false === $lastId) {
+                if (!headers_sent()) {
+                    header("HTTP/1.1 500 Internal Server Error");
+                }
+                // die("Gagal menyimpan data.");
+                customExit("Gagal menyimpan data.", 500);
+            }
+
+            $htmlOutput = (string) $this->include('htmx.data.inventory.row', $payload);
+
+            // 5. Simpan Response HTML Akhir ke Cache Replay
+            if ($idempotencyKey) {
+                IdempotencyManager::saveResponse(
+                    $idempotencyKey, 
+                    $htmlOutput, 
+                    200, 
+                    300 // TTL 5 Menit
+                );
+            }
+
+
+            return $htmlOutput;
+        } catch (\Throwable $e) {
+            // 6. Lepas lock jika terjadi Exception/System Error
+            if ($idempotencyKey) {
+                IdempotencyManager::unlock($idempotencyKey);
+            }
+            
+            throw $e;
         }
-
-        $this->include('htmx.data.inventory.row', $payload);
     }
 
     public function save_product(Request $request, Response $response)

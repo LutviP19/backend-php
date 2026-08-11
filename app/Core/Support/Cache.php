@@ -1,125 +1,43 @@
 <?php
 
-namespace App\Core\Support;
-
 /**
  * Cache class
- * @author Lutvi <lutvip19@gmail.com>
+ * Supported drivers: files(default) and redis
+ * @author LutviP19 <lutvip19@gmail.com>
+ * @package PHP-Microdata
  */
+
+namespace App\Core\Support;
+
+use Exception;
+use Predis\Client as PredisClient;
+
 class Cache
 {
-    protected $driver;
-    protected $redisClient;
-    protected $path_cache = __DIR__ . '/../../../storage/framework/cache/';
-    protected $prefix;
+    // Object class
+    private $redisClient;
     private $storagePath;
     private $defaultExpiry = 3600;
 
-    public function __construct($driver = null, $db = null, $prefix = null)
+    public function __construct()
     {
         $this->redisClient = null;
-        $this->driver = $driver ?? Config::get("app.cache_driver", "files");
-        $this->prefix = $prefix ?: "bp_cache";
 
         // Lazy Initialization of Redis (Only if set as CACHE_DRIVER)
-        if ($this->driver === "redis") {            
-            $this->redisClient = setupRedisConnection();
+        if (Config::get("app.cache_driver") === "redis") {
+            try {
+                $this->redisClient = new PredisClient([
+                    "host" => Config::get("redis.cache.host"),
+                    "port" => Config::get("redis.cache.port"),
+                    "database" => Config::get("redis.cache.database"),
+                ]);
+            } catch (Exception) {
+                $this->redisClient = null;
+            }
         } else {
             // Define cache folder (Adapt to your folder structure)
             $this->storagePath = storage_path("/framework/cache/");
         }
-    }
-
-    /**
-     * saveData cacke function
-     *
-     * @param  [type] $id
-     * @param  [type] $data
-     *
-     * @return void
-     */
-    public function saveData($id, $data, $minutes_to_expire = 120)
-    {
-        $data = base64_encode(serialize($data));
-
-        if ($this->driver == 'database' || $this->driver == 'redis') {
-            $key = $this->prefix.':'.$this->_formatId($id);
-
-            $this->redisClient->mset([$key => $data]);
-            $this->redisClient->expire($key, ($minutes_to_expire * 60));
-        }
-
-        if ($this->driver == 'file') {
-            \file_put_contents($this->path_cache.$this->prefix.'_'.$this->_formatId($id).'.cache', $data);
-        }
-    }
-
-    /**
-     * getData cache function
-     *
-     * @param  string $id
-     *
-     * @return void
-     */
-    public function getData($id)
-    {
-        $data = '';
-        if ($this->driver == 'database' || $this->driver == 'redis') {
-            $path = $this->prefix.':'.$this->_formatId($id);
-
-            // \App\Core\Support\Log::debug($path, 'Cache.getData.$path');
-
-            $data = $this->redisClient->mget([$path]);
-            // \App\Core\Support\Log::debug($data, 'Cache.getData.$data');
-
-            if (is_null($data) || ! isset($data[0])) {
-                $data = $this->redisClient->get($path);
-            }
-
-            if(! is_null($data) && count($data))
-                $data = $data[0];
-        }
-
-        if ($this->driver == 'file') {
-            $path = $this->path_cache.$this->prefix.'_'.$this->_formatId($id).'.cache';
-            if (! \file_exists($path)) {
-                saveData($id, $data);
-            }
-
-            $data = \file_get_contents($this->path_cache.$this->prefix.'_'.$this->_formatId($id).'.cache');
-        }
-
-        return unserialize(base64_decode((string) $data));
-    }
-
-    public function deleteData($id)
-    {
-        if ($this->driver == 'database' || $this->driver == 'redis') {
-            $prefix = $this->prefix.':'.$this->_formatId($id);
-
-            $keysToDelete = $this->redisClient->keys($prefix);
-            if (!empty($keysToDelete))
-                $this->redisClient->del($keysToDelete);
-        }
-        if ($this->driver == 'file') {
-            \unlink($this->path_cache.$this->prefix.'_'.$this->_formatId($id).'.cache');
-        }
-    }
-
-    public function clearData($all = false)
-    {
-        if ($this->driver == 'database' || $this->driver == 'redis' || $all) {
-            clearRedisDataByPrefix($this->prefix);
-        }
-
-        if ($this->driver == 'file' || $all) {
-            clearCacheFileByPrefix($this->path_cache, $this->prefix.'*');
-        }
-    }
-
-    private function _formatId($id)
-    {
-        return \str_replace([' ', '.', '/', '-'], '_', $id);
     }
 
     /**
@@ -196,7 +114,7 @@ class Cache
                 try {
                     $this->redisClient->setex($key, $expiry, $serialized);
                     return;
-                } catch (\Exception) {
+                } catch (Exception) {
                     $this->redisClient = null;
                 }
             }
@@ -222,14 +140,14 @@ class Cache
         if ($this->redisClient) {
             try {
                 $this->redisClient->del($key);
-            } catch (\Exception) {
+            } catch (Exception) {
             }
         }
 
         // Delete in Files
         $file = $this->storagePath . md5((string) $key) . ".cache";
         if (file_exists($file)) {
-            @unlink($file);
+            unlink($file);
         }
     }
 }

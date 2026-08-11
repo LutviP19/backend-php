@@ -132,8 +132,8 @@ class AuthController extends ApiController
                 if (\isSwoole()) {
 
                     // Clean old keys
-                    delCache($_SESSION['uid'].'*', 'bp_session');
-                    cacheContent('set', $_SESSION['uid'] .'-'. $this->sessionId, 'bp_session', $_SESSION);
+                    delCache($_SESSION['uid'].'*');
+                    cacheContent('set', $_SESSION['uid'] .'-'. $this->sessionId, $_SESSION);
                 }
 
                 return endResponse(
@@ -321,7 +321,7 @@ class AuthController extends ApiController
                 if(\isSwoole()) {
 
                     // Clean old keys
-                    delCache($userId.'*', 'bp_session');
+                    delCache($userId.'*');
                 }
 
                 Session::destroy();

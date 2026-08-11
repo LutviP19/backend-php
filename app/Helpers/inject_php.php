@@ -86,6 +86,23 @@ if (!function_exists('customExit')) {
     // customExit("<h1>Maintenance</h1>", 503);
 }
 
+if (!function_exists('htmx_idempotency')) {
+    function htmx_idempotency(string $prefix = 'REQ'): string
+    {
+        $randomHash = generateRandomString(4, false, false);
+        $deviceId = get_device_fingerprint();
+
+        $prefixFinal = sprintf('%s-%s-%s', trim($prefix), $randomHash, $deviceId);
+
+        return sprintf(
+            'data-idempotency-prefix="idempotency:%s"',
+            htmlspecialchars($prefixFinal, ENT_QUOTES, 'UTF-8')
+        );
+
+        // htmx_idempotency('BAST')
+    }
+}
+
 /**
  * Check Rate Limit dengan Redis & Fallback File
  *

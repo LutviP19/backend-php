@@ -13,7 +13,8 @@
           keepOpen: false,
           /* POPULATE CUSTOM SELECT DISINI */
           selected: '<?= $data->kategori ?>' 
-      }"
+      }" 
+      <?= htmx_idempotency('Inventory-Edit') ?> 
       class="p-6 space-y-4">
     
     <input type="hidden" name="id" value="<?= intval($data->id) ?>">

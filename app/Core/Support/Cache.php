@@ -34,10 +34,10 @@ class Cache
             } catch (Exception) {
                 $this->redisClient = null;
             }
-        } else {
-            // Define cache folder (Adapt to your folder structure)
-            $this->storagePath = storage_path("/framework/cache/");
         }
+
+        // Define cache folder (Adapt to your folder structure)
+        $this->storagePath = storage_path("/framework/cache/");
     }
 
     /**

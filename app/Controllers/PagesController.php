@@ -61,9 +61,9 @@ class PagesController extends Controller
     }
 
     // Sample print PDF
-    public function printView(Request $request, Response $response, $id = null)
+    public function printView(Request $request, Response $response)
     {
-        $id = $id ?: (int) $request->id;
+        $id = (int) $request->id ?? 1;
         $produk = $request->produk ?? 'Excavator Komatsu PC200-8M0 & Sparepart';
         $petani = $request->petani ?? 'Petani';
         // $bastData = $this->bastModel->find($id);
@@ -85,13 +85,13 @@ class PagesController extends Controller
             'time'         => date('d M Y, H:i') . ' WIB'
         ];
 
-        // IMPORTANT FOR OPENSWOOLE: 
+        // IMPORTANT FOR OPENSWOOLE:
         // Force Swoole to close the HTTP connection as soon as the data is sent
         // This prevents the socket from getting stuck in the Event Loop
         if ($response && method_exists($response, 'setHeader')) {
             $response->setHeader('Connection', 'close');
         } else {
-            if(! headers_sent()) {
+            if (! headers_sent()) {
                 header('Connection: close');
             }
         }

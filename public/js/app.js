@@ -35,8 +35,8 @@ document.body.addEventListener('htmx:afterOnLoad', function(evt) {
         clearTimeout(idleTimer);
         
         idleTimer = setTimeout(() => {
-            // Lakukan reload / redirect ke /dashboard atau /home
-            window.location.href = '/dashboard'; 
+            // Lakukan reload / redirect ke /login atau /home
+            window.location.href = '/login'; 
             // Jika ingin reload ke halaman saat ini: window.location.reload();
         }, IDLE_TIMEOUT_MS);
     }

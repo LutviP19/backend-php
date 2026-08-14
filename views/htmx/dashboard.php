@@ -234,7 +234,7 @@
                                         });
 
                                         // Picu request chart secara manual
-                                        htmx.ajax('GET', '<?= url('/data/data-dashboard/stats') ?>', {
+                                        htmx.ajax('GET', '<?= url('/data/data-dashboard/activities') ?>', {
                                             target: '#chart-updater', // stats biasanya hx-swap='none'
                                             values: { search: '', category: '' }
                                         });
@@ -422,7 +422,7 @@
     </div>
 </div>
 
-<div hx-get="<?= url('/data/data-dashboard/stats') ?>" 
+<div hx-get="<?= url('/data/data-dashboard/activities') ?>" 
      hx-trigger="every 60s, update-charts" 
      hx-swap="none" 
      class="hidden" 
@@ -517,6 +517,10 @@ document.body.addEventListener('htmx:afterSwap', (evt) => {
 
 document.body.addEventListener('htmx:afterRequest', (evt) => {
     if (evt.detail.target.id === 'chart-updater') {
+        const responseText = evt.detail.xhr.responseText.income;
+
+        if (!responseText) return; // Guard clause if header is missing
+
         const newData = JSON.parse(evt.detail.xhr.responseText);
         
         // Update data secara massal

@@ -75,7 +75,7 @@
                     </select>
 
                     <!-- Hidden input untuk menyimpan Teks Nama Produk tanpa js:eval -->
-                    <input type="hidden" id="nama-produk-hidden" name="produk">
+                    <input type="hidden" id="nama-produk-hidden" name="produk" value="Kubota L-Series A1 (Traktor)">
                 </div>
                 
                 <div class="grid grid-cols-2 gap-4">
@@ -131,10 +131,6 @@
 </div>
 
 <script>
-// Update hidden input 'nama-produk' saat dropdown berubah (Aman dari eval)
-document.getElementById('item-id').addEventListener('change', function() {
-    document.getElementById('nama-produk-hidden').value = this.selectedOptions[0]?.text || '';
-});
 
 // Set nilai awal nama produk saat halaman dimuat
 document.addEventListener('DOMContentLoaded', function() {
@@ -142,6 +138,11 @@ document.addEventListener('DOMContentLoaded', function() {
     if (select) {
         document.getElementById('nama-produk-hidden').value = select.selectedOptions[0]?.text || '';
     }
+});
+
+// Update hidden input 'nama-produk' saat dropdown berubah (Aman dari eval)
+document.getElementById('item-id').addEventListener('change', function() {
+    document.getElementById('nama-produk-hidden').value = this.selectedOptions[0]?.text || '';
 });
 
 // Callback setelah request HTMX selesai

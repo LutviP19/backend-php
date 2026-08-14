@@ -23,3 +23,41 @@ document.body.addEventListener('htmx:afterOnLoad', function(evt) {
         sidebar._x_dataStack[0].updatePath();
     }
 });
+
+// ==========================================
+// LISTENER IDLE / INACTIVITY TIMEOUT (30 MIN)
+// ==========================================
+(function() {
+    const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 Menit dalam Milidetik
+    let idleTimer;
+
+    function resetIdleTimer() {
+        clearTimeout(idleTimer);
+        
+        idleTimer = setTimeout(() => {
+            // Lakukan reload / redirect ke /dashboard atau /home
+            window.location.href = '/dashboard'; 
+            // Jika ingin reload ke halaman saat ini: window.location.reload();
+        }, IDLE_TIMEOUT_MS);
+    }
+
+    // Event DOM standar untuk melacak interaksi pengguna
+    const activityEvents = [
+        'mousemove', 
+        'keydown', 
+        'click', 
+        'scroll', 
+        'touchstart'
+    ];
+
+    // Mendaftarkan event listener untuk setiap interaksi pengguna
+    activityEvents.forEach(eventName => {
+        window.addEventListener(eventName, resetIdleTimer, { passive: true });
+    });
+
+    // Reset timer juga saat ada request HTMX (interaksi AJAX aktif)
+    document.body.addEventListener('htmx:afterRequest', resetIdleTimer);
+
+    // Jalankan timer pertama kali saat halaman dimuat
+    resetIdleTimer();
+})();

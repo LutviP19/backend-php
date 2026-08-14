@@ -18,10 +18,9 @@ if (!function_exists("renderPaginationButtons")) {
     }
 }
 
-if (empty($paged_data)) {
+if (empty($paged_data)):
     //echo '<tr><td colspan="4" class="px-8 py-10 text-center text-slate-400 italic">Data tidak ditemukan.</td></tr>';
-    ?>
-
+?>
 <tr>
     <td colspan="4" class="px-8 py-20">
         <div class="flex flex-col items-center justify-center text-center animate-in fade-in zoom-in duration-500">
@@ -51,28 +50,30 @@ if (empty($paged_data)) {
     </td>
 </tr>
 
-<tr style="display:none">
+
+<tr style="display: none;">
     <td>
-    <p id="pagination-info" hx-swap-oob="true" class="text-slate-400 italic">Tidak ada data untuk ditampilkan</p>'
-    <div id="pagination-controls" hx-swap-oob="true" class="flex items-center gap-2"></div>
+        <p id="pagination-info" hx-swap-oob="true" class="text-slate-400 italic">Tidak ada data untuk ditampilkan</p>
+        <div id="pagination-controls" hx-swap-oob="true" class="flex items-center gap-2">
+            <button></button>
+        </div>
     </td>
 </tr>
 
 <?php
-    // // 2. Jika BUKAN Swoole (misal CLI/PHP-FPM biasa), boleh die/exit
-    // if (!isSwoole()) {
-    //     exit(0);
-    // }
+    // 2. Jika BUKAN Swoole (misal CLI/PHP-FPM biasa), boleh die/exit
+    if (!isSwoole()) {
+        exit(0);
+    }
 
-    // // 3. Jika Swoole, CUKUP RETURN agar Worker tidak mati/crash
-    // return;
+    // 3. Jika Swoole, CUKUP RETURN agar Worker tidak mati/crash
+    return;
 
-    customExit();
-}
+else:
 
 // Render Fragment HTML
-foreach ($paged_data as $item) {
-    ?>
+foreach ($paged_data as $item):
+?>
 <tr class="hover:bg-slate-50 transition-colors group">
     <td class="px-8 py-5">
         <div class="flex items-center gap-4">
@@ -98,10 +99,8 @@ foreach ($paged_data as $item) {
         </span>
     </td>
 </tr>
-<?php
-}
-// 4. OOB Swap untuk Footer
-?>
+<?php endforeach; ?>
+<!-- OOB Swap untuk Footer -->
 <tr style="display:none">
     <td>
     <p id="pagination-info" hx-swap-oob="true" class="text-xs font-medium text-slate-500">
@@ -129,3 +128,4 @@ foreach ($paged_data as $item) {
     </div>
     </td>
 </tr>
+<?php endif; ?>

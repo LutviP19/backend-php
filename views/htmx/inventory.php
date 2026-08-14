@@ -77,62 +77,75 @@
     <div x-data="{ 
             activeCat: 'all',
             searchQuery: '',
-            isKritis: false, // State untuk mendeteksi kondisi bahaya
+            isKritis: false,
+            isLoading: false,
             pillStyles: {
                 'all': 'left: 0%; width: 25%;',
                 'pupuk': 'left: 25%; width: 25%;',
                 'benih': 'left: 50%; width: 25%;',
                 'pestisida': 'left: 75%; width: 25%;'
             }
-        }"
+        }" 
+        @htmx:before-request="isLoading = true"  
+        @htmx:after-request="isLoading = false"
         @update-ai-insight.window="
             isKritis = $event.detail.isKritis; 
             document.getElementById('ai-message').innerText = $event.detail.msg;
         ">
+
+        <!-- Input hidden untuk menampung activeCat agar otomatis terbaca oleh hx-include jika diperlukan -->
         <input type="hidden" name="category" :value="activeCat">
 
-        <div class="relative mb-6 group" x-data="{ searchQuery: '' }">
+        <!-- Search Bar (x-data searchQuery digabung ke Parent) -->
+        <div class="relative mb-6 group">
             <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <i class="fas fa-search text-slate-400 group-focus-within:text-indigo-500 transition-colors"></i>
             </div>
+            
             <input type="text" 
-                   name="search" 
-                   autocomplete="off" 
-                   placeholder="Cari nama produk..." 
-                   x-model="searchQuery" 
-                   class="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 outline-none transition-all shadow-sm text-sm"
-                   hx-get="<?= url('/data/get-products') ?>" 
-                   hx-trigger="keyup changed delay:500ms, search" 
-                   hx-target="#inventory-table-body" 
-                   hx-include="[name='category']" 
-                   hx-indicator="#search-spinner">
-                   
-                <div class="absolute inset-y-0 right-0 pr-4 flex items-center gap-3">
-                    <div id="search-spinner" class="htmx-indicator">
-                        <i class="fas fa-circle-notch animate-spin text-indigo-500 text-sm"></i>
-                    </div>
-
-                    <button x-show="searchQuery.length > 0"
-                            x-transition:enter="transition ease-out duration-200"
-                            x-transition:enter-start="opacity-0 scale-90"
-                            x-transition:enter-end="opacity-100 scale-100"
-                            @click="searchQuery = ''; 
-                                    $nextTick(() => { $el.closest('.relative').querySelector('input').dispatchEvent(new Event('search')) })" 
-                            type="button"
-                            class="text-slate-400 hover:text-rose-500 transition-colors focus:outline-none">
-                        <i class="fas fa-times-circle text-lg"></i>
-                    </button>
+                    name="search" 
+                    autocomplete="off" 
+                    placeholder="Cari nama produk..." 
+                    x-model="searchQuery" 
+                    :disabled="isLoading" 
+                    class="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 outline-none transition-all shadow-sm text-sm"
+                    hx-get="<?= url('/data/get-products') ?>" 
+                    hx-trigger="keyup changed delay:500ms, clearSearch" 
+                    hx-sync="this:replace"
+                    hx-target="#inventory-table-body" 
+                    hx-include="[name='category']" 
+                    hx-indicator="#search-spinner">
+               
+            <div class="absolute inset-y-0 right-0 pr-4 flex items-center gap-3">
+                <div id="search-spinner" class="htmx-indicator">
+                    <i class="fas fa-circle-notch animate-spin text-indigo-500 text-sm"></i>
                 </div>
+
+                <button x-show="searchQuery.length > 0"
+                        x-transition:enter="transition ease-out duration-200"
+                        x-transition:enter-start="opacity-0 scale-90"
+                        x-transition:enter-end="opacity-100 scale-100"
+                        :disabled="isLoading"
+                        @click="searchQuery = ''; $nextTick(() => htmx.trigger($el.closest('.relative').querySelector('input'), 'clearSearch'))" 
+                        type="button" 
+                        class="text-slate-400 hover:text-rose-500 transition-colors focus:outline-none">
+                    <i class="fas fa-times-circle text-lg"></i>
+                </button>
+            </div>
         </div>
 
+        <!-- Category Tabs Filter -->
         <div class="relative flex mb-8 bg-slate-200 p-1.5 rounded-2xl w-full select-none shadow-inner">
             <div class="absolute inset-y-1.5 bg-indigo-600 rounded-xl shadow-md transition-all duration-300 ease-out"
                  :style="pillStyles[activeCat]"></div>
             
             <template x-for="cat in ['all', 'pupuk', 'benih', 'pestisida']">
-                <button @click="activeCat = cat"
-                        :hx-get="'<?= url('/data/inventory-list/?category=') ?>' + cat" 
-                        hx-include="[name='search']" 
+                <button @click="activeCat = cat" 
+                        :disabled="isLoading"
+                        hx-get="<?= url('/data/inventory-list') ?>" 
+                        hx-trigger="click throttle:300ms" 
+                        hx-sync="this:replace"
+                        hx-include="[name='search'], [name='category']" 
                         hx-target="#inventory-table-body" 
                         class="relative z-10 flex-1 px-5 py-2 text-xs md:text-sm font-bold transition-colors duration-300 capitalize"
                         :class="activeCat === cat ? 'text-white' : 'text-slate-500'">
@@ -141,6 +154,7 @@
             </template>
         </div>
 
+        <!-- AI Insight Box -->
         <div id="ai-insight" 
              :class="isKritis ? 'bg-rose-50 border-rose-100 shadow-rose-100' : 'bg-indigo-50 border-indigo-100 shadow-indigo-100'"
              class="mb-6 p-4 border rounded-2xl flex items-center gap-4 transition-all duration-500 shadow-sm">

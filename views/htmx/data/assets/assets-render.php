@@ -1,7 +1,6 @@
 <?php
-if (empty($filtered)) {
-    // Tampilan jika data tidak ditemukan
-    echo '
+if (empty($filtered)): ?>
+    <!-- Tampilan jika data tidak ditemukan -->
     <div class="col-span-full py-20 flex flex-col items-center justify-center text-center animate-in fade-in zoom-in duration-500">
         <div class="relative mb-6">
             <div class="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center border-4 border-white shadow-sm">
@@ -14,7 +13,7 @@ if (empty($filtered)) {
 
         <h3 class="text-xl font-bold text-slate-700 mb-2">Unit Tidak Ditemukan</h3>
         <p class="text-sm text-slate-400 max-w-xs mx-auto leading-relaxed italic">
-            Maaf, kami tidak menemukan armada dengan ID <span class="text-indigo-600 font-bold">"'.htmlspecialchars($search ?? '').'"</span> atau status tersebut.
+            Maaf, kami tidak menemukan armada dengan ID <span class="text-indigo-600 font-bold"><?= htmlspecialchars($search ?? ''); ?></span> atau status tersebut.
         </p>
 
         <button 
@@ -24,10 +23,14 @@ if (empty($filtered)) {
             <i class="fas fa-redo-alt"></i>
             Kembalikan Semua Data
         </button>
-    </div>';
-    customExit();
-}
+    </div>
 
+<?php 
+if (! isSwoole()) {
+    exit(0);
+}
+    return;
+endif; 
 
 if ($viewMode === 'list'): ?>
     <div class="bg-white border border-slate-100 rounded-[2.5rem] overflow-hidden shadow-sm shadow-slate-200/50">

@@ -115,18 +115,44 @@ return [
         ],
 
         'pgsql' => [
-            'driver' => 'pgsql',
-            'url' => env('DB_URL'),
-            'host' => env('DB_HOST', '127.0.0.1'),
-            'port' => env('DB_PORT', '5432'),
-            'dbname' => env('DB_DATABASE', 'backend_php'),
-            'username' => env('DB_USERNAME', 'admin'),
-            'password' => env('DB_PASSWORD', 'password123'),
-            'charset' => env('DB_CHARSET', 'utf8'),
-            'prefix' => '',
+            'driver'    => 'pgsql',
+            'url'       => env('DB_URL'),
+            'host'      => env('DB_HOST', '127.0.0.1'),
+            'port'      => env('DB_PORT', '5432'),
+            'dbname'    => env('DB_DATABASE', 'backend_php'),
+            'username'  => env('DB_USERNAME', 'admin'),
+            'password'  => env('DB_PASSWORD', 'password123'),
+            'charset'   => env('DB_CHARSET', 'utf8'),
+            'prefix'    => '',
             'prefix_indexes' => true,
-            'search_path' => 'public',
-            'sslmode' => 'prefer',
+            'search_path'    => 'public',
+            'sslmode'        => env('DB_SSLMODE', 'prefer'),
+
+            /*
+            |--------------------------------------------------------------------------
+            | PDO Options Optimization (Untuk QueryBuilder & OpenSwoole/FPM)
+            |--------------------------------------------------------------------------
+            */
+            'options' => [
+                // 1. Lempar Exception secara eksplisit jika terjadi SQL Error
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+
+                // 2. Kembalikan nama kolom SELECT sesuai tipe aslinya (Lower/Upper case tetap presisi)
+                PDO::ATTR_CASE => PDO::CASE_NATURAL,
+
+                // 3. Kembalikan data NULL dan Empty String secara konsisten
+                PDO::ATTR_ORACLE_NULLS => PDO::NULL_NATURAL,
+
+                // 4. Menggunakan Native Prepared Statements dari PostgreSQL (Penting untuk Performa)
+                PDO::ATTR_EMULATE_PREPARES => false,
+
+                // 5. Kembalikan hasil fetch sebagai Associative Array secara default
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+
+                // 6. Konversi tipe data numeric PostgreSQL (INT, BIGINT, FLOAT) ke Tipe Data Asli PHP (int/float)
+                //    mencegah semua angka dikembalikan sebagai 'string'.
+                PDO::ATTR_STRINGIFY_FETCHES => false,
+            ],
         ],
 
         'sqlsrv' => [

@@ -6,15 +6,20 @@ use App\Core\Http\{Request, Response};
 use App\Core\Support\Session;
 use App\Core\Database\QueryBuilder;
 use App\Core\Validation\Validator;
-
 use App\Core\Http\IdempotencyHandler;
 use App\Core\Security\IdempotencyManager;
+use App\Models\Product;
+use App\Models\Asset;
 
 class DashboardController extends Controller
 {
+    private $assetModel = null;
+
     public function __construct()
     {
         parent::__construct();
+
+        // $this->assetModel = new Asset();
 
         // // Allow insomnia, etc...
         // $user_agent = trim($_SERVER['HTTP_USER_AGENT'] ?? '');
@@ -45,7 +50,7 @@ class DashboardController extends Controller
         // 1. Allow dev tools (Insomnia, Postman, dll)
         $user_agent = strtolower(trim($_SERVER['HTTP_USER_AGENT'] ?? ''));
         $dev_agents = ['insomnia', 'postman'];
-        
+
         $agentAllow = false;
         foreach ($dev_agents as $agent) {
             if (str_contains($user_agent, $agent)) {
@@ -57,7 +62,7 @@ class DashboardController extends Controller
         // 2. Handler Reload Manual / Direct Browser Access
         if (!$agentAllow) {
             $uri = trim(request()->uri(), '/');
-            
+
             // Retrieve the main path from the URI (example: "htmx/inventory" -> "htmx")
             $segment1 = explode('/', $uri)[0] ?? '';
 
@@ -79,8 +84,8 @@ class DashboardController extends Controller
             ) {
                 // Eksekusi redirect dan kembalikan response langsung
                 response()->redirect('/htmx')->send();
-                
-                // Pada OpenSwoole, lemparkan exception ringan/exit handler framework 
+
+                // Pada OpenSwoole, lemparkan exception ringan/exit handler framework
                 // agar proses instansiasi controller terhenti tanpa mematikan Worker Swoole.
                 if (function_exists('fastcgi_finish_request')) {
                     exit; // Aman untuk FPM
@@ -114,7 +119,7 @@ class DashboardController extends Controller
     public function login(Request $request, Response $response)
     {
         // dd(Session::all());
-        if(Session::has('userdata')) {
+        if (Session::has('userdata')) {
             $response->redirect('/htmx')->send();
         }
 
@@ -196,74 +201,7 @@ class DashboardController extends Controller
     // ===== GET DATA
     protected function inventory_stats($category = 'all')
     {
-        // Logika Query: Ambil data produk sorting berdasarkan terbaru/terakhir diupdate
-        $query = "SELECT nama, stok FROM products ";
-
-        if ($category !== 'all') {
-            $query .= " WHERE kategori = ? ";
-        } else {
-            $category = '1';
-            $query .= " WHERE 1 = ? ";
-        }
-        $query .= " ORDER BY created_at DESC";
-        $result = QueryBuilder::table('products')
-                    ->execQuery($query, [$category], false, false, true);
-
-        $labels = [];
-        $values = [];
-        $totalStok = 0;
-
-        foreach ($result as $row) {
-            // Potong nama jika terlalu panjang untuk label chart
-            $labels[] = strlen((string) $row->nama) > 12 ? substr((string) $row->nama, 0, 10) . '..' : $row->nama;
-            $values[] = (int)$row->stok;
-            $totalStok += $row->stok;
-        }
-
-        // Ambil 5 produk terbaru untuk setiap kategori agar ada titik koordinat di chart
-        $totalStokCat = 0;
-        $resultCat = $labelsCat = $valuesCat = $datasets = [];
-        $queryCat = "SELECT kategori, sum(stok) as ttl_stok FROM products GROUP BY kategori";
-        $resultCat = QueryBuilder::table('products')
-                    ->execQuery($queryCat, [], false, false, true);
-
-
-        // Create an empty generic object (Dummy data)
-        $alat = [
-            'kategori' => 'alat',
-            'ttl_stok' => 5
-        ];
-        array_push($resultCat, (object) $alat);
-        // dd($resultCat);
-
-        $colorMap = ['pupuk' => '#6366f1', 'benih' => '#10b981', 'pestisida' => '#f59e0b', 'alat' => '#f43f5e'];
-        foreach ($resultCat as $row) {
-            // Potong nama jika terlalu panjang untuk label chart
-            $labelsCat[] = ucwords((string) $row->kategori);
-            $valuesCat[] = (int)$row->ttl_stok;
-            $totalStokCat += $row->ttl_stok;
-        }
-
-        // Logika AI Insight sederhana
-        $avgStok = count($values) > 0 ? $totalStok / count($values) : 0;
-        $isKritis = $avgStok < 20; // Contoh: rata-rata stok di bawah 20 dianggap kritis
-        $msg = $isKritis
-            ? "AI Alert: Stok rata-rata kategori $category sangat rendah ($avgStok). Segera cek gudang!"
-            : "AI Insight: Perputaran stok $category terpantau sehat.";
-
-        $data = [
-                    'labels' => $labels,
-                    'values' => $values,
-                    'totalStok' => $totalStok,
-                    'labelsCat' => $labelsCat,
-                    'valuesCat' => $valuesCat,
-                    'totalStokCat' => $totalStokCat,
-                    'isKritis' => $isKritis,
-                    'msg' => $msg
-                ];
-
-        // dd($data, true);
-        return $data;
+        return Product::getInventoryStats($category);
     }
 
     public function inventory_list(Request $request, Response $response)
@@ -286,47 +224,14 @@ class DashboardController extends Controller
 
     protected function getProductsAll($search, $kategori, $currentPage)
     {
-        $limit    = 5; // rows perPage
-        $offset   = ($currentPage - 1) * $limit;
-
-        // 2. Bangun Query dengan Filter
-        $queryStr = "WHERE 1=1";
-        $params   = [];
-
-        if ($search) {
-            $queryStr .= " AND nama LIKE ?";
-            $params['search'] = "%$search%";
-        }
-        if ($kategori && $kategori !== 'all') {
-            $queryStr .= " AND kategori = ?";
-            $params['kategori'] = $kategori;
-        }
-
-        // 3. Hitung Total Data (Untuk Pagination)
-        $totalStmt = QueryBuilder::table('products')
-                    ->execQuery("SELECT COUNT(0) as total_data FROM products $queryStr", array_values($params), false, true);
-        $totalRows = $totalStmt->total_data;
-        $totalPages = ceil($totalRows / $limit);
-        $paginationItems = $this->__getPaginationRange($currentPage, $totalPages);
-
-        // 4. Ambil Data dengan Limit
-        $sql = "SELECT * FROM products $queryStr ORDER BY created_at DESC LIMIT $limit OFFSET $offset";
-        $products = QueryBuilder::table('products')->execQuery($sql, array_values($params), false, false, true);
-
-        return [
-                'products' => $this->getProducts($products),
-                'category' => $kategori,
-                'search' => $search,
-                'currentPage' => $currentPage,
-                'totalPages' => $totalPages,
-                'paginationItems' => $paginationItems,
-            ];
+        $products = Product::getPaginatedProducts($search, $kategori, (int) $currentPage, 5);
+        $this->getProducts($products['products']);
+        return $products;
     }
 
     protected function getProducts($products)
     {
         // Di dalam inventory_list setelah query data
-        // $kritisCount = count(array_filter($products, function($p) { return $p->stok <= 5; }));
         $kritisCount = count(array_filter($products, fn ($p) => $p->stok <= 5));
         $isKritis = ($kritisCount > 0);
         if ($isKritis) {
@@ -334,9 +239,6 @@ class DashboardController extends Controller
         } else {
             $msg = "Stok pada kategori ini terpantau AMAN. Belum diperlukan tindakan restock.";
         }
-
-        // // Kirimkan event ke Alpine.js dengan detail pesan dan status kritis/
-        // header('HX-Trigger: {"update-ai-insight": {"msg": "' . $msg . '", "isKritis": ' . ($isKritis ? 'true' : 'false') . '}}');
 
         $triggerPayload = json_encode([
             'update-ai-insight' => [
@@ -348,7 +250,7 @@ class DashboardController extends Controller
         // Cek dan set di lingkungan OpenSwoole
         if (\isSwoole()) {
             /** @var \OpenSwoole\Http\Response|null $swooleResponse */
-            $swooleResponse = $GLOBALS['swoole_response'] 
+            $swooleResponse = $GLOBALS['swoole_response']
                 ?? (function_exists('app') && app()->has('swoole_response') ? app('swoole_response') : null);
 
             if ($swooleResponse) {
@@ -360,8 +262,6 @@ class DashboardController extends Controller
                 header('HX-Trigger: ' . $triggerPayload);
             }
         }
-
-        return $products;
     }
 
     public function edit_product(Request $request, Response $response)
@@ -369,9 +269,9 @@ class DashboardController extends Controller
         $id = $request->id ?? null;
 
         if (!is_numeric($id)) {
-            header('Content-Type: text/html', true, 422);
+            // header('Content-Type: text/html', true, 422);
             // die("ID tidak valid.");
-            customExit("ID tidak valid.");
+            htmx_response("ID tidak valid.");
         }
 
         $filter = new \App\Core\Validation\Filter();
@@ -388,7 +288,6 @@ class DashboardController extends Controller
     // ===== END GET DATA
 
     // ===== CRUD DATA
-
     public function delete_product(Request $request, Response $response)
     {
         Session::unset('errors');
@@ -407,16 +306,14 @@ class DashboardController extends Controller
             'id' => 'trim|sanitize_numbers',
         ]);
         $payload = $filter->sanitize($postData, ['id']);
-        
+
         $auth = false; // Change it according to your auth logic
         if (false === $auth) {
             htmx_response("Produk ini tidak bisa dihapus, mohon hubungi Admin.", 403);
         }
 
-        $callback = QueryBuilder::table('products')
-                    ->execQuery('DELETE FROM products WHERE id = ?', array_values($payload));
-
-        if (false === $callback) {
+        $callback = Product::deleteById($id);
+        if (false === $callback || !is_numeric($callback)) {
             htmx_response("Gagal menghapus data.", 500);
         }
 
@@ -434,8 +331,8 @@ class DashboardController extends Controller
 
         // 1. Check & Lock Request Idempotency
         $idempotencyData = IdempotencyHandler::simpleCheck($request);
-        
-        
+
+
         if ($idempotencyData) {
             // A. Jika request SUDAH selesai sebelumnya (COMPLETED) -> Replay Cache Response
             if (!empty($idempotencyData['cached'])) {
@@ -483,12 +380,8 @@ class DashboardController extends Controller
                 if ($idempotencyKey) {
                     IdempotencyManager::unlock($idempotencyKey);
                 }
-
-                // 1. Standard use (Status 422)
-                htmx_response($errors);
-
-                // 2. Or with a custom HTTP status code & special HTMX header
-                // htmx_response($errors, 422, ['HX-Retarget' => '#error-display']);
+                
+                htmx_response($errors, 422);
             }
 
             $filter = new \App\Core\Validation\Filter();
@@ -506,16 +399,12 @@ class DashboardController extends Controller
             // dd($payload);
             // dd(array_values($payload));
 
-            $lastId = QueryBuilder::table('products')
-                        ->execQuery('UPDATE products SET  nama = ?,  kategori = ?,  stok = ?, harga = ?,  status_kritis = ?, updated_at = NOW() WHERE id = ?', array_values($payload));
+            $id = $payload['id'];
+            $lastId = Product::updateById($id, array_diff_key($payload, ['id' => true]));
 
             // dd($lastId);
-            if (false === $lastId) {
-                if (!headers_sent()) {
-                    header("HTTP/1.1 500 Internal Server Error");
-                }
-                // die("Gagal menyimpan data.");
-                customExit("Gagal menyimpan data.", 500);
+            if (false === $lastId || !is_numeric($lastId)) {
+                htmx_response("Gagal menyimpan data.", 500);
             }
 
             $htmlOutput = (string) $this->include('htmx.data.inventory.row', $payload);
@@ -523,9 +412,9 @@ class DashboardController extends Controller
             // 5. Simpan Response HTML Akhir ke Cache Replay
             if ($idempotencyKey) {
                 IdempotencyManager::saveResponse(
-                    $idempotencyKey, 
-                    $htmlOutput, 
-                    200, 
+                    $idempotencyKey,
+                    $htmlOutput,
+                    200,
                     300 // TTL 5 Menit
                 );
             }
@@ -537,9 +426,49 @@ class DashboardController extends Controller
             if ($idempotencyKey) {
                 IdempotencyManager::unlock($idempotencyKey);
             }
-            
+
             throw $e;
         }
+    }
+
+    public function debugTable()
+    {
+        
+        // //=====================
+        // // 1. Buat koneksi kustom/berbeda
+        // $customPdo = \App\Core\Database\Connection::custom(
+        //     'mysql',
+        //     'backend_php', // Test Ganti Database
+        //     '127.0.0.1',
+        //     env('DB_PORT'),
+        //     env('DB_USERNAME'),
+        //     env('DB_PASSWORD'),
+        //     config('database.mysql.options')
+        // );
+
+        // // Cara paksa Inject Langsung ke BaseModel sebelum load Model
+        // // \App\Core\Database\BaseModel::setConnection($customPdo);
+
+        // // 2. Inject PDO kustom melalui method setConnection
+        // $productModel = new \App\Models\Product();
+        // $productModel::setConnection($customPdo);
+
+        // // 3. Jalankan QueryBuilder (Aman & Menggunakan $customPdo)
+        // $activeProducts = $productModel
+        //     ->where('status_kritis', '=', '1')
+        //     ->orderBy('created_at', 'DESC')
+        //     ->paginate(10, 1);
+        // //=====================
+
+        $activeProducts = \App\Models\Product::where('status_kritis', '=', '1')
+                            ->orderBy('created_at', 'DESC')
+                            ->paginate(10, 1);
+
+        // \endResponse(
+        //     $activeProducts
+        // );
+
+        json_response($activeProducts);
     }
 
     public function save_product(Request $request, Response $response)
@@ -559,11 +488,7 @@ class DashboardController extends Controller
         $errors = Session::get('errors');
 
         if ($errors) {
-            // 1. Standard use (Status 422)
-            htmx_response($errors);
-
-            // 2. Or with a custom HTTP status code & special HTMX header
-            // htmx_response($errors, 422, ['HX-Retarget' => '#error-display']);
+            htmx_response($errors, 422);
         }
 
         $filter = new \App\Core\Validation\Filter();
@@ -580,14 +505,11 @@ class DashboardController extends Controller
         // dd($payload);
         // dd(array_values($payload));
 
-        $lastId = QueryBuilder::table('products')
-                    ->execQuery('INSERT INTO products (nama, kategori, stok, harga, status_kritis) 
-                                VALUES (?, ?, ?, ?, ?)', array_values($payload), true);
+        $lastId = Product::create($payload);
 
         // dd($lastId);
         if (false === $lastId || !is_numeric($lastId)) {
-            header("HTTP/1.1 500 Internal Server Error");
-            die("Gagal menyimpan data.");
+            htmx_response("Gagal menyimpan data.", 500);
         }
 
         $payload['id'] = $lastId;
@@ -608,35 +530,14 @@ class DashboardController extends Controller
         $limit    = 5; // Jumlah data per halaman
         $offset   = ($page - 1) * $limit;
 
-        // Filter Data
-        $queryStr = " FROM activities a JOIN categories c ON a.category_id = c.id WHERE 1=1";
-        $params = [];
-        if ($category && $category !== 'all') {
-            $queryStr .= " AND c.slug = ?";
-            $params['kategori'] = $category;
-        }
-        if ($search && $search !== '') {
-            $queryStr .= " AND (a.title LIKE ? OR a.member LIKE ?)";
-            $params['search1'] = "%$search%";
-            $params['search2'] = "%$search%";
-        }
-
-        $queryStr .= " ORDER BY a.time ASC";
-
-        // 3. Hitung Total Data (Untuk Pagination)
-        $totalStmt = QueryBuilder::table('activities')
-                    ->execQuery("SELECT COUNT(0) as total_data $queryStr", array_values($params), false, true);
-        $total_items = $totalStmt->total_data;
-        $total_pages = ceil($total_items / $limit);
-        $page        = max(1, min($page, $total_pages ?: 1)); // Proteksi range halaman
-
-        // 4. Ambil Data dengan Limit
-        $sql = "SELECT  a.id, a.title, a.member, c.display_name AS category_name, a.time, a.status, c.slug AS cat, COALESCE(a.icon, c.default_icon) AS icon, COALESCE(a.color, c.default_color) AS color $queryStr LIMIT $limit OFFSET $offset";
-        $object_data = QueryBuilder::table('activities')->execQuery($sql, array_values($params), false, false, true);
-
-        // Convert Object menjadi Array
-        $json_string = json_encode($object_data);
-        $paged_data = json_decode($json_string, true);
+        // Panggil method model
+        $this->assetModel = new Asset();
+        $result = $this->assetModel->getPaginatedActivities($category, $search, $page, $limit);
+        // Akses data
+        $paged_data  = $result['data'];
+        $total_items = $result['total_items'];
+        $total_pages = $result['total_pages'];
+        $page = $result['page'];
 
         // --- ROUTER LOGIC ---
         // Ambil path setelah /data-chart/
@@ -646,7 +547,6 @@ class DashboardController extends Controller
         $parts = explode('/', trim($path, '/'));
         $endpoint = end($parts);
 
-
         $dataViews = [
             // 'filtered' => $filtered,
             'search' => $search,
@@ -655,7 +555,7 @@ class DashboardController extends Controller
             'total_pages' => $total_pages,
             'page' => $page,
             'offset' => $offset,
-            'paged_data' => (array) $paged_data,
+            'paged_data' => (array) $paged_data ?? [],
         ];
 
         // Hanya mengambil data tabelnya saja
@@ -705,17 +605,8 @@ class DashboardController extends Controller
                         ];
             }
 
-
-            // // header('Content-Type: application/json');
-            // echo json_encode($data);
-
-            // if (!isSwoole()) {
-            //     exit;
-            // }
-            // return;
-
             // CORRECT EXAMPLE IF SENDING JSON
-            return endResponse($data);
+            return json_response($data);
         }
     }
     // ===== END GET DATA CHART
@@ -765,62 +656,29 @@ class DashboardController extends Controller
 
         $page     = isset($request->page) ? (int)$request->page : 1;
         $limit    = 5; // Jumlah data per halaman
-        $offset   = ($page - 1) * $limit;
+        $offset   = ($page - 1) * $limit;        
 
-        // $sql = "SELECT a.asset_id, a.name, a.status, a.health, a.icon, a.color, a.updated_at, c.category_name
-        //         FROM assets a
-        //         LEFT JOIN asset_categories c ON a.category_id = c.id
-        //         ORDER BY c.category_name ASC, a.asset_id ASC, a.updated_at DESC;";
+        $this->assetModel = new Asset();
+        $filtered = $this->assetModel->getFilteredAssets([
+            'search'        => $search,
+            'status_filter' => $status,
+            'page'          => $page,
+            'limit'         => $limit,
+        ]);
+        // \json_response($filtered);
 
-        // Filter Data
-        $queryStr = " FROM assets a LEFT JOIN asset_categories c ON a.category_id = c.id WHERE 1=1";
-        $params = [];
-        if ($status && $status !== '') {
-            $queryStr .= " AND a.status = ?";
-            $params['status'] = $status;
-        }
-        if ($search && $search !== '') {
-            $queryStr .= " AND (a.name LIKE ? OR a.asset_id LIKE ?)";
-            $params['search1'] = "%$search%";
-            $params['search2'] = "%$search%";
-        }
-
-        $queryStr .= " ORDER BY a.updated_at DESC, c.category_name ASC, a.asset_id ASC";
-
-
-        // // 3. Hitung Total Data (Untuk Pagination)
-        // $totalStmt = QueryBuilder::table('activities')
-        //             ->execQuery("SELECT COUNT(0) as total_data $queryStr", array_values($params), false, true);
-        // $total_items = $totalStmt->total_data;
-        // $total_pages = ceil($total_items / $limit);
-        // $page        = max(1, min($page, $total_pages ?: 1)); // Proteksi range halaman
-
-
-        // 4. Ambil Data dengan Limit
-        // $sql = "SELECT a.asset_id, a.name, a.status, a.health, a.icon, a.color, a.updated_at, c.category_name $queryStr LIMIT $limit OFFSET $offset";
-        $sql = "SELECT a.id, a.asset_id, a.name, a.status, a.health, a.icon, a.color, a.updated_at, c.category_name $queryStr";
-        $object_data = QueryBuilder::table('activities')->execQuery($sql, array_values($params), false, false, true);
-
-        // Convert Object menjadi Array
-        $json_string = json_encode($object_data);
-        $filtered = json_decode($json_string, true);
-
-
-        // dd($viewMode);
-        $dataViews = [
+        return [
+            'search' => $search,
             'filtered' => $filtered,
-            'viewMode' => $viewMode,
+            'viewMode' => $request->view_mode ?? 'grid',
         ];
-
-        // Just take the table data - POST Update data
-        return $dataViews;
     }
 
     public function assets_render_view(Request $request, Response $response)
     {
-    // http_response_code(200);
         $dataViews = $this->assets_render($request);
-        // dd($dataViews);
+        // json_response($dataViews);
+
         $this->include('htmx.data.assets.assets-render', $dataViews);
     }
 
@@ -839,20 +697,15 @@ class DashboardController extends Controller
         // Use null coalescing (??) to be safe from undefined index
         $unitId = $payload['id'] ?? null;
 
-        $sql = "SELECT a.asset_id as unit_id, a.name as unit_name, l.maintenance_date as date, l.task, l.status 
-            FROM asset_maintenance_logs l
-            JOIN assets a ON l.asset_id = a.id
-            WHERE a.id = ? 
-            ORDER BY l.maintenance_date DESC";
-        $object_data = QueryBuilder::table('asset_maintenance_logs')->execQuery($sql, [$unitId], false, false, true);
+        $logs   = [];
+        if ($unitId) {
+            $this->assetModel = new Asset();
+            $logs       = $this->assetModel->getMaintenanceLogs((int) $unitId);
+        }
 
-        // Convert Object menjadi Array
-        $json_string = json_encode($object_data);
-        $logs = json_decode($json_string, true);
-
-        // $logs = [];
         $unitId = $unitName = '';
         if (isset($logs[0])) {
+            $unitCode = $logs[0]['unit_id'] ?? '';
             $unitId = $logs[0]['unit_id'] ?? '';
             $unitName = $logs[0]['unit_name'] ?? '';
         }
@@ -872,16 +725,9 @@ class DashboardController extends Controller
 
         $unitId = $payload['id'] ?? null;
 
-        // // Dummy data asset - di proyek nyata ambil dari database
-        // $asset = ['id' => $id, 'name' => 'Excavator Cat 320', 'health' => 85, 'status' => 'ready'];
-
-        $sql = "SELECT a.id, a.asset_id, a.category_id, a.name, a.status, a.health, a.icon, a.color, ac.category_name  
-                FROM assets a LEFT JOIN asset_categories ac ON a.category_id = ac.id WHERE a.id = ? LIMIT 1";
-        $object_data = QueryBuilder::table('assets')->execQuery($sql, [$unitId], false, true, false);
-
-        // Convert Object menjadi Array
-        $json_string = json_encode($object_data);
-        $asset = json_decode($json_string, true);
+        $this->assetModel = new Asset();
+        $asset = $this->assetModel->findByAssetId($unitId);
+        // json_response($asset);
 
         if ($unitId && $asset) {
             $this->include('htmx.modals.assets.edit', ['id' => $unitId, 'asset' => $asset]);
@@ -910,11 +756,7 @@ class DashboardController extends Controller
         $errors = Session::get('errors');
 
         if ($errors) {
-            // 1. Standard use (Status 422)
-            htmx_response($errors);
-
-            // 2. Or with a custom HTTP status code & special HTMX header
-            // htmx_response($errors, 422, ['HX-Retarget' => '#error-display']);
+            htmx_response($errors, 422);
         }
 
         $filter = new \App\Core\Validation\Filter();
@@ -945,17 +787,17 @@ class DashboardController extends Controller
         ];
         // dd($params);
 
-        $sql = "UPDATE assets 
-                SET  asset_id = ?,  name = ?,  status = ?, health = ?, category_id = ?, icon = ?, color = ?, updated_at = NOW() 
-                WHERE id = ?";
-        $lastId = QueryBuilder::table('assets')->execQuery($sql, array_values($params));
+        $id = (int) $params['id'];
+        $dataToUpdate = array_diff_key($params, ['id' => true]);
+        // \write_log('debug', $dataToUpdate);
+        
+        $lastId = $this->assetModel->updateById($id, $dataToUpdate);
 
         // dd($lastId);
-        if (false === $lastId) {
-            header("HTTP/1.1 500 Internal Server Error");
-            // die("Gagal menyimpan data.");
-            customExit("Gagal menyimpan data.");
+        if (false === $lastId || !is_numeric($lastId)) {
+            htmx_response("Gagal menyimpan data.", 500);
         }
+
     }
 
     public function assets_add(Request $request, Response $response)
@@ -983,11 +825,7 @@ class DashboardController extends Controller
         $errors = Session::get('errors');
 
         if ($errors) {
-            // 1. Standard use (Status 422)
-            htmx_response($errors);
-
-            // 2. Or with a custom HTTP status code & special HTMX header
-            // htmx_response($errors, 422, ['HX-Retarget' => '#error-display']);
+            htmx_response($errors, 422);
         }
 
         $filter = new \App\Core\Validation\Filter();
@@ -1014,20 +852,15 @@ class DashboardController extends Controller
         // dd($payload);
         // dd(array_values($payload));
 
-        // 3. Insert Data Baru
-        $lastId = QueryBuilder::table('assets')
-                    ->execQuery('INSERT INTO assets (asset_id, name, category_id, status, icon, color, health) 
-                                VALUES (?, ?, ?, ?, ?, ?, ?)', array_values($payload), true);
+        $lastId = Asset::create($payload);
 
         // dd($lastId);
         if (false === $lastId || !is_numeric($lastId)) {
-            header("HTTP/1.1 500 Internal Server Error");
-            // die("Gagal menyimpan data.");
-            customExit("Gagal menyimpan data.");
+            htmx_response("Gagal menyimpan data.", 500);
         }
+
         // Push id ke payload
         $payload['id'] = $lastId;
-
 
         // Tampilkan row
         $dataViews['filtered'] = [0 => $payload];
@@ -1038,34 +871,34 @@ class DashboardController extends Controller
     }
     // ===== END GET DATA ASSETS
 
-    private function __getPaginationRange($currentPage, $totalPages)
-    {
-        $delta = 1; // Jumlah halaman di kiri & kanan halaman aktif
-        $range = [];
-        $rangeWithDots = [];
-        $l = null;
+    // /**
+    //  * Built-in helper to send responses directly to OpenSwoole & close the stream
+    //  */
+    // private function sendSwooleOutput(string $content, int $statusCode = 200): void
+    // {
+    //     if (\isSwoole()) {
+    //         /** @var \OpenSwoole\Http\Response|null $swooleResponse */
+    //         $swooleResponse = $GLOBALS['swoole_response']
+    //             ?? (function_exists('app') && app()->has('swoole_response') ? app('swoole_response') : null);
 
-        for ($i = 1; $i <= $totalPages; $i++) {
-            // Tampilkan: Halaman 1, Halaman Terakhir, dan Halaman di sekitar Current
-            if ($i == 1 || $i == $totalPages || ($i >= $currentPage - $delta && $i <= $currentPage + $delta)) {
-                $range[] = $i;
-            }
-        }
+    //         if ($swooleResponse && method_exists($swooleResponse, 'end')) {
+    //             $swooleResponse->status($statusCode);
+    //             $swooleResponse->end($content);
 
-        foreach ($range as $i) {
-            if ($l) {
-                if ($i - $l === 2) {
-                    $rangeWithDots[] = $l + 1;
-                } elseif ($i - $l !== 1) {
-                    $rangeWithDots[] = '...';
-                }
-            }
-            $rangeWithDots[] = $i;
-            $l = $i;
-        }
+    //             if (class_exists('\App\Core\Exceptions\SwooleExitException')) {
+    //                 throw new \App\Core\Exceptions\SwooleExitException($statusCode);
+    //             }
+    //             return;
+    //         }
+    //     }
 
-        return $rangeWithDots;
-    }
+    //     // Fallback FPM / Native HTTP
+    //     http_response_code($statusCode);
+    //     echo $content;
+    //     if (function_exists('customExit')) {
+    //         customExit();
+    //     }
+    // }
 }
 
 class AssetHelper

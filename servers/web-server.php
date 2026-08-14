@@ -31,6 +31,10 @@ $server->set([
     'enable_static_handler' => true,                             // <--- LOAD ASSETS
     'static_handler_locations' => ['/css', '/js', '/assets', '/images', '/favicon.ico', '/backend-php-sw.js'], // <--- (Opsional) Folder/File asset
     'enable_coroutine' => true,
+
+    // --- KOREKSI PENTING UNTUK MENCEGAH DEADLOCK ---
+    'max_wait_time'            => 3,    // Toleransi waktu (detik) saat worker reload/stop sebelum force kill coroutine
+    'max_request'              => 3000, // Restart worker otomatis setelah 3000 request untuk cegah memory leak
 ]);
 
 // Start Server
@@ -44,13 +48,21 @@ $server->on("Start", function (Server $server) {
 $server->on('WorkerStart', function ($server, int $workerId) {
     try {
         // Setiap worker akan membuat ClientPool-nya sendiri
-        DatabasePoolManager::init(10);
+        DatabasePoolManager::init();
         echo "[" . date('Y-m-d H:i:s') . "] [OK] Connection Pool initialized for Worker #{$workerId}\n";
     } catch (\Throwable $e) {
         // Tangkap fatal error agar worker tidak exit status 255
         echo "[" . date('Y-m-d H:i:s') . "] [ERROR] Failed to initialize Database Pool on Worker #{$workerId}: " . $e->getMessage() . "\n";
         echo $e->getTraceAsString() . "\n";
     }
+});
+
+// PENTING: Bersihkan Pool ketika Worker Berhenti (Worker Stop/Reload)
+$server->on('WorkerStop', function ($server, int $workerId) {
+    if (class_exists('DatabasePoolManager') && method_exists('DatabasePoolManager', 'close')) {
+        DatabasePoolManager::close();
+    }
+    echo "[" . date('Y-m-d H:i:s') . "] [INFO] Worker #{$workerId} stopped and pool cleaned up.\n";
 });
 
 // Pre-load router ke memory 1x

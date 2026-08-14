@@ -124,7 +124,7 @@ $server->on('WorkerStart', function (Server $server, int $workerId) {
     // Jalankan Inisialisasi Pool DI DALAM Coroutine Context
     Coroutine::create(function () use ($workerId) {
         try {
-            DatabasePoolManager::init(10);
+            DatabasePoolManager::init();
             echo "[" . date('Y-m-d H:i:s') . "] [OK] Connection Pool initialized for Worker #{$workerId}\n";
         } catch (\Throwable $e) {
             echo "[" . date('Y-m-d H:i:s') . "] [ERROR] Failed to initialize Database Pool on Worker #{$workerId}: " . $e->getMessage() . "\n";

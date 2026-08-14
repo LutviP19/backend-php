@@ -66,3 +66,6 @@ $router->post('/data/asset-update', 'DashboardController@assets_update');
 
 // Report - data/bast/print-view
 $router->get('data/bast/print-view', 'PagesController@printView');
+
+// Debug
+$router->get('/data/tabel-swoole', 'DashboardController@debugTable');

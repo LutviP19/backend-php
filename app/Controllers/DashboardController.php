@@ -791,6 +791,7 @@ class DashboardController extends Controller
         $dataToUpdate = array_diff_key($params, ['id' => true]);
         // \write_log('debug', $dataToUpdate);
         
+        $this->assetModel = new Asset();
         $lastId = $this->assetModel->updateById($id, $dataToUpdate);
 
         // dd($lastId);
@@ -798,6 +799,7 @@ class DashboardController extends Controller
             htmx_response("Gagal menyimpan data.", 500);
         }
 
+        return;
     }
 
     public function assets_add(Request $request, Response $response)
@@ -870,75 +872,4 @@ class DashboardController extends Controller
 
     }
     // ===== END GET DATA ASSETS
-
-    // /**
-    //  * Built-in helper to send responses directly to OpenSwoole & close the stream
-    //  */
-    // private function sendSwooleOutput(string $content, int $statusCode = 200): void
-    // {
-    //     if (\isSwoole()) {
-    //         /** @var \OpenSwoole\Http\Response|null $swooleResponse */
-    //         $swooleResponse = $GLOBALS['swoole_response']
-    //             ?? (function_exists('app') && app()->has('swoole_response') ? app('swoole_response') : null);
-
-    //         if ($swooleResponse && method_exists($swooleResponse, 'end')) {
-    //             $swooleResponse->status($statusCode);
-    //             $swooleResponse->end($content);
-
-    //             if (class_exists('\App\Core\Exceptions\SwooleExitException')) {
-    //                 throw new \App\Core\Exceptions\SwooleExitException($statusCode);
-    //             }
-    //             return;
-    //         }
-    //     }
-
-    //     // Fallback FPM / Native HTTP
-    //     http_response_code($statusCode);
-    //     echo $content;
-    //     if (function_exists('customExit')) {
-    //         customExit();
-    //     }
-    // }
-}
-
-class AssetHelper
-{
-    // 1. Mapping Kategori (Ikon & Warna Dasar)
-    public static $categories = [
-        'heavy-equipment' => ['icon' => 'fa-tractor', 'color' => 'emerald', 'label' => 'Alat Berat'],
-        'technology'      => ['icon' => 'fa-plane-up', 'color' => 'indigo', 'label' => 'Teknologi'],
-        'support'         => ['icon' => 'fa-faucet-drip', 'color' => 'blue', 'label' => 'Pendukung'],
-        'warehouse'       => ['icon' => 'fa-dolly', 'color' => 'slate', 'label' => 'Gudang'],
-        'logistics'       => ['icon' => 'fa-truck', 'color' => 'amber', 'label' => 'Logistik']
-    ];
-
-    // 2. Mapping Status (Badge UI)
-    public static $statuses = [
-        'ready'       => ['label' => 'Tersedia', 'css' => 'bg-emerald-50 text-emerald-600 border-emerald-100'],
-        'working'     => ['label' => 'Beroperasi', 'css' => 'bg-blue-50 text-blue-600 border-blue-100'],
-        'maintenance' => ['label' => 'Perbaikan', 'css' => 'bg-rose-50 text-rose-600 border-rose-100']
-    ];
-
-    /**
-     * Menghitung visual Health Bar dan efek khusus
-     */
-    public static function getHealthInfo($health)
-    {
-        $info = [
-            'color'    => 'emerald',
-            'is_critical' => false,
-            'label'    => 'Sehat'
-        ];
-
-        if ($health <= 25) {
-            $info['color'] = 'rose';
-            $info['is_critical'] = true;
-            $info['label'] = 'Kritis';
-        } elseif ($health <= 65) {
-            $info['color'] = 'amber';
-            $info['label'] = 'Butuh Perhatian';
-        }
-
-        return $info;
-    }
 }

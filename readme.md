@@ -34,7 +34,7 @@ Before setting up the framework, ensure your local machine meets the minimum run
 
 ### 1. Core Core Runtimes & Environments
 * **PHP 8.3+** (Must include `redis`, `ffi` and `openswoole` extensions enabled in your `php.ini`).
-* **[OpenSwoole 22.x+](https://openswoole.com/docs/get-started/installation)** (Required for running high-concurrency HTTP/WebSocket servers).
+* **[OpenSwoole 24.x+](https://openswoole.com/docs/get-started/installation)** (Required for running high-concurrency HTTP/WebSocket servers).
 * **Docker Desktop** (Required if you choose to spin up infrastructure dependencies via containers. Compatible with macOS, Windows, and Linux).
 
 ### 2. Databases & Infrastructure Services

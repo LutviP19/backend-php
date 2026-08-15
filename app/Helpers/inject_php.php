@@ -189,6 +189,48 @@ function rateLimitFallbackFile(?string $identifier, ?int $limit, ?int $timeframe
     return true; // Request allowed
 }
 
+/**
+ * Helps create SQL SEARCH (LIKE/ILIKE) clauses and their bindings automatically.
+ * 
+ * @param string &$sqlRef Reference to the main $sql variable to which the AND (...) clause will be added
+ * @param array &$bindingsRef Reference to the main $bindings array
+ * @param string|null $searchTerm Search keyword from user input
+ * @param array $columns List of columns to search, example: ['a.name', 'a.asset_id']
+ * @param string $driver Active DB driver ('pgsql' or 'mysql')
+ */
+function apply_raw_search(
+        string &$sqlRef, 
+        array &$bindingsRef, 
+        ?string $searchTerm, 
+        array $columns, 
+        string $driver = ''
+    ): void 
+{
+
+    if($driver === '') {
+        $driver = config('database.'.config('default_db').'.driver');
+    }
+
+    if ($searchTerm === null || trim($searchTerm) === '') {
+        return;
+    }
+
+    // Tentukan operator: ILIKE untuk PostgreSQL (Case-Insensitive), LIKE untuk MySQL
+    $operator = (strtolower($driver) === 'pgsql') ? 'ILIKE' : 'LIKE';
+    
+    $wildcardSearch = '%' . trim($searchTerm) . '%';
+    $conditions = [];
+
+    foreach ($columns as $column) {
+        $conditions[] = "{$column} {$operator} ?";
+        $bindingsRef[] = $wildcardSearch;
+    }
+
+    if (!empty($conditions)) {
+        $sqlRef .= " AND (" . implode(' OR ', $conditions) . ")";
+    }
+}
+
 // --- Base64URL Encoding/Decoding Functions ---
 function base64url_encode($data)
 {

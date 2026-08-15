@@ -191,6 +191,27 @@ class QueryBuilderV2
         return $this;
     }
 
+    public function whereLike(string $column, string $value, string $boolean = 'AND'): self
+    {
+        // Use ILIKE for PostgreSQL, LIKE for MySQL/MariaDB
+        $operator = ($this->driver === 'pgsql') ? 'ILIKE' : 'LIKE';
+        
+        // (Assuming you use named placeholders like :w_0 in the previous example)
+        $placeholder = ':w_' . count($this->bindings);
+        
+        $this->wheres[] = [
+            'type'     => 'basic',
+            'column'   => $this->quoteIdentifier($column),
+            'operator' => $operator,
+            'value'    => $placeholder,
+            'boolean'  => strtoupper($boolean)
+        ];
+
+        $this->bindings[$placeholder] = '%' . trim($value, '%') . '%';
+
+        return $this;
+    }
+
     /**
      * Explicit aliases for WHERE ... AND ... clauses
      */

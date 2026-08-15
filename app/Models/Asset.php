@@ -30,11 +30,9 @@ class Asset extends BaseModel
             $params[] = $category;
         }
 
-        if (!empty($search)) {
-            $baseFrom .= " AND (a.title LIKE ? OR a.member LIKE ?)";
-            $searchTerm = "%{$search}%";
-            $params[] = $searchTerm;
-            $params[] = $searchTerm;
+        if ($search && $search !== '') {
+            // gunakan helpers otomatis deteksi driver $default_db
+            $baseFrom .= apply_raw_search($baseFrom, $params, $search, ['a.title', 'a.member']);
         }
 
         // 2. Hitung Total Data untuk Pagination
@@ -99,13 +97,8 @@ class Asset extends BaseModel
         }
 
         if ($search && $search !== '') {
-            // Pakai LIKE standar tanpa operator || atau CONCAT di SQL
-            $queryStr .= " AND (a.name LIKE ? OR a.asset_id LIKE ?)";
-            
-            // Gabungkan wildcard % di PHP
-            $searchTerm = '%' . $search . '%';
-            $bindings[] = $searchTerm;
-            $bindings[] = $searchTerm;
+            // gunakan helpers otomatis deteksi driver $default_db
+            $queryStr .= apply_raw_search($queryStr, $bindings, $search, ['a.name', 'a.asset_id']);
         }
 
         $queryStr .= " ORDER BY a.updated_at DESC, c.category_name ASC, a.asset_id ASC";

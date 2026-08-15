@@ -4,7 +4,7 @@ namespace App\Core\Validation;
 
 use Exception;
 use App\Core\Http\Request;
-use App\Core\Database\QueryBuilder;
+use App\Core\Database\QueryBuilderV2 as QueryBuilder;
 
 /**
  * Rules class

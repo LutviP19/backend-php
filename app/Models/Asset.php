@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Core\Database\BaseModel;
-use App\Core\Database\QueryBuilderV2 as QueryBuilder;
+use App\Core\Database\QueryBuilderV2;
 // use PDO;
 
 class Asset extends BaseModel
@@ -200,10 +200,10 @@ class Asset extends BaseModel
     }
 
     /**
-     * Helper untuk membentuk QueryBuilder yang selalu membawa $this->pdo
+     * Helper untuk membentuk QueryBuilderV2 yang selalu membawa $this->pdo
      */
-    public function newCustomQuery(): QueryBuilder
+    public function newCustomQuery(): QueryBuilderV2
     {
-        return QueryBuilder::table($this->getPdo(), static::$table);
+        return QueryBuilderV2::table($this->getPdo(), static::$table);
     }
 }

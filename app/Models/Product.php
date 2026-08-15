@@ -21,28 +21,25 @@ class Product extends BaseModel
 
     /**
      * Retrieve all products whose stock is considered critical (critical_status = 1)
-     * Output: Array of Objects
+     * Output: Array or Objects
      */
-    public static function getCriticalStock(int $threshold = 5): array
+    public static function getCriticalStock(int $threshold = 5): array|\stdClass|null|false
     {
-        $items = static::query()
+        return static::query()
             ->where('status_kritis', '=', 1)
             ->where('stok', '<=', $threshold)
             ->orderBy('stok', 'ASC')
+            ->asObject()
             ->get();
-
-        return static::toObject($items);
     }
 
     /**
      * Filter products by enum category ('fertilizer','seed','pesticide','tool')
-     * Output: Array of Objects
+     * Output: Array or Objects
      */
-    public static function getByKategori(string $kategori): array
+    public static function getByKategori(string $kategori): array|\stdClass|null|false
     {
-        $items = static::where('kategori', '=', $kategori)->get();
-
-        return static::toObject($items);
+        return static::where('kategori', '=', $kategori)->asObject()->get();
     }
     
     /**

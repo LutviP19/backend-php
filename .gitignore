@@ -5,6 +5,7 @@
 *.zip
 *.ini
 *.lock
+*.ori
 *.old
 *.bak
 *.dev

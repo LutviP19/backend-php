@@ -131,33 +131,7 @@ abstract class BaseModel
     public static function getConnection(): PDO
     {
         // ---------------------------------------------------------------------
-        // 1. MAIN PRIORITIES (OpenSwoole Environment)
-        // ---------------------------------------------------------------------
-        if (function_exists('isSwoole') && \isSwoole()) {
-            $cid = Coroutine::getCid();
-            if ($cid > 0) {
-                $context = Coroutine::getContext($cid);
-
-                // A. If there is a custom connection/override set specifically for this Coroutine/Request
-                if (isset($context['pdo']) && $context['pdo'] instanceof PDO) {
-                    return $context['pdo'];
-                }
-            }
-
-            // B. Fallback Swoole: Retrieve the default connection from DatabasePoolManager
-            $defaultPdo = DatabasePoolManager::getConnection();
-
-            // Save it to Context so that this request consistently uses that 1 PDO instance
-            if (isset($cid) && $cid > 0) {
-                $context = Coroutine::getContext($cid);
-                $context['pdo'] = $defaultPdo;
-            }
-
-            return $defaultPdo;
-        }
-
-        // ---------------------------------------------------------------------
-        // 2. PRIORITY FOR FPM/CLI (Non-Swoole)
+        // PRIORITY FOR PDO
         // ---------------------------------------------------------------------
         // A. If set manually via setConnection() in FPM
         if (static::$staticPdo !== null) {
@@ -170,7 +144,12 @@ abstract class BaseModel
             return static::$staticPdo;
         }
 
-        throw new RuntimeException("PDO Connection belum di-set dan class Connection tidak ditemukan.");
+        // C. Fallback Swoole ambil koneksi dari DatabasePoolManager
+        if (isSwoole()) {
+            return DatabasePoolManager::createConnection(config('default_db'));
+        }
+
+        throw new RuntimeException("PDO Connection belum di-set dan class Connection not found.");
     }
 
     public static function getTableName(): string
@@ -188,7 +167,7 @@ abstract class BaseModel
      */
     public static function query(): QueryBuilder
     {
-        $connection = static::$staticPdo ?? static::getConnection();
+        $connection = static::getConnection();
 
         $builder = QueryBuilder::table($connection, static::getTableName());
 
@@ -259,12 +238,12 @@ abstract class BaseModel
      * CRUD OPERATOR DENGAN LIFECYCLE HOOKS
      * ========================================================================= */
 
-    public static function all(): array
+    public static function all(): mixed
     {
         return static::query()->get();
     }
 
-    public static function find(mixed $id): ?array
+    public static function find(mixed $id): mixed
     {
         return static::query()
             ->where(static::$primaryKey, '=', $id)
@@ -367,7 +346,7 @@ abstract class BaseModel
         return static::query()->count($column);
     }
 
-    public static function rawQuery(string $sql, array $bindings = []): array
+    public static function rawQuery(string $sql, array $bindings = []): mixed
     {
         return static::query()->queryRaw($sql, $bindings);
     }
@@ -386,11 +365,16 @@ abstract class BaseModel
         $pdo = null;
 
         if (function_exists('isSwoole') && \isSwoole()) {
-            // Take PDO from a special OpenSwoole pool if one exists
+            // Take the connection from DatabasePoolManager
+            // (DatabasePoolManager automatically selects the pool based on $connectionName)
             $pdo = \App\Core\Database\DatabasePoolManager::getConnection($connectionName);
         } else {
-            // Fallback for PHP-FPM
-            $pdo = \App\Core\Database\Connection::fromConfig($connectionName);
+            // Fallback for regular FPM/CLI
+            if (class_exists(\App\Core\Database\Connection::class)) {
+                $pdo = \App\Core\Database\Connection::fromConfig($connectionName);
+            } else {
+                $pdo = \App\Core\Database\DatabasePoolManager::createConnection($connectionName);
+            }
         }
 
         $builder = QueryBuilder::table($pdo, static::getTableName());
@@ -422,7 +406,7 @@ abstract class BaseModel
     protected static function toObject(mixed $data): mixed
     {
         if (is_array($data)) {
-            return array_map(fn($item) => is_array($item) ? (object) $item : $item, $data);
+            return array_map(fn ($item) => is_array($item) ? (object) $item : $item, $data);
         }
         return is_array($data) ? (object) $data : $data;
     }

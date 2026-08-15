@@ -4,7 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Http\{Request, Response};
 use App\Core\Support\Session;
-use App\Core\Database\QueryBuilder;
+// use App\Core\Database\QueryBuilderV2 as QueryBuilder;
 use App\Core\Validation\Validator;
 use App\Core\Http\IdempotencyHandler;
 use App\Core\Security\IdempotencyManager;
@@ -281,7 +281,7 @@ class DashboardController extends Controller
         ]);
         $payload = $filter->sanitize($postData, ['id']);
 
-        $product = QueryBuilder::table('products')->execQuery('SELECT * FROM products WHERE id = ? LIMIT 1', array_values($payload), false, true);
+        $product = Product::find($payload['id']);
 
         $this->view('htmx.modals.inventory.form_edit', ['data' => $product]);
     }
@@ -380,7 +380,7 @@ class DashboardController extends Controller
                 if ($idempotencyKey) {
                     IdempotencyManager::unlock($idempotencyKey);
                 }
-                
+
                 htmx_response($errors, 422);
             }
 
@@ -433,7 +433,7 @@ class DashboardController extends Controller
 
     public function debugTable()
     {
-        
+
         // //=====================
         // // 1. Buat koneksi kustom/berbeda
         // $customPdo = \App\Core\Database\Connection::custom(
@@ -656,7 +656,7 @@ class DashboardController extends Controller
 
         $page     = isset($request->page) ? (int)$request->page : 1;
         $limit    = 5; // Jumlah data per halaman
-        $offset   = ($page - 1) * $limit;        
+        $offset   = ($page - 1) * $limit;
 
         $this->assetModel = new Asset();
         $filtered = $this->assetModel->getFilteredAssets([
@@ -790,9 +790,8 @@ class DashboardController extends Controller
         $id = (int) $params['id'];
         $dataToUpdate = array_diff_key($params, ['id' => true]);
         // \write_log('debug', $dataToUpdate);
-        
-        $this->assetModel = new Asset();
-        $lastId = $this->assetModel->updateById($id, $dataToUpdate);
+
+        $lastId = Asset::updateById($id, $dataToUpdate);
 
         // dd($lastId);
         if (false === $lastId || !is_numeric($lastId)) {

@@ -34,7 +34,7 @@ $server->set([
 
     // --- KOREKSI PENTING UNTUK MENCEGAH DEADLOCK ---
     'max_wait_time'            => 3,    // Toleransi waktu (detik) saat worker reload/stop sebelum force kill coroutine
-    'max_request'              => 3000, // Restart worker otomatis setelah 3000 request untuk cegah memory leak
+    'max_request'              => config('app.env') !== 'production' ? 3000 : 30, // Restart worker otomatis setelah 3000 request untuk cegah memory leak
 ]);
 
 // Start Server
@@ -47,8 +47,15 @@ $server->on("Start", function (Server $server) {
 // PENTING: Inisialisasi Pool DI DALAM WorkerStart (Per Worker Process)
 $server->on('WorkerStart', function ($server, int $workerId) {
     try {
-        // Setiap worker akan membuat ClientPool-nya sendiri
-        DatabasePoolManager::init();
+        // // Setiap worker akan membuat ClientPool-nya sendiri
+        // DatabasePoolManager::init(config('default_db'));
+
+        $defaultDb = config('default_db') ?? 'pgsql';        
+        // 1. Set default connection secara eksplisit (opsional tapi bagus untuk kepastian)
+        DatabasePoolManager::setDefaultConnection($defaultDb);
+        // 2. Inisialisasi Pool khusus untuk Worker ini
+        DatabasePoolManager::init($defaultDb);
+
         echo "[" . date('Y-m-d H:i:s') . "] [OK] Connection Pool initialized for Worker #{$workerId}\n";
     } catch (\Throwable $e) {
         // Tangkap fatal error agar worker tidak exit status 255

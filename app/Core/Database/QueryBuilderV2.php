@@ -7,7 +7,7 @@ use PDOStatement;
 use App\Core\Database\RawSql;
 
 /**
- * QueryBuilder v2 class 
+ * QueryBuilder v2 class
  * Automatic database driver detection (MySQL/PostgreSQL)
  * @author Lutvi <lutvip19@gmail.com>
  * @package: Backend-PHP
@@ -16,6 +16,11 @@ class QueryBuilderV2
 {
     protected PDO $pdo;
     protected string $driver;
+
+    /**
+     * Mode fetch default (PDO::FETCH_ASSOC)
+     */
+    protected int $fetchMode = \PDO::FETCH_ASSOC;
 
     protected string $table = '';
     protected array $selects = ['*'];
@@ -38,10 +43,29 @@ class QueryBuilderV2
         $this->driver = strtolower($this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME));
     }
 
-    public static function table(PDO $pdo, string $table): self
+    /**
+     *  Creates a new QueryBuilder instance for the specified table.
+     *The $pdo parameter is optional. If null, will search for the default connection.
+     * Supports summoning:
+     * -QueryBuilder::table('users')
+     * -QueryBuilder::table($pdo, 'users')
+     * -QueryBuilder::table(null, 'users')
+     */
+    public static function table(PDO|string|null $pdo = null, string $table = ''): self
     {
-        $instance = new static($pdo);
+        // 1. If the first argument is a string (eg: QueryBuilder::table('users')),
+        //    allow flexible invocation without PDO passing.
+        if (is_string($pdo)) {
+            $table = $pdo;
+            $pdo = null;
+        }
+
+        // 2. Resolve PDO if null
+        $resolvedPdo = $pdo ?? static::resolveDefaultPdo();
+
+        $instance = new static($resolvedPdo);
         $instance->table = $table;
+
         return $instance;
     }
 
@@ -84,9 +108,36 @@ class QueryBuilderV2
      * CORE QUERY BUILDER METHODS
      * ========================================================================= */
 
-    public function select(array|string $columns = ['*']): self
+    /**
+     * Specifies the columns to be selected in SELECT.
+     *
+     * Supported usage examples:
+     * -select('id', 'name', 'email')
+     * -select(['id', 'name', 'email'])
+     * -select('id, name, email')
+     * -select() //Default '*'
+     */
+    public function select(array|string ...$columns): self
     {
-        $this->selects = is_array($columns) ? $columns : func_get_args();
+        // 1. If there are no arguments at all, set default ['*']
+        if (empty($columns)) {
+            $this->selects = ['*'];
+            return $this;
+        }
+
+        $parsedColumns = [];
+
+        foreach ($columns as $column) {
+            if (is_array($column)) {
+                $parsedColumns = array_merge($parsedColumns, $column);
+            } elseif (is_string($column)) {
+                $items = array_map('trim', explode(',', $column));
+                $parsedColumns = array_merge($parsedColumns, $items);
+            }
+        }
+
+        $this->selects = array_values(array_unique($parsedColumns));
+
         return $this;
     }
 
@@ -119,12 +170,41 @@ class QueryBuilderV2
         return $this->join($table, $first, $operator, $second, 'RIGHT');
     }
 
-    public function where(string $column, string $operator, mixed $value): self
+    /**
+     * Added WHERE condition with AND logic (Default)
+     */
+    public function where(string $column, string $operator, mixed $value, string $boolean = 'AND'): self
     {
         $placeholder = ':w_' . count($this->bindings);
-        $this->wheres[] = sprintf('%s %s %s', $this->quoteIdentifier($column), $operator, $placeholder);
+
+        //Save the condition along with the boolean operator (AND/OR)
+        $this->wheres[] = [
+            'type'     => 'basic',
+            'column'   => $this->quoteIdentifier($column),
+            'operator' => $operator,
+            'value'    => $placeholder,
+            'boolean'  => strtoupper($boolean)
+        ];
+
         $this->bindings[$placeholder] = $value;
+
         return $this;
+    }
+
+    /**
+     * Explicit aliases for WHERE ... AND ... clauses
+     */
+    public function whereAnd(string $column, string $operator, mixed $value): self
+    {
+        return $this->where($column, $operator, $value, 'AND');
+    }
+
+    /**
+     * Explicit aliases for WHERE...OR... clauses (Optional bonus)
+     */
+    public function whereOr(string $column, string $operator, mixed $value): self
+    {
+        return $this->where($column, $operator, $value, 'OR');
     }
 
     public function whereRaw(string $sql, array $bindings = []): self
@@ -210,7 +290,7 @@ class QueryBuilderV2
         }
 
         if (!empty($this->wheres)) {
-            $sql .= ' WHERE ' . implode(' AND ', $this->wheres);
+            $sql .= $this->compileWheres();
         }
 
         if (!empty($this->orders)) {
@@ -228,13 +308,39 @@ class QueryBuilderV2
         return $sql;
     }
 
-    public function get(): array
+    /**
+     * Built-in helper for compiling the $this->wheres array into a SQL string
+     */
+    protected function compileWheres(): string
+    {
+        if (empty($this->wheres)) {
+            return '';
+        }
+
+        $sqlConditions = [];
+
+        foreach ($this->wheres as $index => $where) {
+            $condition = sprintf('%s %s %s', $where['column'], $where['operator'], $where['value']);
+
+            if ($index === 0) {
+                // The first condition is without AND/OR affixes
+                $sqlConditions[] = $condition;
+            } else {
+                // The 2nd and subsequent conditions begin with a boolean (AND /OR)
+                $sqlConditions[] = sprintf('%s %s', $where['boolean'], $condition);
+            }
+        }
+
+        return 'WHERE ' . implode(' ', $sqlConditions);
+    }
+
+    public function get(): mixed
     {
         $stmt = $this->executePrepared($this->toSql(), $this->bindings);
         return $stmt->fetchAll();
     }
 
-    public function first(): ?array
+    public function first(): mixed
     {
         $this->limit(1);
         $stmt = $this->executePrepared($this->toSql(), $this->bindings);
@@ -249,7 +355,7 @@ class QueryBuilderV2
     protected function aggregate(string $function, string $column = '*'): mixed
     {
         $columnSql = ($column === '*') ? '*' : $this->quoteIdentifier($column);
-        
+
         // 1. Save the current property state
         $previousSelects = $this->selects;
         $previousOrders  = $this->orders;
@@ -398,29 +504,32 @@ class QueryBuilderV2
             return 0;
         }
 
-        $this->applySoftDeleteScope();
+        // $this->applySoftDeleteScope();
 
         $setClauses = [];
         $updateBindings = [];
 
         foreach ($data as $column => $value) {
-            $ph = ':u_' . $column;
+            // Clean up the column names so they can safely be used as PDO placeholder names
+            $safeColumnName = preg_replace('/[^a-zA-Z0-9_]/', '_', $column);
+            $ph = ':u_' . $safeColumnName;
+
             $setClauses[] = sprintf('%s = %s', $this->quoteIdentifier($column), $ph);
             $updateBindings[$ph] = $value;
         }
 
         $sql = sprintf(
-            'UPDATE %s SET %s',
+            'UPDATE %s SET %s %s',
             $this->quoteIdentifier($this->table),
-            implode(', ', $setClauses)
+            implode(', ', $setClauses),
+            $this->compileWheres()
         );
 
-        if (!empty($this->wheres)) {
-            $sql .= ' WHERE ' . implode(' AND ', $this->wheres);
-        }
-
+        // IMPORTANT: Combine UPDATE bindings ($updateBindings) with WHERE bindings ($this->bindings)
         $allBindings = array_merge($updateBindings, $this->bindings);
+
         $stmt = $this->executePrepared($sql, $allBindings);
+
         return $stmt->rowCount();
     }
 
@@ -448,7 +557,7 @@ class QueryBuilderV2
         $sql = sprintf('DELETE FROM %s', $this->quoteIdentifier($this->table));
 
         if (!empty($this->wheres)) {
-            $sql .= ' WHERE ' . implode(' AND ', $this->wheres);
+            $sql .= $this->compileWheres();
         }
 
         $stmt = $this->executePrepared($sql, $this->bindings);
@@ -472,7 +581,7 @@ class QueryBuilderV2
         ]);
     }
 
-    public function queryRaw(string $sql, array $bindings = []): array
+    public function queryRaw(string $sql, array $bindings = []): mixed
     {
         $stmt = $this->executePrepared($sql, $bindings);
         return $stmt->fetchAll();
@@ -486,25 +595,33 @@ class QueryBuilderV2
 
     protected function executePrepared(string $sql, array $bindings = []): PDOStatement
     {
-        // 1. If QueryBuilder has a custom $this->pdo, execute it directly!
-        if ($this->pdo !== null) {
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute($bindings);
-            return $stmt;
-        }
+        // 1. Make sure $this->pdo is not null (take fallback if it is not already set)
+        $pdo = $this->pdo ?? static::resolveDefaultPdo();
 
-        // 2. If in OpenSwoole and there is no custom $this->pdo, just use Pool
-        if (function_exists('isSwoole') && \isSwoole()) {
-            return \App\Core\Database\DatabasePoolManager::run(function (PDO $pdo) use ($sql, $bindings) {
-                $stmt = $pdo->prepare($sql);
-                $stmt->execute($bindings);
-                return $stmt;
-            });
-        }
-
-        // 3. Fallback FPM
-        $stmt = $this->pdo->prepare($sql);
+        // 2. Execute the query directly on the PDO instance
+        $stmt = $pdo->prepare($sql);
         $stmt->execute($bindings);
+
         return $stmt;
+    }
+
+    /**
+     * Built-in helper to retrieve PDO fallback (Auto-detect Swoole vs FPM)
+     */
+    protected static function resolveDefaultPdo(): PDO
+    {
+        if (function_exists('isSwoole') && \isSwoole()) {
+            $cofigDb = \App\Core\Database\DatabasePoolManager::getDefaultConnection();
+
+            if (class_exists(\App\Core\Database\Connection::class)) {
+                return \App\Core\Database\Connection::fromConfig($cofigDb);
+            }
+        }
+
+        if (class_exists(\App\Core\Database\Connection::class)) {
+            return \App\Core\Database\Connection::make();
+        }
+
+        throw new \RuntimeException("Koneksi PDO tidak tersedia dan tidak dapat di-resolve otomatis.");
     }
 }

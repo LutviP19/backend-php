@@ -10,6 +10,11 @@ use Throwable;
 class DatabasePoolManager
 {
     /**
+     * Default connection name. If null, will read automatically from config('default_db')
+     */
+    public static ?string $defaultConnection = null;
+
+    /**
      * Map of multiple ClientPools based on connection name
      * @var array<string, ClientPool>
      */
@@ -22,44 +27,82 @@ class DatabasePoolManager
     private static array $factories = [];
 
     /**
-     * Initialize pool for specific connection (default: 'mysql').
-     */
-    public static function init(string $connectionName = 'mysql', int $capacity = 10, ?callable $factory = null): void
+    * Initialize pool for specific connections.
+    */
+    public static function init(?string $connectionName = null, int $capacity = 10, ?callable $factory = null): void
     {
-        if (isset(self::$pools[$connectionName])) {
+        $connName = self::resolveConnectionName($connectionName);
+
+        if (isset(self::$pools[$connName])) {
             return;
         }
 
         if ($factory !== null) {
-            self::$factories[$connectionName] = $factory;
+            self::$factories[$connName] = $factory;
         }
-        
-        self::$pools[$connectionName] = new ClientPool(PDOFactory::class, $capacity);
+
+        self::$pools[$connName] = new ClientPool(PDOFactory::class, $capacity);
     }
 
     /**
-     * Borrows PDO connections directly from the pool (for fast queries)
+     * Internal helper to determine the name of the connection used.
+     * Fallback hierarchy: passed $connectionName -> $defaultConnection -> config('default_db') -> 'pgsql'
      */
-    public static function getConnection(string $connectionName = 'mysql'): PDO
+    public static function resolveConnectionName(?string $connectionName = null): string
     {
-        return self::getPool($connectionName)->get();
+        if ($connectionName !== null) {
+            return $connectionName;
+        }
+
+        if (self::$defaultConnection !== null) {
+            return self::$defaultConnection;
+        }
+
+        // Take it from the config('default_db') helper if available
+        if (function_exists('config')) {
+            $configDb = config('default_db');
+            if (!empty($configDb)) {
+                return (string) $configDb;
+            }
+        }
+
+        // Final fallback if config() does not return a value
+        return 'pgsql';
+    }
+
+    /**
+     * Change the default connection name dynamically
+     */
+    public static function setDefaultConnection(string $connectionName): void
+    {
+        self::$defaultConnection = $connectionName;
+    }
+
+    /**
+     * Gets the current default connection name
+     */
+    public static function getDefaultConnection(): string
+    {
+        return self::resolveConnectionName();
     }
 
     /**
      * Create a new PDO instance according to the connection name
      */
-    public static function createConnection(string $connectionName = 'mysql'): PDO
+    public static function createConnection(?string $connectionName = null): PDO
     {
-        if (isset(self::$factories[$connectionName])) {
-            return (self::$factories[$connectionName])();
+        $connName = self::resolveConnectionName($connectionName);
+
+        if (isset(self::$factories[$connName])) {
+            return (self::$factories[$connName])();
         }
 
         if (class_exists(\App\Core\Database\Connection::class)) {
-            return Connection::fromConfig($connectionName);
+            return Connection::fromConfig($connName);
         }
 
         if (class_exists(\App\Core\Database\PDOFactory::class)) {
-            return PDOFactory::make($connectionName);
+            return PDOFactory::make($connName);
         }
 
         throw new RuntimeException("Tidak ada pembuat koneksi (Connection/PDOFactory) yang terdeteksi.");
@@ -68,23 +111,24 @@ class DatabasePoolManager
     /**
      * Retrieve ClientPool instances based on connection name
      */
-    public static function getPool(string $connectionName = 'mysql'): ClientPool
+    public static function getPool(?string $connectionName = null): ClientPool
     {
-        if (!isset(self::$pools[$connectionName])) {
-            self::init($connectionName);
+        $connName = self::resolveConnectionName($connectionName);
+
+        if (!isset(self::$pools[$connName])) {
+            self::init($connName);
         }
 
-        return self::$pools[$connectionName];
+        return self::$pools[$connName];
     }
 
     /**
      * Close and clean up specific ClientPool resources or the entire pool.
-     * 
+     *
      * @param string|null $connectionName Connection name (e.g. 'mysql'). If null, it will close ALL registered pools.
      */
     public static function close(?string $connectionName = null): void
     {
-        // 1. If the parameter is null, close all stored pools
         if ($connectionName === null) {
             foreach (array_keys(self::$pools) as $name) {
                 self::close($name);
@@ -92,23 +136,22 @@ class DatabasePoolManager
             return;
         }
 
-        // 2. If the connection name is listed, perform a ClientPool cleanup
-        if (isset(self::$pools[$connectionName])) {
-            $pool = self::$pools[$connectionName];
+        $connName = self::resolveConnectionName($connectionName);
+
+        if (isset(self::$pools[$connName])) {
+            $pool = self::$pools[$connName];
 
             try {
-                // Call the close() method on the OpenSwoole ClientPool if available
                 if (method_exists($pool, 'close')) {
                     $pool->close();
                 }
             } catch (Throwable $e) {
                 if (function_exists('write_log')) {
-                    write_log('error', "[POOL:{$connectionName}] Error closing pool: " . $e->getMessage(), '/Core/Database/DatabasePoolManager.close', false);
+                    write_log('error', "[POOL:{$connName}] Error closing pool: " . $e->getMessage(), '/Core/Database/DatabasePoolManager.close', false);
                 }
             } finally {
-                // Remove reference pool & factory from static memory
-                unset(self::$pools[$connectionName]);
-                unset(self::$factories[$connectionName]);
+                unset(self::$pools[$connName]);
+                unset(self::$factories[$connName]);
             }
         }
     }
@@ -117,21 +160,20 @@ class DatabasePoolManager
      * IMPORTANT: Use SHORT TIME connection with Auto-Release (Prevents Deadlock)
      * Never use raw $pool->get() without try...finally!
      */
-    public static function useConnection(callable $callback, string $connectionName = 'mysql'): mixed
+    public static function useConnection(callable $callback, ?string $connectionName = null): mixed
     {
-        $pool = self::getPool($connectionName);
-        
-        // Take the connection from the pool
+        $connName = self::resolveConnectionName($connectionName);
+        $pool = self::getPool($connName);
+
         $pdo = $pool->get();
 
         if (!$pdo instanceof PDO) {
-            throw new RuntimeException("Gagal mengambil koneksi dari Database Pool (Timeout/Exhausted).");
+            throw new RuntimeException("Failed to take connection from Database Pool (Timeout/Exhausted).");
         }
 
         try {
             return $callback($pdo);
         } finally {
-            // Ensure it is ALWAYS returned to the pool no matter what happens (Error/Abort/Success)
             $pool->put($pdo);
         }
     }
@@ -139,9 +181,10 @@ class DatabasePoolManager
     /**
      * Ultimate execution helper with Auto-Ping, Auto-Retry, Multi-Pool, & Safe Pool Return
      */
-    public static function run(callable $callback, string $connectionName = 'mysql', int $maxRetries = 2): mixed
+    public static function run(callable $callback, ?string $connectionName = null, int $maxRetries = 2): mixed
     {
-        $pool = self::getPool($connectionName);
+        $connName = self::resolveConnectionName($connectionName);
+        $pool = self::getPool($connName);
         $attempts = 0;
 
         while (true) {
@@ -154,7 +197,7 @@ class DatabasePoolManager
                 $pdo->query('SELECT 1');
             } catch (Throwable $e) {
                 // Create a new instance if the one popped from the pool is dead
-                $pdo = self::createConnection($connectionName);
+                $pdo = self::createConnection($connName);
             }
 
             try {
@@ -174,14 +217,14 @@ class DatabasePoolManager
                 }
 
                 if (self::isConnectionLost($e)) {
-                    $freshPdo = self::createConnection($connectionName);
+                    $freshPdo = self::createConnection($connName);
 
                     if ($attempts > $maxRetries) {
                         // Keep returning fresh instances so that the quota pool doesn't hang/leak
                         $pool->put($freshPdo);
 
                         if (function_exists('write_log')) {
-                            write_log('error', "[POOL:{$connectionName}] Connection lost. Failed after {$attempts} attempts.", '/Core/Database/DatabasePoolManager.run', false);
+                            write_log('error', "[POOL:{$connName}] Connection lost. Failed after {$attempts} attempts.", '/Core/Database/DatabasePoolManager.run', false);
                         }
 
                         throw new RuntimeException("Koneksi database terputus setelah {$maxRetries} kali percobaan.", 503, $e);
@@ -209,18 +252,19 @@ class DatabasePoolManager
 
     /**
      * Securely wrap DB Transaction execution in OpenSwoole Pool.
-     * If the connection is lost in the middle of a transaction, it WILL NOT be retried per-query, 
+     * If the connection is lost in the middle of a transaction, it WILL NOT be retried per-query,
      * instead the connection is discarded, cleared, and throws an Exception.
-     * 
+     *
      * @param callable $callback fn(PDO $pdo)
      * @param string $connectionName
      * @return mixed
      * @throws Throwable
      */
-    public static function transaction(callable $callback, string $connectionName = 'mysql'): mixed
+    public static function transaction(callable $callback, ?string $connectionName = null): mixed
     {
-        $pool = self::getPool($connectionName);
-        
+        $connName = self::resolveConnectionName($connectionName);
+        $pool = self::getPool($connName);
+
         /** @var PDO $pdo */
         $pdo = $pool->get();
 
@@ -228,7 +272,7 @@ class DatabasePoolManager
         try {
             $pdo->query('SELECT 1');
         } catch (Throwable $e) {
-            $pdo = self::createConnection($connectionName);
+            $pdo = self::createConnection($connName);
         }
 
         try {
@@ -254,18 +298,18 @@ class DatabasePoolManager
                 }
             } catch (Throwable $rollbackException) {
                 if (function_exists('write_log')) {
-                    write_log('error', "[POOL:{$connectionName}] Failed to rollback transaction: " . $rollbackException->getMessage(), '/Core/Database/DatabasePoolManager.transaction', false);
+                    write_log('error', "[POOL:{$connName}] Failed to rollback transaction: " . $rollbackException->getMessage(), '/Core/Database/DatabasePoolManager.transaction', false);
                 }
             }
 
             // B. If the error is caused by a CONNECTION BREAK
             if (self::isConnectionLost($e)) {
                 if (function_exists('write_log')) {
-                    write_log('error', "[POOL:{$connectionName}] Connection dropped during TRANSACTION! Destroying stale PDO instance. Error: " . $e->getMessage(), '/Core/Database/DatabasePoolManager.transaction', false);
+                    write_log('error', "[POOL:{$connName}] Connection dropped during TRANSACTION! Destroying stale PDO instance. Error: " . $e->getMessage(), '/Core/Database/DatabasePoolManager.transaction', false);
                 }
 
                 // Return new fresh PDO to the pool to maintain pool quota/capacity
-                $freshPdo = self::createConnection($connectionName);
+                $freshPdo = self::createConnection($connName);
                 $pool->put($freshPdo);
 
                 throw new RuntimeException("Transaksi dibatalkan karena koneksi database terputus. Silakan coba kembali request Anda.", 503, $e);
@@ -278,7 +322,7 @@ class DatabasePoolManager
     }
 
     /**
-     * Detect whether Throwable is caused by a dropped connection
+     *Detect whether Throwable is caused by a dropped connection
      */
     private static function isConnectionLost(Throwable $e): bool
     {

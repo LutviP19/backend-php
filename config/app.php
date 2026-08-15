@@ -146,8 +146,8 @@ return [
                 // 4. Menggunakan Native Prepared Statements dari PostgreSQL (Penting untuk Performa)
                 PDO::ATTR_EMULATE_PREPARES => false,
 
-                // 5. Kembalikan hasil fetch sebagai Associative Array secara default
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                // 5. Kembalikan hasil fetch sebagai stdObject secara default
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ,
 
                 // 6. Konversi tipe data numeric PostgreSQL (INT, BIGINT, FLOAT) ke Tipe Data Asli PHP (int/float)
                 //    mencegah semua angka dikembalikan sebagai 'string'.

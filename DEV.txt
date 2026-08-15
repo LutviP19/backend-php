@@ -38,3 +38,30 @@ STATUS :
 
 MAINTENANCE:
 - Add Rector : Rector instantly upgrades and refactors the PHP code of your application.
+
+
+Upgrade Histories:
+------------------
+[2026-08-15]
+Lock file operations: 0 installs, 20 updates, 0 removals
+  - Upgrading amphp/amp (v3.1.2 => v3.1.3)
+  - Upgrading amphp/pipeline (v1.2.6 => v1.2.7)
+  - Upgrading guzzlehttp/guzzle (7.15.1 => 7.15.3)
+  - Upgrading guzzlehttp/promises (2.5.1 => 2.5.2)
+  - Upgrading myclabs/deep-copy (1.13.4 => 1.14.0)
+  - Upgrading nesbot/carbon (3.13.1 => 3.13.2)
+  - Upgrading phpseclib/phpseclib (3.0.55 => 3.0.56)
+  - Upgrading phpstan/phpstan (2.2.5 => 2.2.8)
+  - Upgrading predis/predis (v3.5.1 => v3.6.0)
+  - Upgrading rector/rector (2.5.7 => 2.6.2)
+  - Upgrading symfony/console (v7.4.14 => v7.4.16)
+  - Upgrading symfony/event-dispatcher (v7.4.14 => v7.4.15)
+  - Upgrading symfony/mailer (v7.4.14 => v7.4.15)
+  - Upgrading symfony/messenger (v7.4.14 => v7.4.15)
+  - Upgrading symfony/mime (v8.1.0 => v8.1.4)
+  - Upgrading symfony/polyfill-intl-grapheme (v1.38.1 => v1.41.0)
+  - Upgrading symfony/polyfill-php83 (v1.38.2 => v1.41.0)
+  - Upgrading symfony/string (v8.1.0 => v8.1.2)
+  - Upgrading symfony/translation (v8.1.1 => v8.1.4)
+  - Upgrading symfony/validator (v7.4.14 => v7.4.16)
+

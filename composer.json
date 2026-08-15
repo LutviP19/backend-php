@@ -25,8 +25,7 @@
         "amphp/http-client": "^5.3",
         "nesbot/carbon": "^3.11",
         "phpstreamserver/scheduler": "^0.8.0",
-        "neuron-core/neuron-ai": "^2.11",
-        "inspector-apm/inspector-php": "^3.16",
+        "neuron-core/neuron-ai": "^2.11",        
         "symfony/validator": "^7.4"
     },
     "bin": [
@@ -43,6 +42,7 @@
         ]
     },
     "require-dev": {
+        "inspector-apm/inspector-php": "^3.16",
         "pestphp/pest": "^3.8",
         "fakerphp/faker": "^1.24",
         "rector/rector": "^2.2"

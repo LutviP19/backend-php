@@ -2,19 +2,12 @@
 
 namespace App\Models;
 
-use App\Core\Database\Model;
-use App\Core\Database\QueryBuilder; // import the class.
-// use App\Core\Database\Connection; // Uncomment to build new Custom connection.
+use App\Core\Database\BaseModel;
 use PDO; // new PDO object
 
-class Role extends Model
+class Role extends BaseModel
 {
-    /**
-     * static table name for this model.
-     *
-     * @var string
-     */
-    protected static $tableM = "roles";
+    protected static string $table = "roles";
 
     public function __construct(?PDO $pdo = null)
     {
@@ -31,18 +24,13 @@ class Role extends Model
 
         // Default connection
         parent::__construct($pdo);
-        
-        $this->table = self::$tableM;
     }
 
+    public static function getRoleById($id, $cols = null)
+    {
+        $selectCols = $cols ?? '*';
 
-    public static function getRoleById($id, $cols = false) {
-        $selectCols = $cols ?: '*';
-        $sql = 'SELECT '.$selectCols.' FROM '.self::$tableM.' WHERE id = ? LIMIT 1';
-        // $result = Model::table(self::$tableM)->execQuery($sql, [$id], false, true, false);
-        $result = (new QueryBuilder())->table(self::$tableM)->execQuery($sql, [$id], false, true, false);
-
-        return $result;
+        return static::select($selectCols)->where('id', '=', $id)->first();
     }
 
 }

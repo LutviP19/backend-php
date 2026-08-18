@@ -27,9 +27,6 @@ class AuthController extends ServerApiController
     /**
      * loginAction function
      *
-     * @param  Request  $request
-     * @param  Response $response
-     *
      * @return response
      */
     public function loginAction($request, array $data)
@@ -88,10 +85,7 @@ class AuthController extends ServerApiController
             // // Middleware
             // $this->setRatelimiter('login_request', 1200, 10);
 
-            if (false == $callback || empty($errors)) {
-
-                return $this->SetOpenSwooleResponse($status, $statusCode, $errors, $message);
-            } else {
+            if ($callback && empty($errors)) {
 
                 // Set Session and generate new JwtToken
                 // dd($user, true);
@@ -120,6 +114,9 @@ class AuthController extends ServerApiController
                         ];
 
                 return $this->SetOpenSwooleResponse($status, $statusCode, $output, '', $headers);
+            } else {
+
+                return $this->SetOpenSwooleResponse($status, $statusCode, $errors, $message);
             }
         } catch (Exception $exception) {
 

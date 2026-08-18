@@ -60,9 +60,6 @@ class UserController extends ServerApiController
     /**
      * logoutAction function
      *
-     * @param  Request  $request
-     * @param  Response $response
-     *
      * @return $response->json
      */
     public function logoutAction($request, array $data)
@@ -117,10 +114,8 @@ class UserController extends ServerApiController
             // // Middleware
             // $this->setRatelimiter('uptoken_request', 1200, 5);
 
-            if (false == $callback) {
 
-                return $this->SetOpenSwooleResponse(false, $statusCode, [$errors], 'Validation errors.');
-            } else {
+            if ($callback) {
 
                 // clear cache token
                 $userId = Session::get('uid');
@@ -135,6 +130,9 @@ class UserController extends ServerApiController
                         ];
 
                 return $this->SetOpenSwooleResponse(true, $statusCode, $output);
+            } else {
+
+                return $this->SetOpenSwooleResponse(false, $statusCode, [$errors], 'Validation errors.');
             }
         } catch (Exception $exception) {
 
@@ -145,9 +143,6 @@ class UserController extends ServerApiController
 
     /**
      * updateTokenAction function, update client_token
-     *
-     * @param  Request  $request
-     * @param  Response $data
      *
      * @return $response->json
      */
@@ -204,9 +199,6 @@ class UserController extends ServerApiController
                 }
 
                 if ($validEmail) {
-                    $statusCode = 203;
-                    $errors = ['auth' => 'Invalid credentials'];
-
                     $user = User::getUserByEmail($email);
                     $callback = $this->checkCredentials($user, $password);
                 }
@@ -215,11 +207,8 @@ class UserController extends ServerApiController
             // // Middleware
             // $this->setRatelimiter('uptoken_request', 1200, 5);
 
-            if (false === $validEmail || false == $callback || empty($user)) {
 
-                return $this->SetOpenSwooleResponse(false, $statusCode, [$errors], 'Validation errors.');
-            } else {
-
+            if ($validEmail && $callback && !is_null($user)) {
                 // Update Client Token
                 $userId = Session::get('uid');
                 $validateClient = new ValidateClient($userId);
@@ -239,6 +228,12 @@ class UserController extends ServerApiController
                 $output = [ 'auth' => 'Token successfully updated, please re-login to use new token!' ];
 
                 return $this->SetOpenSwooleResponse(true, $statusCode, $output);
+            } else {
+
+                $statusCode = 203;
+                $errors = ['auth' => 'Invalid credentials'];
+
+                return $this->SetOpenSwooleResponse(false, $statusCode, [$errors], 'Validation errors.');
             }
         } catch (Exception $exception) {
 

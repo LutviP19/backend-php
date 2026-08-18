@@ -2,41 +2,32 @@
 
 namespace App\Models;
 
-use App\Core\Database\Model;
-use App\Core\Database\QueryBuilder; // import the class.
-// use App\Core\Database\Connection; // Uncomment to build new Custom connection.
+use App\Core\Database\BaseModel;
 use PDO; // new PDO object
 
-class User extends Model
+class User extends BaseModel
 {
-    /**
-     * static table name for this model.
-     *
-     * @var string
-     */
-    protected static $tableM = "users";
+    protected static string $table = "users";
 
     public function __construct(?PDO $pdo = null)
     {
         // Default connection
         parent::__construct($pdo);
-        
-        $this->table = self::$tableM;
     }
 
-
-    //user model code....
     public static function getAllUser()
     {
-        $data = QueryBuilder::table(self::$tableM)->select()->get();
-        if($data) return $data;
+        $data = static::select()->get();
+        if ($data) {
+            return $data;
+        }
 
         return null;
     }
 
     public static function getUserByEmail($email)
     {
-        $data = QueryBuilder::table(self::$tableM)->select([
+        $data = static::select([
                         'ulid',
                         'name',
                         'email',
@@ -52,14 +43,17 @@ class User extends Model
                     ->whereAnd('status', '=', 1)
                     ->first();
 
-        if($data) return $data;
+        // \App\Core\Support\Log::debug($data, 'UserModel.getUserByEmail');
+        if ($data) {
+            return $data;
+        }
 
         return null;
     }
 
     public static function getClientId($id, $columnId = 'id')
     {
-        $data = QueryBuilder::table(self::$tableM)->select(['client_token'])
+        $data = static::select(['client_token'])
                 ->where($columnId, '=', $id)
                 ->whereAnd('status', '=', 1)
                 ->first();
@@ -74,7 +68,7 @@ class User extends Model
 
     public static function getUlid($id)
     {
-        $data = QueryBuilder::table(self::$tableM)->select(['ulid'])->where('id', '=', $id)->first();
+        $data = static::select(['ulid'])->where('id', '=', $id)->first();
         // \App\Core\Support\Log::debug($data, 'UserModel.getUlid');
 
         if ($data) {
@@ -88,10 +82,10 @@ class User extends Model
     {
         $token = generateRandomString();
 
-        QueryBuilder::table(self::$tableM)->primaryKey($columnId);
-        $update = QueryBuilder::table(self::$tableM)->updateWhere(['client_token' => $token], $columnId, $id);
+        static::$primaryKey = $columnId;
+        $update = static::updateById($id, ['client_token' => $token]);
 
-        if (true === $update) {
+        if ($update > 0) {
             return $token;
         } else {
             return null;

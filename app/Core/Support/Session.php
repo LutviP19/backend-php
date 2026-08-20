@@ -16,12 +16,14 @@ class Session
      *
      * @return array
      */
-    public static function all()
+    public static function all(): array
     {
         $sessions = [];
         $csrfTokenKey = (string) Config::get("session.csrf_token", 'csrf_token');
         
         $escaped = [
+            "sessionKey",
+            "sessionKeyApi",
             $csrfTokenKey,
             "OBSOLETE",
             "EXPIRES",
@@ -43,7 +45,6 @@ class Session
 
         $isEncrypted = (bool) config("session.encrypt");
 
-        // Pastikan $_SESSION ada dan tipenya array sebelum dilooping
         if (isset($_SESSION) && is_array($_SESSION)) {
             foreach ($_SESSION as $key => $value) {
                 if (in_array($key, $escaped)) {
@@ -54,8 +55,7 @@ class Session
                 if (is_null($data) || $data === '') {
                     continue;
                 }
-
-                // OPTIMASI: Parsing JSON yang seragam, aman, dan bersih
+                
                 if (is_string($data)) {
                     $decoded = json_decode($data, true);
                     $sessions[$key] = (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) ? $decoded : $data;

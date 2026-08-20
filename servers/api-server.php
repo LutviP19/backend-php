@@ -25,10 +25,15 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use OpenSwoole\HTTP\Server;
 use OpenSwoole\Coroutine;
+use OpenSwoole\Runtime;
 use App\Core\Database\DatabasePoolManager;
+use App\Core\Support\CacheSwoole;
 
 // use OpenSwoole\Http\Request as OpenSwooleRequest;
 // use OpenSwoole\Http\Response as OpenSwooleResponse;
+
+// Otomatis meng-hook seluruh I/O (File, PDO/TCP, cURL, Redis, dll)
+Runtime::enableCoroutine(true);
 
 // $table = new Swoole\Table(1024);
 // $table->column('name', Swoole\Table::TYPE_STRING, 64);
@@ -59,6 +64,10 @@ $server->set([
     'task_worker_num' => 5,
     // 'max_request' => 10000,
     //'max_request_grace' => 0,
+
+    // --- KOREKSI PENTING UNTUK MENCEGAH DEADLOCK ---
+    'max_wait_time' => 10,    // Toleransi waktu (detik) saat worker reload/stop sebelum force kill coroutine
+    'max_request' => config('app.env') !== 'production' ? 3000 : 300, // Restart worker otomatis setelah 3000 request untuk cegah memory leak
 
     // // Setup SSL files
     // 'ssl_cert_file' => $ssl_dir . '/ssl.crt',
@@ -93,44 +102,35 @@ $server->set([
     // 'http2_max_header_list_size' => 4095,
 ]);
 
-$process = new Swoole\Process(function ($process) use ($server) {
-    while (true) {
-        $msg = $process->read();
+// Tambahkan sebuah Process khusus yang berjalan di background
+$pingProcess = new \OpenSwoole\Process(function (\OpenSwoole\Process $process) {
+    // echo "Background Ping Process Started...\n";
+    
+    // Interval longgar: 30 detik (30.000 ms) - Timer berjalan independen
+    \OpenSwoole\Timer::tick(30000, function () {
+        \OpenSwoole\Coroutine::create(function () {
+            try {
+                // Beri jeda acak 0-3000 ms agar antar worker tidak hit DB bersamaan
+                \OpenSwoole\Coroutine::sleep(mt_rand(0, 3000) / 1000);
 
-        foreach ($server->connections as $conn) {
-            $server->send($conn, $msg);
-        }
-    }
+                // Hanya lakukan ping jika pool benar-benar IDLE lebih dari 30 detik
+                DatabasePoolManager::ping(null, 30);
+                // echo "[" . date('Y-m-d H:i:s') . "] [OK] Ping Database Berhasil\n";
+            } catch (\Throwable $e) {
+                // Safe catch agar timer tidak terhenti
+            }
+        });
+    });
 });
+// Sisipkan proses background ke dalam server
+$server->addProcess($pingProcess);
 
-$server->addProcess($process);
 
 // Start Server
 $server->on("Start", function (Server $server) {
     global $serverip, $serverport;
 
     echo "Swoole api server is started at http://" . $serverip . ":" . $serverport . "\n";
-});
-
-// WORKER PROCESS: Dijalankan 4 kali (sekali untuk setiap worker)
-$server->on('WorkerStart', function (Server $server, int $workerId) {
-    // SANGAT AMAN UNTUK AUTO-REFRESH:
-    // File di bawah ini akan dimuat ulang setiap kali worker di-reload
-    require_once __DIR__ . '/bootstrap.php';
-    require_once __DIR__ . '/../routes/api-server.php';
-
-    echo "Worker #{$workerId} is ready.\n";
-
-    // Jalankan Inisialisasi Pool DI DALAM Coroutine Context
-    Coroutine::create(function () use ($workerId) {
-        try {
-            DatabasePoolManager::init();
-            echo "[" . date('Y-m-d H:i:s') . "] [OK] Connection Pool initialized for Worker #{$workerId}\n";
-        } catch (\Throwable $e) {
-            echo "[" . date('Y-m-d H:i:s') . "] [ERROR] Failed to initialize Database Pool on Worker #{$workerId}: " . $e->getMessage() . "\n";
-            echo $e->getTraceAsString() . "\n";
-        }
-    });
 });
 
 $server->on('Task', function (Swoole\Server $server, $task_id, $reactorId, $data) {
@@ -148,7 +148,9 @@ class MiddlewareSetup implements MiddlewareInterface
         $serverParams = $request->getServerParams() ?? [];
         initializeServerConstant(array_merge($serverParams, $request->getHeaders() ?? []));
 
-        var_dump('Middleware start clientIP:'.clientIP());
+        if (config('app.debug')) {
+            echo "[" . date('Y-m-d H:i:s') . "] Middleware start clientIP:" .clientIP() . "\n";
+        }
         // \App\Core\Support\Log::debug($_SERVER, 'ApiServer.MiddlewareSetup.process.$serverP');
         // \App\Core\Support\Log::debug(getallheaders(), 'ApiServer.MiddlewareSetup.process.getallheaders()');
 
@@ -200,13 +202,15 @@ class MiddlewareSetup implements MiddlewareInterface
                         ];
             }
 
-            var_dump('MiddlewareSetup failed. Invalid headers!');
+            if (config('app.debug')) {
+                echo "[" . date('Y-m-d H:i:s') . "] [ERROR] MiddlewareSetup failed. Invalid headers!\n";
+            }
 
             return new Response(\json_encode($json), $statusCode, 'Missing credentials', ['Content-Type' => 'application/json']);
         }
 
         // Validate Api Token
-        if (matchEncryptedData(config('app.token'), $headers['X-Api-Token'][0]) === false) {
+        if (matchEncryptedData(config('app.token_api'), $headers['X-Api-Token'][0]) === false) {
             $statusCode = 403;
             $json = [
                         'status' => false,
@@ -214,7 +218,9 @@ class MiddlewareSetup implements MiddlewareInterface
                         'message' => 'Invalid api token!',
                     ];
 
-            var_dump('MiddlewareSetup failed. Invalid API Token!');
+            if(config('app.debug')) {
+                echo "[" . date('Y-m-d H:i:s') . "] [ERROR] MiddlewareSetup failed. Invalid API Token!\n";
+            } 
 
             return new Response(\json_encode($json), $statusCode, '', ['Content-Type' => 'application/json']);
         }
@@ -235,7 +241,9 @@ class MiddlewareSetup implements MiddlewareInterface
             }
 
             if (false === $status) {
-                var_dump('MiddlewareSetup failed. Invalid Client Token!');
+                if (config('app.debug')) {
+                    echo "[" . date('Y-m-d H:i:s') . "] [ERROR] MiddlewareSetup failed. Invalid Client Token!\n";
+                }
 
                 return new Response(\json_encode($json), $statusCode, 'Missing credentials', ['Content-Type' => 'application/json']);
             }
@@ -243,7 +251,10 @@ class MiddlewareSetup implements MiddlewareInterface
         }
 
         $response = $handler->handle($request);
-        var_dump('MiddlewareSetup passed');
+        
+        if (config('app.debug')) {
+            echo "[" . date('Y-m-d H:i:s') . "] [OK] MiddlewareSetup passed\n";
+        }
 
         return $response;
     }
@@ -296,6 +307,36 @@ class RouteMiddleware implements MiddlewareInterface
             // $response = $handler->handle($request);
             initializeServerConstant($req);
             // \App\Core\Support\Log::debug($_SERVER, 'ApiServer.RouteMiddleware.process.$_SERVER');
+
+            // Get metadata headers
+            // 1. Retrieve Session Token from Header or Cookie
+            $sessionHeader = $request->getHeaderLine('sessionKeyApi');
+            $cookies       = $request->getCookieParams();
+            $sessionCookie = $cookies[session_name()] ?? $cookies['sessionKeyApi'] ?? null;
+            $rawToken = !empty($sessionHeader) ? $sessionHeader : $sessionCookie;
+
+            if (!empty($rawToken)) {                
+                // Dekripsi token untuk mendapatkan prefix key cache
+                $prefixKey = strlen($rawToken) > 100 ? decryptData($rawToken) : $rawToken;
+
+                if (!empty($prefixKey)) {
+                    $cachedSession = (new \App\Core\Support\CacheSwoole())->get($prefixKey);
+
+                    if (is_array($cachedSession) && !empty($cachedSession)) {
+                        
+                        $_SESSION = $cachedSession;
+                        if (class_exists('\OpenSwoole\Coroutine') && \OpenSwoole\Coroutine::getCid() > 0) {
+                            \OpenSwoole\Coroutine::getContext()['session'] = $cachedSession;
+                        }
+
+                        if (class_exists('\App\Core\Support\Session')) {
+                            foreach ($cachedSession as $sKey => $sVal) {
+                                \App\Core\Support\Session::set($sKey, $sVal);
+                            }
+                        }
+                    }
+                }
+            }
 
             // Only accept valid JSON content
             $contentType = $request->headers['content-type'];
@@ -375,6 +416,11 @@ class RouteMiddleware implements MiddlewareInterface
             if (ob_get_level() > 0) {
                 ob_end_clean();
             }
+
+            // Menggunakan OpenSwoole defer agar $_SESSION pasti dibersihkan setelah Response dikirim
+            defer(function () {
+                $_SESSION = [];
+            });
         }
     }
 }
@@ -387,5 +433,46 @@ $stack = (new StackHandler())
 ;
 
 $server->setHandler($stack);
+
+// WORKER PROCESS: Dijalankan 4 kali (sekali untuk setiap worker)
+$server->on('WorkerStart', function (Server $server, int $workerId) {
+    // SANGAT AMAN UNTUK AUTO-REFRESH:
+    // File di bawah ini akan dimuat ulang setiap kali worker di-reload 
+    if(config('app.env') === 'local') {
+        require_once __DIR__ . '/bootstrap.php';
+        require_once __DIR__ . '/../routes/api-server.php';
+    }
+
+    echo "Worker #{$workerId} is ready.\n";
+
+    // Jalankan Inisialisasi Pool DI DALAM Coroutine Context
+    Coroutine::create(function () use ($workerId) {
+        try {
+            // DatabasePoolManager::init();
+
+            $defaultDb = config('default_db') ?? 'pgsql';        
+            // 1. Set default connection secara eksplisit (opsional tapi bagus untuk kepastian)
+            DatabasePoolManager::setDefaultConnection($defaultDb);
+            // 2. Inisialisasi Pool khusus untuk Worker ini
+            DatabasePoolManager::init($defaultDb);
+
+            // Inisialisasi pool CacheSwoole
+            CacheSwoole::initPool();
+
+            echo "[" . date('Y-m-d H:i:s') . "] [OK] Connection Pool initialized for Worker #{$workerId}\n";
+        } catch (\Throwable $e) {
+            echo "[" . date('Y-m-d H:i:s') . "] [ERROR] Failed to initialize Database Pool on Worker #{$workerId}: " . $e->getMessage() . "\n";
+            echo $e->getTraceAsString() . "\n";
+        }
+    });
+});
+
+// PENTING: Bersihkan Pool ketika Worker Berhenti (Worker Stop/Reload)
+$server->on('WorkerStop', function ($server, int $workerId) {
+    if (class_exists('DatabasePoolManager') && method_exists('DatabasePoolManager', 'close')) {
+        DatabasePoolManager::close();
+    }
+    echo "[" . date('Y-m-d H:i:s') . "] [INFO] Worker #{$workerId} stopped and pool cleaned up.\n";
+});
 
 $server->start();

@@ -53,17 +53,18 @@ if (env('SESSION_DRIVER') === "redis") {
     ini_set('session.save_path', BASEPATH . '/storage/framework/sessions');
 }
 
-// Set session from cache
-if (isset($_SESSION['uid'])) {
-    $_SESSION = array_merge($_SESSION, cacheContent('get', $_SESSION['uid'] .'-'. $_COOKIE[session_name()]) ?: []);
-}
-
 
 $serverip = "127.0.0.1";
 // $serverport = 8008;
 $serverport = 8009;
-$sessionName = '';
+$sessionName = 'WEBBACKENDPHPSESSID';
 $sessionId = '';
+
+// Set a custom session name
+ini_set('session.use_strict_mode', 0);
+session_name($sessionName);
+ini_set('session.use_strict_mode', 1);
+
 
 /**
  * Helper to check whether a string is a valid JSON format
@@ -104,6 +105,7 @@ function initializeServerConstant($request, $response): void
     // \App\Core\Support\Log::debug($request, 'Bootstrap.initializeServerConstant.$request');
 
     $_SERVER = [];
+    $_SESSION = [];
     // Clean up $_SERVER dari request sebelumnya
     $_SERVER = array_filter($_SERVER, function($key) {
         return !str_starts_with($key, 'HTTP_');
@@ -125,9 +127,6 @@ function initializeServerConstant($request, $response): void
     $_SERVER['SERVER_NAME'] = $serverip;
     $_SERVER['DOCUMENT_ROOT'] = __DIR__ . '/../public/';
     $_SERVER['SERVER_SOFTWARE'] = "Backend PHP";
-    // $_SERVER['PHP_SELF'] = isset($request->server['php_self']) ? $request->server['php_self'] : 'index';
-    // $_SERVER['SCRIPT_NAME'] = isset($request->server['script_name']) ? $request->server['script_name'] : 'php';
-    // $_SERVER['SCRIPT_FILENAME'] = isset($request->server['script_filename']) ? $request->server['script_filename'] : 'index.php';
     $_SERVER['PHP_SELF'] = $request->server['php_self'] ?? 'index';
     $_SERVER['SCRIPT_NAME'] = $request->server['script_name'] ?? 'php';
     $_SERVER['SCRIPT_FILENAME'] = $request->server['script_filename'] ?? 'index.php';

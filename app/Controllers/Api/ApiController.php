@@ -35,7 +35,7 @@ class ApiController extends BaseController
         $this->rateLimit = false;
         $this->filter = new \App\Core\Validation\Filter();
         $this->requestServer = $requestServer;
-        $this->sessionId = $sessionId;
+        $this->sessionId = $_COOKIE[$sessionName] ?? $sessionId ?? \session_id();
         $this->sessionName = $sessionName ?? \session_name();
 
         $rawBody = '';
@@ -156,49 +156,67 @@ class ApiController extends BaseController
      */
     protected function setLoginSession($user)
     {
-        // dd($user, true);
+        $sessionData = [];
         foreach ($user as $key => $value) {
             if ($key === 'ulid') {
                 $key = 'uid';
             }
-
-            Session::set($key, $value);
+            $sessionData[$key] = $value;
         }
 
-        Session::set('gnr', generateRandomString(32, true));
-        $userId =  Session::get('uid');
-        $gnr =  Session::get('gnr');
-
-        // Set login session
+        $gnr = generateRandomString(32, true);
+        $userId = $user['ulid'] ?? $sessionData['uid'] ?? \get_device_fingerprint() ?? null;
+        $sessionData['gnr'] = $gnr;
+        
         $validateClient = new \App\Core\Security\Middleware\ValidateClient($userId);
         $clientToken = $validateClient->getToken();
         $clientTokenGen = $validateClient->generateToken();
-        Session::set('client_token', $clientTokenGen);
-        
-        if (false === $validateClient->matchToken($clientTokenGen)) {
 
-            Session::destroy();
-            return false;
+        $sessionData['client_token'] = $clientTokenGen;
 
-            // return endResponse(
-            //     $this->getOutput(false, 401, [
-            //       'auth' => 'Client not found!',
-            //     ], 'Invalid Client!'), 401);
+        // Clear Redis Session Cache
+        if (isSwoole()) {
+            $sessionKey = sessionKeyFormat($userId);
+            (new \App\Core\Support\CacheSwoole())->flush($sessionKey);
         }
 
-        // initJwtToken
+        if (false === $validateClient->matchToken($clientTokenGen)) {
+            if (!isSwoole()) {
+                Session::destroy();
+            }
+
+            return false;
+        }
+
+        // JWT & Secret initialization
         Session::set('secret', encryptData($clientToken, $gnr));
-        Session::set('jwtId', generateUlid());
+        $sessionData['secret'] = Session::get('secret');
+        $sessionData['jwtId'] = generateUlid();
+
+        // initJwtToken & create tokenJwt
         $jwtToken = $this->initJwtToken();
+        $info = 'Web jwt-' . $userId;
+        $subject = 'Access API for web user:' . $userId;
+        $tokenJwt = $jwtToken->createToken($userId, $info, $subject);
+        $sessionData['tokenJwt'] = $tokenJwt;
 
-        // Create specific data for jwt
-        $info = 'Api jwt-'.$userId;
-        $subject = 'Access API for user:'.$userId;
-        $tokenJwt =  $jwtToken->createToken($userId, $info, $subject);
-        Session::set('tokenJwt', $tokenJwt);
+        // Persistence Based on Flag isSwoole()
+        if (isSwoole()) {
+            $this->sessionId = session_create_id('bp-');
+            $prefixKey = sessionKeyFormat($userId, $this->sessionId);
+            $sessionData['sessionKey'] = $prefixKey;
 
-        // dd(\App\Core\Support\Session::get('tokenJwt'));
-        // dd(\App\Core\Support\Session::all());
+            (new \App\Core\Support\CacheSwoole())->set($prefixKey, $sessionData, config('session.exptime'));
+
+            // Saved to the Swoole Request Context so it can be accessed in the Controller
+            if (class_exists('\OpenSwoole\Coroutine')) {
+                \OpenSwoole\Coroutine::getContext()['session'] = $sessionData;
+            }
+        }
+        
+        foreach ($sessionData as $sKey => $sVal) {
+            Session::set($sKey, $sVal);
+        }
 
         return $tokenJwt;
     }

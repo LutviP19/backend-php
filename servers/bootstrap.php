@@ -103,6 +103,7 @@ function initializeServerConstant($request, $response = null): void
     }
 
     $_SERVER = [];
+    $_SESSION = [];
     // Clean up $_SERVER dari request sebelumnya
     $_SERVER = array_filter($_SERVER, function ($key) {
         return !str_starts_with($key, 'HTTP_');

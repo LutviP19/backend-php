@@ -15,6 +15,30 @@ if (!defined('BASEPATH')) {
  * @return array
  */
 return [
+    // TODO:  Add ServerApi/Auth
+    // ServerApi/Auth
+    'backend_login' => [
+        'method' => 'POST',
+        'url' => 'http://localhost:8080/auth/login',
+        'headers' => [
+            'User-Agent' => 'Backend-PHP',
+            'Content-Type' => 'application/json',
+            'Accept' => 'application/json',
+            'X-Api-Token' => encryptData(config('app.token_api')),
+        ]
+    ],
+    'backend_profile' => [
+        'method' => 'POST',
+        'url' => 'http://localhost:8080/user/index',
+        'headers' => [
+            'User-Agent' => 'Backend-PHP',
+            'Content-Type' => 'application/json',
+            'Accept' => 'application/json',
+            'X-Api-Token' => encryptData(config('app.token_api')),
+        ]
+    ],
+
+    
     // Client - Webhook
     'microdata_client_web' => [
         'method' => 'POST',

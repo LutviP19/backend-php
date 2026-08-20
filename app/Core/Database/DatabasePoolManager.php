@@ -26,6 +26,9 @@ class DatabasePoolManager
      */
     private static array $factories = [];
 
+    // To record the time of last activity in this pool (ping)
+    private static array $lastUsedTime = [];
+
     /**
     * Initialize pool for specific connections.
     */
@@ -318,6 +321,87 @@ class DatabasePoolManager
             // C. If the error is normal (Not a broken connection, for example: Constraint Violation /Validation)
             $pool->put($pdo);
             throw $e;
+        }
+    }
+
+    /**
+     * Smart Ping: Lightweight, saves CPU & Network
+     */
+    public static function ping(?string $connectionName = null, int $idleThreshold = 30): void
+    {
+        $connName = self::resolveConnectionName($connectionName);
+
+        if (!isset(self::$pools[$connName])) {
+            return;
+        }
+
+        $lastUsed = self::$lastUsedTime[$connName] ?? 0;
+
+        // Bypass ping if there has been recent activity (less than $idleThreshold seconds)
+        if ((time() - $lastUsed) < $idleThreshold) {
+            return;
+        }
+
+        /** @var ClientPool $pool */
+        $pool = self::$pools[$connName];
+        $numConnections = method_exists($pool, 'length') ? $pool->length() : 5;
+
+        if ($numConnections <= 0) {
+            return;
+        }
+
+        // Check a maximum of 2 connections per cycle
+        $checkLimit = min($numConnections, 2);
+
+        for ($i = 0; $i < $checkLimit; $i++) {
+            $pdo = null;
+
+            try {
+                $pdo = $pool->get(0.01);
+            } catch (Throwable $e) {
+                continue;
+            }
+
+            if ($pdo instanceof PDO) {
+                if (self::isAlive($pdo)) {
+                    $pool->put($pdo);
+                } else {
+                    $freshPdo = self::makeSafeConnection($connName);
+                    if ($freshPdo) {
+                        $pool->put($freshPdo);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Utility to check whether the PDO socket is still active
+     */
+    private static function isAlive(PDO $pdo): bool
+    {
+        try {
+            $stmt = $pdo->query('SELECT 1');
+            return $stmt !== false;
+        } catch (Throwable $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Safe wrapper for createConnection to not throw an uncaught exception when the DB is down
+     */
+    private static function makeSafeConnection(?string $connectionName = null): ?PDO
+    {
+        $connName = self::resolveConnectionName($connectionName);
+        
+        // Note the timestamp every time a connection is created/taken
+        self::$lastUsedTime[$connName] = time();
+
+        try {
+            return self::createConnection($connName);
+        } catch (Throwable $e) {
+            return null;
         }
     }
 

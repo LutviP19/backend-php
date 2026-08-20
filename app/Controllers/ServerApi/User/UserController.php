@@ -34,7 +34,11 @@ class UserController extends ServerApiController
         if ($validateOutput) {
             return $validateOutput;
         }
-
+        
+        // Set default output
+        $headers = [];
+        $status = false;
+        $output = null;        
         $requestData = [
             'attributes' => $data['attributes'],
             'jsonData' => $data['jsonData'],
@@ -42,19 +46,55 @@ class UserController extends ServerApiController
         ];
         $jsonData = $data['jsonData'];
 
-        // Set default output
-        $status = true;
-        $statusCode = 200;
-        $output = [];
-        $message = '';
-        $headers = [];
+        // Validate Input
+        $validator = new Validator();
+        $validator->validate($jsonData, [
+            'email' => 'required|email'
+        ]);
+        $errors = \App\Core\Support\Session::get('errors');
 
-        // $statusCode = 200;
-        $output = [
-                    'account' => Session::all()
-                ];
+        if ($errors) {
+            $statusCode = 422;
+            $message = 'Validation errors.';
+        } else {
 
-        return $this->SetOpenSwooleResponse($status, $statusCode, $output, $message, $headers);
+            // Filter Input
+            $jsonData = $this->filter->filter($jsonData, [
+                'email' => 'trim|sanitize_string',
+            ]);
+
+            // Sanitize Input
+            $payload = $this->filter->sanitize($jsonData, ['email']);
+            $email = readJson('email', $payload, $payload['email']);
+            
+            $statusCode = 203;
+            $errors = ['auth' => 'Invalid credentials.'];
+            $message = 'Credentials errors.';
+            $account = User::getUserByEmail($email);
+            $sessionEmail = $this->activeClientMiddleware ? Session::get('email') : (Session::has('email') ? Session::get('email') : $account->email);
+            $callback = ($email === $account->email && $account->email === $sessionEmail);
+            // dd($sessionEmail);
+            // dd($callback);
+
+            // $this->activeClientMiddleware
+            if (!$callback) {
+                $status = true;
+                $statusCode = 203;
+                $message = 'Credentials errors.';
+                $errors = ['auth' => 'Invalid credentials'];
+            } else {
+                $status = true;
+                $statusCode = 200;
+                $message = '';
+                $output = [
+                            'account' => $this->activeClientMiddleware && Session::has('email') ? Session::all() : array_except($account, ['ulid', 'password', 'client_token']),
+                            // 'callback' => $callback,
+                            // 'session' => Session::all(),
+                        ];
+            }
+        }
+
+        return $this->SetOpenSwooleResponse($status, $statusCode, $output ?: $errors, $message, $headers);
     }
 
     /**
@@ -70,11 +110,8 @@ class UserController extends ServerApiController
             return $validateOutput;
         }
 
-        // $requestData = [
-        //     'attributes' => $data['attributes'],
-        //     'jsonData' => $data['jsonData'],
-        //     'requestQuery' => $data['requestQuery']
-        // ];
+        // $attributes = $data['attributes']; // Parse URI-Path
+        // $requestQuery = $data['requestQuery']; // Parse Query-String
         $jsonData = $data['jsonData'];
 
         try {

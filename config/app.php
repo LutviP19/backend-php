@@ -20,6 +20,7 @@ return [
         'key' => env('ENCRYPTION_KEY'),
         'hash_key' => env('HASH_KEY'),
         'token' => env('HEADER_TOKEN'),
+        'token_api' => env('HEADER_TOKEN_API'),
         'url' => env('APP_URL', 'http://localhost'),
         'path' => BASE_PATH,
         'env' => env('APP_ENV', 'production'),
@@ -62,6 +63,7 @@ return [
         ],
 
         'mysql' => [
+            'driver' => 'mysql',
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '3306'),
             'dbname' => env('DB_DATABASE', 'backend_php'),
@@ -109,6 +111,10 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
+
+                // PENTING: Batasi timeout koneksi PDO agar tidak membuat HTTP request hang
+                PDO::ATTR_TIMEOUT => 2,
+
                 // Deteksi otomatis konstanta SSL CA (Mendukung PHP < 8.5 & 8.5+)
                 (defined('\Pdo\Mysql::ATTR_SSL_CA') ? \Pdo\Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
@@ -152,6 +158,9 @@ return [
                 // 6. Konversi tipe data numeric PostgreSQL (INT, BIGINT, FLOAT) ke Tipe Data Asli PHP (int/float)
                 //    mencegah semua angka dikembalikan sebagai 'string'.
                 PDO::ATTR_STRINGIFY_FETCHES => false,
+
+                // PENTING: Batasi timeout koneksi PDO agar tidak membuat HTTP request hang
+                PDO::ATTR_TIMEOUT => 2,
             ],
         ],
 
@@ -285,9 +294,15 @@ return [
      */
     'session' => [
         'csrf_token' => 'csrf_token',
-        'lifetime' => (int) env('SESSION_LIFETIME', 120),
+        'lifetime' => (int) env('SESSION_LIFETIME', 120), // in minutes
+        'exptime' => (int) env('SESSION_LIFETIME', 120) * 60, // in secoonds
         'regenerate' => (int) env('SESSION_REGENERATE', 300), // in secoonds
         'encrypt' => (bool) env('SESSION_ENCRYPT', false),
     ],
 
+    // 'clients' => [
+    //     'client_web' => [
+    //         'x-api-token' => ''
+    //     ]
+    // ],
 ];

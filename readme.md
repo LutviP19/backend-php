@@ -1,9 +1,12 @@
 
 # Backend PHP - Framework
 
-<div align="center">
-  <img src="public/assets/icons/apple-touch-icon.png" alt="Logo">
+<div align="center" style="display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom:1em">
+  <img src="public/assets/icons/apple-touch-icon.png" alt="Logo" width="80" height="80">
+  <span style="font-size: 24px; font-weight: bold; color: #888;">+</span>
+  <img src="public/assets/icons/Logo-Ui-UX.png" alt="UI-UX" width="80" height="80">
 </div>
+
 
 A lightweight, high-performance PHP framework built on modern architecture patterns. It is specifically designed for microservices architecture and high-concurrency environments using native OpenSwoole.
 

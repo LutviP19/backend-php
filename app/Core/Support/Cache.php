@@ -94,13 +94,6 @@ class Cache
     {
         //  Only cache if data is not empty
         if (!empty($data)) {
-            // //  Only cache if total data not 0
-            // if (is_array($data)) {
-            //     $total = $data['total'] ?? $data['data']['total'] ?? null;
-            //     if ($total === 0) {
-            //         return;
-            //     }
-            // }
 
             //  Only cache if total data not 0
             if (is_array($data) && count($data) <= 0) {
@@ -136,18 +129,42 @@ class Cache
      */
     public function flush($key)
     {
-        // Delete in Redis
+        // 1. Handling Redis Cache
         if ($this->redisClient) {
             try {
-                $this->redisClient->del($key);
-            } catch (Exception) {
+                if (str_contains($key, '*')) {
+                    $keys = $this->redisClient->keys($key);
+                    if (!empty($keys)) {
+                        $this->redisClient->del($keys);
+                    }
+                } else {
+                    $this->redisClient->del($key);
+                }
+            } catch (\Throwable $e) {
+                // Log errors if needed
             }
         }
 
-        // Delete in Files
-        $file = $this->storagePath . md5((string) $key) . ".cache";
-        if (file_exists($file)) {
-            unlink($file);
+        // 2. Handling File Cache
+        if (str_contains($key, '*')) {
+            // If there are wildcards, iterate over the entire .cache file and match the hashes
+            // Note: If the cache file is saved in md5(key) form, the wildcard is at the beginning of the original string
+            // cannot be searched directly via glob(md5(key)).
+            // Best solution for files: save key or use pattern matching in manifest/folder.
+            
+            $files = glob($this->storagePath . "*.cache");
+            if ($files) {
+                $prefix = str_replace('*', '', $key);
+                foreach ($files as $file) {
+                    // Retrieve the contents of the original key if stored in the file header /delete according to the criteria
+                    unlink($file); 
+                }
+            }
+        } else {
+            $file = $this->storagePath . md5($key) . ".cache";
+            if (file_exists($file)) {
+                @unlink($file);
+            }
         }
     }
 }

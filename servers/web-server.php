@@ -11,6 +11,7 @@ error_reporting(E_ALL);
 ini_set("display_errors", 1);
 
 
+use OpenSwoole\Runtime;
 use OpenSwoole\Http\Request as OpenSwooleRequest;
 use OpenSwoole\Http\Response as OpenSwooleResponse;
 use OpenSwoole\Http\Server;
@@ -19,9 +20,14 @@ use App\Core\Http\Response;
 use App\Core\Http\Router;
 use App\Core\Support\App;
 use App\Core\Database\DatabasePoolManager;
+use App\Core\Support\CacheSwoole;
 
 // 1. APPLICATION BOOTSTRAP (Only executed once when the server is turned on)
-require_once __DIR__ . '/../app/Core/swoole_init.php';
+require __DIR__ . '/../app/Core/swoole_init.php';
+
+// Hooks all I/O including PDO MySQL/PgSQL
+// Automatically hooks all I/O (File, PDO/TCP, cURL, Redis, etc.)
+Runtime::enableCoroutine(true);
 
 $server = new Server("127.0.0.1", 8009);
 
@@ -46,6 +52,12 @@ $server->on("Start", function (Server $server) {
 
 // PENTING: Inisialisasi Pool DI DALAM WorkerStart (Per Worker Process)
 $server->on('WorkerStart', function ($server, int $workerId) {
+    // VERY SAFE FOR AUTO-REFRESH:
+    // The file below will be reloaded every time the worker is reloaded 
+    if(config('app.env') === 'local') {
+        require_once __DIR__ . '/../app/Core/swoole_init.php';
+    }
+    
     try {
         // // Setiap worker akan membuat ClientPool-nya sendiri
         // DatabasePoolManager::init(config('default_db'));
@@ -55,6 +67,9 @@ $server->on('WorkerStart', function ($server, int $workerId) {
         DatabasePoolManager::setDefaultConnection($defaultDb);
         // 2. Inisialisasi Pool khusus untuk Worker ini
         DatabasePoolManager::init($defaultDb);
+
+        // Inisialisasi pool CacheSwoole
+        CacheSwoole::initPool();
 
         echo "[" . date('Y-m-d H:i:s') . "] [OK] Connection Pool initialized for Worker #{$workerId}\n";
     } catch (\Throwable $e) {
@@ -156,6 +171,19 @@ $server->on('Request', function (OpenSwooleRequest $request, OpenSwooleResponse 
     $_SERVER['REQUEST_METHOD'] = $request->server['request_method'] ?? 'GET';
     $_SERVER['HTTP_USER_AGENT'] = $userAgent;
 
+     // Ambil Session ID dari Cookie / Header ---
+    $sessionId = $_COOKIE[session_name()] ?? $_COOKIE['sessionKey'] ?? $headers['sessionKey'] ?? null;
+    if ($sessionId) {
+        $prefixKey = strlen($sessionId) > 100 ? decryptData($sessionId) : $sessionId;
+
+        // Ambil data array session dari CacheSwoole
+        $cachedSession = (new \App\Core\Support\CacheSwoole())->get($prefixKey);
+
+        if (is_array($cachedSession)) {
+            $_SESSION = $cachedSession;
+        }
+    }
+
     // --- FASE EXECUTION: Capture Router Output---
     try {
         ob_start();
@@ -218,13 +246,17 @@ $server->on('Request', function (OpenSwooleRequest $request, OpenSwooleResponse 
                         ? (int)$rawStatus
                         : 200;
 
-                    $response->status($statusCode);
+                    if ($response->isWritable()) {
+                        $response->status($statusCode);
+                    }
                     $rawContent = json_encode($convertArr, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
                 }
 
                 // Wajib paksa Content-Type ke application/json
-                $response->header('Content-Type', 'application/json; charset=UTF-8');
-                $response->end($rawContent);
+                if ($response->isWritable()) {
+                    $response->header('Content-Type', 'application/json; charset=UTF-8');
+                    $response->end($rawContent);
+                }
                 return;
             }
         }
@@ -349,6 +381,12 @@ $server->on('Request', function (OpenSwooleRequest $request, OpenSwooleResponse 
                 $response->end($errorMessage);
             }
         }
+    } finally {
+
+        // Menggunakan OpenSwoole defer agar $_SESSION pasti dibersihkan setelah Response dikirim
+        defer(function () {
+            $_SESSION = [];
+        });
     }
 });
 

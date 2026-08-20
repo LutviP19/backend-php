@@ -180,6 +180,8 @@ function endResponse($response, $status = 200, $headers = [])
     $expired_seconds = time() + (60 * 60 * 24 * 1);
     $domain = env('APP_ENV') === 'local' ? 'localhost' : 'happyfew.org';
     $path = '/';
+    $isSecure = env('APP_ENV') !== 'local'; // Flexible secure flag based on environment
+
     $csrfHeader[] = ['Set-Cookie' => "XSRF-TOKEN={$csrfToken}; Max-Age={$expired_seconds}; Path={$path}; Domain={$domain}; HttpOnly; SameSite=Lax; Secure;"];
     $headers = array_merge($csrfHeader, $headers);
 
@@ -197,71 +199,73 @@ function endResponse($response, $status = 200, $headers = [])
         // die(response()->json($response, $status));
         response()->json($response, $status);
     } else {
-        // Direct to Swoole Response
+        // --- OPENSWOOLE ---
         if (isset($GLOBALS['swoole_response']) && $GLOBALS['swoole_response'] instanceof \OpenSwoole\Http\Response) {
-            $GLOBALS['swoole_response']->status($status);
-        }
-    }
+            $swooleResp = $GLOBALS['swoole_response'];
 
-    // // Get output response
-    // \App\Core\Support\Log::debug($response, 'Helper.endResponse.$response');
+            if ($swooleResp->isWritable()) {
+                // Set CSRF Cookie Using Native Swoole Method
+                // Signature: cookie(name, value, expires, path, domain, secure, httponly, samesite)
+                $swooleResp->cookie(
+                    'XSRF-TOKEN',
+                    $csrfToken,
+                    $expired_seconds, // Swoole automatically converts these timestamps to Max-Age /Expires
+                    $path,
+                    $domain,
+                    $isSecure,
+                    true,  // HttpOnly
+                    'Lax'  // SameSite
+                );
 
-    // $cookieSessID = isset($_COOKIE[session_name()]) ? $_COOKIE[session_name()] : false;
-    $cookieSessID = $_COOKIE[session_name()] ?? false;
-    // get sessionId, then merged it to response
-    $sessionId = $cookieSessID ?: session_id();
-
-
-    //
-    if (isset($_SESSION['uid'])) {
-        delCache($_SESSION['uid'].'*');
-        $sessionId = $_SESSION['uid'] . '-' . session_id();
-    } else {
-        if ($cookieSessID) {
-
-            $getSessionId = explode("-", (string) $_COOKIE[session_name()]);
-            if (count($getSessionId) == 2) {
-
-                if (isset($_SESSION['uid']) && $getSessionId[0] !== $_SESSION['uid']) {
-                    delCache($_SESSION['uid'].'*');
-                    $sessionId = $_SESSION['uid'] . '-' . session_id();
-                } else {
-                    $sessionId = $_COOKIE[session_name()];
+                // Iterate & Set Custom Headers
+                $swooleResp->header('X-Robots-Tag', 'noindex, nofollow');
+                if (!empty($headers)) {
+                    foreach ($headers as $header) {
+                        if (is_array($header)) {
+                            foreach ($header as $key => $value) {
+                                // Method header() OpenSwoole Received (string $key, string $value)
+                                $swooleResp->header((string)$key, (string)$value);
+                            }
+                        }
+                    }
                 }
+
+                // Set HTTP Status Code
+                $swooleResp->status($status);
             }
         }
     }
 
-    cacheContent('set', $sessionId, $_SESSION);
-
-    $response = array_merge($response, ['sessionId' => $sessionId]);
+    $response = array_merge($response, config('app.debug') ? ['sessionName' => session_name()] : []);
 
     session_write_close();
-
-    $responseX = [];
-    $responseArr = response()->json($response, $status);
-    // \App\Core\Support\Log::debug($responseArr, 'Helper.endResponse.$responseArr');
-
-    // \App\Core\Support\Log::debug(count($headers), 'Helper.endResponse.count($headers)');
-    if (count($headers)) {
-        $responseArr['headers'] = $headers;
-    }
-
-    // \App\Core\Support\Log::debug($responseArr, 'Helper.endResponse.$responseArr');
-    while (true) {
-        if (isset($responseArr['code']) && ! in_array($responseArr['code'], [200, 201])) {
-            $responseX[] = array_merge(response()->json($response, $status), $headers);
-        }
-        break;
-    }
-
-    if (count($responseX)) {
-        print json_encode($responseX[0]).'@|@';
-    } else {
-        print json_encode($responseArr);
-    }
-
+    exit_response($response, $status);
     return;
+}
+
+function sessionKeyFormat($userId, $sessionId = '*'): string
+{
+    return "session:" . ($userId ?? 'guest-'.\clientIP()) .":{$sessionId}";
+}
+
+if (!function_exists('array_except')) {
+    /**
+     * Hide certain keys/properties from Array or stdClass.
+     *
+     * @param array|object $data Input is an Array or stdClass
+     * @param array|string $keys Key/Property to hide
+     * @return array|object Returns the same data type as the input
+     */
+    function array_except(array|object $data, array|string $keys): array|object
+    {
+        $isObject = is_object($data);
+        $array = $isObject ? (array) $data : $data;
+        $keys = (array) $keys;
+
+        $filtered = array_diff_key($array, array_flip($keys));
+
+        return $isObject ? (object) $filtered : $filtered;
+    }
 }
 
 /**
@@ -296,9 +300,9 @@ function is_json_request($request = null): bool
     }
 
     // 2. Check Content-Type (Body Payload: e.g., application/json, application/problem+json)
-    $contentType = $_SERVER['CONTENT_TYPE'] 
-        ?? $_SERVER['HTTP_CONTENT_TYPE'] 
-        ?? $_SERVER['REDIRECT_HTTP_CONTENT_TYPE'] 
+    $contentType = $_SERVER['CONTENT_TYPE']
+        ?? $_SERVER['HTTP_CONTENT_TYPE']
+        ?? $_SERVER['REDIRECT_HTTP_CONTENT_TYPE']
         ?? '';
 
     // 3. Check Accept Header (Respons Expectation: e.g., application/json, */*)
@@ -357,10 +361,16 @@ function json_response($data, $status = 200, $message = "", $errors = [])
     customExit();
 }
 
+// Alias exit_response for open swoole /FPM
+function exit_response(mixed $data, int $statusCode = 200, array $extraHeaders = []): void
+{
+    htmx_response($data, $statusCode, $extraHeaders);
+}
+
 /**
  * Send custom String | JSON response to HTMX /API client
  * with dynamic HTTP Status Code (default: 422 Unprocessable Entity).
- * 
+ *
  * Compatible for OpenSwoole & PHP-FPM.
  *
  * @param mixed $data Data payload / errors array
@@ -371,26 +381,28 @@ function json_response($data, $status = 200, $message = "", $errors = [])
 function htmx_response(mixed $data, int $statusCode = 422, array $extraHeaders = []): void
 {
     $payload = is_string($data) ? $data : json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-    
+
     if (\isSwoole()) {
         /** @var \OpenSwoole\Http\Response|null $swooleResponse */
         $swooleResponse = $GLOBALS['swoole_response'] ?? (function_exists('app') && app()->has('swoole_response') ? app('swoole_response') : null);
 
         if ($swooleResponse && method_exists($swooleResponse, 'end')) {
-            $swooleResponse->status($statusCode);
-            $swooleResponse->header('Content-Type', 'application/json; charset=UTF-8');
+            if ($swooleResponse->isWritable()) {
+                $swooleResponse->status($statusCode);
+                $swooleResponse->header('Content-Type', 'application/json; charset=UTF-8');
 
-            foreach ($extraHeaders as $key => $value) {
-                $swooleResponse->header((string)$key, (string)$value);
+                foreach ($extraHeaders as $key => $value) {
+                    $swooleResponse->header((string)$key, (string)$value);
+                }
+
+                $swooleResponse->end($payload);
             }
-            
-            $swooleResponse->end($payload);
 
             // Terminate the Router flow with a Swoole specific Exception
             if (class_exists('\App\Core\Exceptions\SwooleExitException')) {
                 throw new \App\Core\Exceptions\SwooleExitException($statusCode);
             }
-            
+
             return;
         }
     }
@@ -481,7 +493,7 @@ if (!function_exists("asset")) {
 function assets(string $uri = ''): string
 {
     $uri = sanitizeUri($uri);
-    
+
     if (\isSwoole()) { // OpenSwoole Server
         // Use null coalescing (??) to be safe from undefined index
         $host = $_SERVER['HTTP_HOST'] ?? request()->header('host') ?? 'localhost';
@@ -519,10 +531,10 @@ function isHtmx()
 function dd($data = [], $json = false)
 {
     if ($json) {
-        customExit(json_encode($data, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
+        exit_response($data);
     }
 
-    customExit("<pre>". var_dump($data) . "</pre>");
+    exit_response("<pre>". var_dump($data) . "</pre>");
 }
 
 /**
@@ -539,11 +551,22 @@ function url($uri = '')
 
 function cacheContent($method, $id, $content = null, $expiry = 3600)
 {
-    if ($method === 'set') {
-        (new \App\Core\Support\Cache())->set($id, $content, $expiry);
-    }
-    if ($method === 'get') {
-        return (new \App\Core\Support\Cache())->get($id);
+    if (isSwoole()) {
+        if ($method === 'set') {
+            (new \App\Core\Support\CacheSwoole())->set($id, $content, $expiry);
+        }
+
+        if ($method === 'get') {
+            return (new \App\Core\Support\CacheSwoole())->get($id);
+        }
+    } else {
+        if ($method === 'set') {
+            (new \App\Core\Support\Cache())->set($id, $content, $expiry);
+        }
+
+        if ($method === 'get') {
+            return (new \App\Core\Support\Cache())->get($id);
+        }
     }
 
     return $content;
@@ -551,7 +574,12 @@ function cacheContent($method, $id, $content = null, $expiry = 3600)
 
 function delCache($id)
 {
-    (new \App\Core\Support\Cache())->flush($id);
+    if (isSwoole()) {
+        (new \App\Core\Support\CacheSwoole())->flush($id);
+    } else {
+        (new \App\Core\Support\Cache())->flush($id);
+    }
+
 }
 
 /**
@@ -1173,47 +1201,55 @@ function readJson($key = null, $payload = null, $default = null)
 }
 
 /**
- * Mendapatkan versi singkat dari User Agent (Browser + OS + Version).
- * @param bool $is_hash Jika true, mengembalikan MD5 hash (32 char).
+ * Get short version of User Agent (Browser + OS + Version).
+ * @param bool $is_hash If true, returns the MD5 hash (32 char).
  * @return string
  */
 function get_short_ua(bool $is_hash = false): string
 {
     $ua = $_SERVER["HTTP_USER_AGENT"] ?? "Unknown";
+    
+    // Make sure $ua is actually a pure string, not an array of other global modifications
+    $uaString = is_array($ua) ? implode(" ", $ua) : (string) $ua;
 
-    // 1. Identifikasi Platform/OS & Versi
+    // 1. Identify Platform/OS and Version
     $os = "Unknown";
-    if (preg_match("/Windows NT ([\d\.]+)/i", (string) $ua, $m)) {
+    if (preg_match("/Windows NT ([\d\.]+)/i", $uaString, $m)) {
         $os = "Win" . $m[1];
-    } elseif (preg_match("/Android ([\d\.]+)/i", (string) $ua, $m)) {
+    } elseif (preg_match("/Android ([\d\.]+)/i", $uaString, $m)) {
         $os = "Android" . (int) $m[1];
-    } elseif (preg_match("/iPhone OS ([\d_]+)/i", (string) $ua, $m)) {
+    } elseif (preg_match("/iPhone OS ([\d_]+)/i", $uaString, $m)) {
         $os = "iOS" . (int) str_replace("_", "", $m[1]);
-    } elseif (preg_match("/Mac OS X ([\d_]+)/i", (string) $ua, $m)) {
+    } elseif (preg_match("/Mac OS X ([\d_]+)/i", $uaString, $m)) {
         $os = "MacOS" . (int) str_replace("_", "", $m[1]);
-    } elseif (stripos((string) $ua, "linux") !== false) {
+    } elseif (stripos($uaString, "linux") !== false) {
         $os = "Linux";
     }
 
-    // 2. Identifikasi Browser & Versi Mayor
+    // 2. Identify Major Browsers & Versions
     $browser = "Unknown";
-    if (preg_match("/(Edg|Edge)\/([\d\.]+)/i", (string) $ua, $m)) {
+    
+    // Reset the contents of the $m variable before the browser regex for data security
+    $m = [];
+    
+    if (preg_match("/(Edg|Edge)\/([\d\.]+)/i", $uaString, $m)) {
         $browser = "Edge" . (int) $m[2];
-    } elseif (preg_match("/OPR\/([\d\.]+)/i", (string) $ua, $m)) {
+    } elseif (preg_match("/OPR\/([\d\.]+)/i", $uaString, $m)) {
         $browser = "Opera" . (int) $m[1];
-    } elseif (preg_match("/Chrome\/([\d\.]+)/i", (string) $ua, $m)) {
+    } elseif (preg_match("/Chrome\/([\d\.]+)/i", $uaString, $m)) {
         $browser = "Chrome" . (int) $m[1];
-    } elseif (preg_match("/Firefox\/([\d\.]+)/i", (string) $ua, $m)) {
+    } elseif (preg_match("/Firefox\/([\d\.]+)/i", $uaString, $m)) {
         $browser = "Firefox" . (int) $m[1];
-    } elseif (preg_match("/Version\/([\d\.]+).*Safari/i", (string) $ua, $m)) {
+    } elseif (preg_match("/Version\/([\d\.]+).*Safari/i", $uaString, $m)) {
         $browser = "Safari" . (int) $m[1];
     }
 
     $shortUa = $os . "_" . $browser;
 
-    // Jika gagal deteksi, gunakan string asli yang dibersihkan sedikit
+    // If detection fails, use the original string cleaned up slightly
     if ($shortUa === "Unknown_Unknown") {
-        $shortUa = substr((string) preg_replace("/[^a-zA-Z0-0]/", "", (string) $ua), 0, 20);
+        $sanitized = preg_replace("/[^a-zA-Z0-9]/", "", $uaString);
+        $shortUa = substr((string) $sanitized, 0, 20);
     }
 
     return $is_hash ? md5($shortUa) : $shortUa;

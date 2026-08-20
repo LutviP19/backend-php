@@ -11,7 +11,7 @@ use ReallySimpleJWT\Validate as ValidateJwt;
 use ReallySimpleJWT\Decode as DecodeJwt;
 use ReallySimpleJWT\Encoders\EncodeHS256 as EncodeHS256Jwt;
 use ReallySimpleJWT\Helper\Validator as HelperValidator;
-use Exception;
+use Throwable;
 
 /**
  * JwtToken class
@@ -48,7 +48,7 @@ class JwtToken
     protected $audience;
 
 
-    public function __construct($secret = null, $expirationTime = 3600, $jwtId = null, $issuer = null, $audience = null)
+    public function __construct($secret = null, $expirationTime = 7200, $jwtId = null, $issuer = null, $audience = null)
     {
         $this->secret = (string) $secret ?: generateRandomString(16);
         $this->expirationTime = $expirationTime;
@@ -65,7 +65,7 @@ class JwtToken
     public function createToken($userId, $info = null, $subject = null): string
     {
         if (! $userId) {
-            throw new Exception('userId not set!');
+            return '';
         }
 
         $info = $info ?: Config::get('app.name');
@@ -101,7 +101,7 @@ class JwtToken
     public function parseJwt($token, $isArray = true)
     {
         if (! $token) {
-            throw new Exception('token not set!');
+            return null;
         }
 
         try {
@@ -118,8 +118,8 @@ class JwtToken
             }
 
             return $jwt;
-        } catch (Exception $ex) {
-            throw new Exception('Failed to parsing JWT token!, '.$ex->getMessage());
+        } catch (Throwable $ex) {
+            return null;
         }
     }
 
@@ -131,7 +131,7 @@ class JwtToken
     public function validateToken($token): bool
     {
         if (! $token) {
-            throw new Exception('token not set!');
+            return  false;
         }
 
         try {
@@ -155,8 +155,8 @@ class JwtToken
             }
 
             return true;
-        } catch (Exception $ex) {
-            throw new Exception('Failed to validated JWT token!, '.$ex->getMessage());
+        } catch (Throwable $ex) {
+            return false;
         }
     }
 }

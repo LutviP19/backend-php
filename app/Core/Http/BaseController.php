@@ -161,9 +161,9 @@ class BaseController
     public function initJwtToken()
     {
         $secret = Session::get('secret') ?? generateRandomString(32, true);
-        $expirationTime = 3600;
+        $expirationTime = config('session.exptime');
         $jwtId = Session::get('jwtId') ?? generateUlid();
-        $issuer = clientIP();
+        $issuer = \get_device_fingerprint(false);
         $audience = Config::get('app.url');
 
         // Init JwtToken

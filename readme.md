@@ -52,7 +52,7 @@ The framework boots up multiple isolated server instances simultaneously. Ensure
 | Service Node | Default Port | Protocol | Purpose / Target Destination |
 | :--- | :--- | :--- | :--- |
 | **Web Application** | `8009` | HTTP | Local web asset rendering and user frontend router |
-| **API Router** | `8080` | HTTP | Asynchronous API router and long-lived HTTP traffic handler |
+| **API Router** | `8080` - `8089` | HTTP | Asynchronous API router and long-lived HTTP traffic handler |
 | **WebSocket Engine** | `9501` | WebSocket | Socket connections and long-lived HTTP traffic handler |
 | **Socket Engine** | `9502` | TCP / HTTP | Live streaming bidirectional socket connections and relays |
 

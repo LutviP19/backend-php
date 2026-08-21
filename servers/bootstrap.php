@@ -26,6 +26,7 @@ $dotenv->load();
 
 // Register the configuration to the application.
 use App\Core\Support\App;
+
 App::register('config', require BASEPATH . '/config/app.php');
 App::register("routing_external_api", require BASEPATH . "/routes/external-api.php");
 
@@ -64,11 +65,6 @@ ini_set('session.use_strict_mode', 1);
 // Write useful codes
 /* ----------------------------- Default settings END -------------------------------- */
 
-$serverip = "127.0.0.1";
-// $serverport = 8080;
-$serverport = 8008;
-$sessionName = '';
-$sessionId = '';
 
 function initializeServerConstant($request, $response = null): void
 {
@@ -85,7 +81,7 @@ function initializeServerConstant($request, $response = null): void
     // HANDLER CORS & OPTIONS PREFLIGHT
     // -------------------------------------------------------------
     $method = $request->server['request_method'] ?? 'GET';
-    
+
     // Set CORS Headers
     // Check if $response is available before calling the header() method
     if ($response !== null) {
@@ -94,7 +90,7 @@ function initializeServerConstant($request, $response = null): void
         $response->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, HX-Request, HX-Target, HX-Current-URL, HX-Trigger');
 
 
-        // Jika browser mengirimkan Preflight OPTIONS, langsung kembalikan 204 No Content
+        // If the browser sends Preflight OPTIONS, immediately return 204 No Content
         if ($method === 'OPTIONS') {
             $response->status(204);
             $response->end('');
@@ -103,8 +99,8 @@ function initializeServerConstant($request, $response = null): void
     }
 
     $_SERVER = [];
-    $_SESSION = [];
-    // Clean up $_SERVER dari request sebelumnya
+    $_SESSION = []; // MANDATORY: Reset previous session request!
+    // Clean up $_SERVER from previous requests
     $_SERVER = array_filter($_SERVER, function ($key) {
         return !str_starts_with($key, 'HTTP_');
     }, ARRAY_FILTER_USE_KEY);
@@ -161,7 +157,7 @@ function initializeServerConstant($request, $response = null): void
     }
 }
 
-function getRequestData(\OpenSwoole\Core\Psr\ServerRequest $request, ): array
+function getRequestData(\OpenSwoole\Core\Psr\ServerRequest $request): array
 {
     // Get uri atrributes
     $attributes = $request->getAttributes();
@@ -192,4 +188,34 @@ function getRequestData(\OpenSwoole\Core\Psr\ServerRequest $request, ): array
         'requestQuery' => $requestQuery,
         'jsonData' => $jsonData,
     ];
+}
+
+// ===========================================================================
+// DUMMY DATABASE CHECKER (Customize your PDO /Pool DB)
+// ===========================================================================
+function checkDatabaseHealth(): array
+{
+    $startTime = microtime(true);
+    try {
+        // Example of a PDO /Connection Pool connection
+        // $pdo = new PDO("mysql:host=127.0.0.1;dbname=test", "user", "pass", [PDO::ATTR_TIMEOUT => 2]);
+        // $pdo->query("SELECT 1");
+
+        // Simulasi latency DB
+        // 5000 mikrodetik = 0.005 detik (5ms)
+        \OpenSwoole\Coroutine::usleep(5000);
+        $latencyMs = round((microtime(true) - $startTime) * 1000, 2);
+
+        return [
+            'status'  => 'UP',
+            'latency' => "{$latencyMs}ms",
+            'engine'  => 'MySQL 8.0'
+        ];
+    } catch (\Throwable $ex) {
+        return [
+            'status'  => 'DOWN',
+            'error'   => $ex->getMessage(),
+            'engine'  => 'MySQL 8.0'
+        ];
+    }
 }

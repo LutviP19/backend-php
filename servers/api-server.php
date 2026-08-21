@@ -10,6 +10,12 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/bootstrap.php';
 
+$serverip = "127.0.0.1";
+// $serverport = 8080;
+$serverport = 8008;
+$sessionName = '';
+$sessionId = '';
+
 // Set a custom session name
 ini_set('session.use_strict_mode', 0);
 session_name('APIBACKENDPHPSESSID');
@@ -105,7 +111,7 @@ $server->set([
 // Tambahkan sebuah Process khusus yang berjalan di background
 $pingProcess = new \OpenSwoole\Process(function (\OpenSwoole\Process $process) {
     // echo "Background Ping Process Started...\n";
-    
+
     // Interval longgar: 30 detik (30.000 ms) - Timer berjalan independen
     \OpenSwoole\Timer::tick(30000, function () {
         \OpenSwoole\Coroutine::create(function () {
@@ -218,9 +224,9 @@ class MiddlewareSetup implements MiddlewareInterface
                         'message' => 'Invalid api token!',
                     ];
 
-            if(config('app.debug')) {
+            if (config('app.debug')) {
                 echo "[" . date('Y-m-d H:i:s') . "] [ERROR] MiddlewareSetup failed. Invalid API Token!\n";
-            } 
+            }
 
             return new Response(\json_encode($json), $statusCode, '', ['Content-Type' => 'application/json']);
         }
@@ -251,7 +257,7 @@ class MiddlewareSetup implements MiddlewareInterface
         }
 
         $response = $handler->handle($request);
-        
+
         if (config('app.debug')) {
             echo "[" . date('Y-m-d H:i:s') . "] [OK] MiddlewareSetup passed\n";
         }
@@ -315,7 +321,7 @@ class RouteMiddleware implements MiddlewareInterface
             $sessionCookie = $cookies[session_name()] ?? $cookies['sessionKeyApi'] ?? null;
             $rawToken = !empty($sessionHeader) ? $sessionHeader : $sessionCookie;
 
-            if (!empty($rawToken)) {                
+            if (!empty($rawToken)) {
                 // Dekripsi token untuk mendapatkan prefix key cache
                 $prefixKey = strlen($rawToken) > 100 ? decryptData($rawToken) : $rawToken;
 
@@ -323,7 +329,7 @@ class RouteMiddleware implements MiddlewareInterface
                     $cachedSession = (new \App\Core\Support\CacheSwoole())->get($prefixKey);
 
                     if (is_array($cachedSession) && !empty($cachedSession)) {
-                        
+
                         $_SESSION = $cachedSession;
                         if (class_exists('\OpenSwoole\Coroutine') && \OpenSwoole\Coroutine::getCid() > 0) {
                             \OpenSwoole\Coroutine::getContext()['session'] = $cachedSession;
@@ -383,16 +389,16 @@ class RouteMiddleware implements MiddlewareInterface
             if (ob_get_level() > 0) {
                 $bufferedOutput = ob_get_clean();
             }
-            
+
             $status = 200;
             if (method_exists($e, 'getStatus')) {
                 $status = $e->getStatus();
             } elseif (property_exists($e, 'status')) {
                 $status = $e->status;
             }
-            
-            $contentType = str_contains($bufferedOutput, '<pre>') 
-                ? 'text/html; charset=utf-8' 
+
+            $contentType = str_contains($bufferedOutput, '<pre>')
+                ? 'text/html; charset=utf-8'
                 : 'application/json; charset=utf-8';
 
             return (new Response($bufferedOutput))->withHeaders(["Content-Type" => $contentType])->withStatus(200);
@@ -400,16 +406,16 @@ class RouteMiddleware implements MiddlewareInterface
             if (ob_get_level() > 0) {
                 ob_end_clean();
             }
-            
+
             $statusCode = 500;
-            $errorMessage = config('app.debug') 
+            $errorMessage = config('app.debug')
                 ? $e->getMessage() . " in " . str_replace(BASE_PATH, '', $e->getFile()) . ":" . $e->getLine()
                 : 'Internal Server Error';
             $json = [
                         'status' => false,
                         'statusCode' => $statusCode,
                         'message' => $errorMessage,
-                    ];            
+                    ];
 
             return (new Response(\json_encode($json)))->withHeaders(["Content-Type" => "application/json"])->withStatus($statusCode);
         } finally {
@@ -437,8 +443,8 @@ $server->setHandler($stack);
 // WORKER PROCESS: Dijalankan 4 kali (sekali untuk setiap worker)
 $server->on('WorkerStart', function (Server $server, int $workerId) {
     // SANGAT AMAN UNTUK AUTO-REFRESH:
-    // File di bawah ini akan dimuat ulang setiap kali worker di-reload 
-    if(config('app.env') === 'local') {
+    // File di bawah ini akan dimuat ulang setiap kali worker di-reload
+    if (config('app.env') === 'local') {
         require_once __DIR__ . '/bootstrap.php';
         require_once __DIR__ . '/../routes/api-server.php';
     }
@@ -450,7 +456,7 @@ $server->on('WorkerStart', function (Server $server, int $workerId) {
         try {
             // DatabasePoolManager::init();
 
-            $defaultDb = config('default_db') ?? 'pgsql';        
+            $defaultDb = config('default_db') ?? 'pgsql';
             // 1. Set default connection secara eksplisit (opsional tapi bagus untuk kepastian)
             DatabasePoolManager::setDefaultConnection($defaultDb);
             // 2. Inisialisasi Pool khusus untuk Worker ini

@@ -54,7 +54,7 @@
                 <div class="flex justify-between items-start mb-4">
                     <div>
                         <p class="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Tren Pendapatan (Mingguan)</p>
-                        <h2 class="text-4xl font-black text-slate-800 tracking-tighter">Rp <span id="lastIncome">84.250.000</span></h2>
+                        <h2 class="text-4xl font-black text-slate-800 tracking-tighter">Rp <span id="lastIncome">50.073.055</span></h2>
                     </div>
                     <div class="p-3 bg-indigo-50 rounded-2xl text-indigo-600">
                         <i class="fas fa-chart-line text-xl"></i>
@@ -144,7 +144,7 @@
             <div class="flex justify-between items-center mb-4">
                 <div>
                     <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Utilitas Alat Berat</p>
-                    <h4 class="text-2xl font-bold text-slate-800">85.4%</h4>
+                    <h4 id="utility-cutout" class="text-2xl font-bold text-slate-800">85.4%</h4>
                 </div>
                 <span class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
                     <i class="fas fa-tractor"></i>
@@ -158,9 +158,10 @@
                     </div>
                 </div>
                 <canvas id="utilityChart"></canvas>
-                <div class="absolute inset-0 flex items-center justify-center flex-col pt-2">
-                    <span class="text-xs font-bold text-emerald-600">8 Unit</span>
-                    <span class="text-[9px] text-slate-400 uppercase">Aktif</span>
+                <!-- Dibuat Dinamis dengan ID -->
+                <div class="absolute inset-0 flex items-center justify-center flex-col pt-2 pointer-events-none">
+                    <span id="utility-count" class="text-xs font-bold text-emerald-600">8 Unit</span>
+                    <span id="utility-label" class="text-[9px] text-slate-400 uppercase">Aktif</span>
                 </div>
             </div>
             <div class="mt-4 flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-tighter">
@@ -179,7 +180,7 @@
                     <p class="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Tren Stok Kritis (7 Hari Terakhir)</p>
                     <h2 class="text-2xl font-black text-slate-800 tracking-tighter">Pengawasan Inventaris</h2>
                 </div>
-                <span class="px-3 py-1 bg-rose-50 text-rose-600 rounded-lg text-[10px] font-bold uppercase">
+                <span id="stock-warning" class="px-3 py-1 bg-rose-50 text-rose-600 rounded-lg text-[10px] font-bold uppercase">
                     3 Produk Warning
                 </span>
             </div>
@@ -234,7 +235,7 @@
                                         });
 
                                         // Picu request chart secara manual
-                                        htmx.ajax('GET', '<?= url('/data/data-dashboard/activities') ?>', {
+                                        htmx.ajax('GET', '<?= url('/data/data-dashboard/stats') ?>', {
                                             target: '#chart-updater', // stats biasanya hx-swap='none'
                                             values: { search: '', category: '' }
                                         });
@@ -359,7 +360,7 @@
                         <?php
                         // Render Data
                         foreach ($paged_data as $item) {
-                        ?>
+                            ?>
                         <tr class="hover:bg-slate-50 transition-colors group">
                             <td class="px-8 py-5">
                                 <div class="flex items-center gap-4">
@@ -387,7 +388,7 @@
                         </tr>
                         <?php
                         }
-                        ?>
+                                        ?>
                     </tbody>
                 </table>
 
@@ -422,7 +423,7 @@
     </div>
 </div>
 
-<div hx-get="<?= url('/data/data-dashboard/activities') ?>" 
+<div hx-get="<?= url('/data/data-dashboard/stats') ?>" 
      hx-trigger="every 60s, update-charts" 
      hx-swap="none" 
      class="hidden" 
@@ -431,9 +432,7 @@
      id="chart-updater">
 </div>
 
-<!-- <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> -->
 <script src="<?= assets('/js/chart.js') ?>"></script>
-
 <script>
 // Objek pusat untuk manajemen chart
 window.ChartManager = window.ChartManager || {
@@ -452,7 +451,7 @@ window.ChartManager = window.ChartManager || {
         this.create('incomeChart', 'bar', {
             labels: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
             datasets: [{
-                data: [12, 19, 15, 25, 22, 30, 84], // Data dummy awal
+                data: [15000000, 22000000, 18000000, 28000000, 24000000, 32000000, 50073055], // Data dummy awal
                 backgroundColor: (ctx) => this.getGradient(ctx.chart.ctx, '99, 102, 241'), // Indigo
                 borderRadius: 10
             }]
@@ -498,6 +497,35 @@ window.ChartManager = window.ChartManager || {
                 ...extraOptions
             }
         });
+    },
+
+    // Method aman untuk meng-update data dari HTMX (tanpa re-create)
+    updateData(id, newData) {
+        if (!newData) return;
+
+        const chart = this.instances[id];
+
+        // Case 1: Chart sudah ada & Canvas masih menempel di DOM
+        if (chart && document.body.contains(chart.canvas)) {
+            chart.data.datasets[0].data = [...newData];
+            chart.update();
+            return;
+        }
+
+        // Case 2: Canvas hilang/di-swap oleh HTMX -> Re-create spesifik chart ini dengan newData
+        const canvas = document.getElementById(id);
+        if (canvas) {
+            // Hancurkan instance lama jika menggantung
+            if (this.instances[id]) this.instances[id].destroy();
+
+            // Panggil kembali fungsi create sesuai tipe chart-nya
+            // (Contoh re-init dinamis sederhana)
+            this.init(); 
+            if (this.instances[id]) {
+                this.instances[id].data.datasets[0].data = [...newData];
+                this.instances[id].update('none');
+            }
+        }
     }
 };
 
@@ -517,32 +545,74 @@ document.body.addEventListener('htmx:afterSwap', (evt) => {
 
 document.body.addEventListener('htmx:afterRequest', (evt) => {
     if (evt.detail.target.id === 'chart-updater') {
-        const responseText = evt.detail.xhr.responseText.income;
+        const rawResponse = evt.detail.xhr.responseText;
+        if (!rawResponse) return;
 
-        if (!responseText) return; // Guard clause if header is missing
+        try {
+            const res = JSON.parse(rawResponse);
+            const payload = res.data;
 
-        const newData = JSON.parse(evt.detail.xhr.responseText);
-        
-        // Update data secara massal
-        const mapping = {
-            'incomeChart': newData.income,
-            'utilityChart': newData.utility,
-            'stockChart': newData.stock_critical
-        };
+            if (!payload) return;
 
-        Object.keys(mapping).forEach(id => {
-            if (window.ChartManager.instances[id] && mapping[id]) {
-                window.ChartManager.instances[id].data.datasets[0].data = mapping[id];
-                window.ChartManager.instances[id].update();
+            // Update data tiap chart
+            if (payload.income && window.ChartManager?.instances?.['incomeChart']) {
+                const chart = window.ChartManager.instances['incomeChart'];
+                chart.data.datasets[0].data = [...payload.income]; // Gunakan spread operator agar reference array diperbarui
+                chart.update('none'); // Update tanpa animasi ulang seluruhnya agar responsif
             }
-        });
+            
+            if (payload.utility && window.ChartManager?.instances?.['utilityChart']) {
+                const chart = window.ChartManager.instances['utilityChart'];
+                
+                // 1. Update data chart-nya
+                chart.data.datasets[0].data = [...payload.utility];
+                
+                // 2. Hitung cutout dinamis dari nilai pertama (misal: 88 -> '88%')
+                const calculatedCutout = `${payload.utility[0]}%`;
+                const cutoutEl = document.getElementById('utility-cutout');
+                if (cutoutEl) cutoutEl.textContent = calculatedCutout;
+                // chart.options.cutout = calculatedCutout;
+                
+                
+                // 3. Render ulang
+                chart.update('none');
+            }
 
-        if(newData.last_income) document.getElementById('lastIncome').textContent = newData.last_income;
+            if (payload.stock_critical && window.ChartManager?.instances?.['stockChart']) {
+                const chart = window.ChartManager.instances['stockChart'];
+                chart.data.datasets[0].data = [...payload.stock_critical];
+                chart.update('none');
+            }
+
+            // stock_warning
+            if (payload.stock_warning) {
+                const stockEl = document.getElementById('stock-warning');
+                if (stockEl) stockEl.textContent = payload.stock_warning;
+            }
+
+            // 2. Update Teks Tengah Utility Chart secara Dinamis
+            if (payload.utility_count) {
+                const countEl = document.getElementById('utility-count');
+                if (countEl) countEl.textContent = payload.utility_count;
+            }
+            if (payload.utility_label) {
+                const labelEl = document.getElementById('utility-label');
+                if (labelEl) labelEl.textContent = payload.utility_label;
+            }
+
+            // Update teks lastIncome
+            if (payload.last_income) {
+                const el = document.getElementById('lastIncome');
+                if (el) el.textContent = payload.last_income;
+            }
+        } catch (e) {
+            console.error('Gagal memproses JSON HTMX:', e);
+        }
     }
 });
 
 // Jalankan saat pertama kali load jika di dashboard
-<?php if(isset($isHome)): ?>
+<?php if (isset($isHome)): ?>
     document.addEventListener('DOMContentLoaded', () => window.ChartManager.init());
 <?php endif; ?>
 </script>

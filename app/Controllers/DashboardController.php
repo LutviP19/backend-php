@@ -573,16 +573,23 @@ class DashboardController extends Controller
 
         // B. Endpoint untuk Data Chart (JSON)
         if ($endpoint === 'stats') {
-            // header('Content-Type: application/json');
 
             $lastIncome = random_int(30000000, 90000000);
+            $active = rand(0, 100);
+            $maintenance = 100 - $active;
+            $utility = [$active, $maintenance];
+            $activeUnits = rand(1, 20); // Dummy jumlah unit dinamis
+            $stock_warning = random_int(1, 6);
 
             // Tanpa Filter
             $data = [
                 'last_income' => number_format($lastIncome, 0, '', '.') ,
                 'income' => [15000000, 22000000, 18000000, 28000000, 24000000, 32000000, $lastIncome], // Data dalam juta
-                'stock_critical' => [3, 5, 2, 8, 4, 2, random_int(1, 6)],
-                'utility' => [88, 12]
+                'stock_critical' => [3, 5, 2, 8, 4, 2, $stock_warning],
+                'stock_warning' => $stock_warning . " Produk Warning",
+                'utility' => $utility,
+                "utility_count" => $activeUnits . " Unit", // Data dinamis teks tengah
+                "utility_label" => "Aktif"
             ];
 
             // Logika: Jika kategori 'inventory', kembalikan angka khusus inventory
@@ -590,8 +597,11 @@ class DashboardController extends Controller
                 $data = [
                             'last_income' => number_format($lastIncome, 0, '', '.') ,
                             'income' => [15000000, 22000000, 18000000, 28000000, 24000000, 32000000, $lastIncome], // Data dalam juta
-                            'stock_critical' => [3, 5, 2, 8, 4, 2, random_int(1, 6)],
-                            'utility' => [88, 12]
+                            'stock_critical' => [3, 5, 2, 8, 4, 2, $stock_warning],
+                            'stock_warning' => $stock_warning . " Produk Warning",
+                            'utility' => $utility,
+                            "utility_count" => $activeUnits . " Unit", // Data dinamis teks tengah
+                            "utility_label" => "Aktif"
                         ];
             }
 
@@ -600,12 +610,14 @@ class DashboardController extends Controller
                 $data = [
                             'last_income' => number_format($lastIncome, 0, '', '.') ,
                             'income' => [15000000, 22000000, 18000000, 28000000, 24000000, 32000000, $lastIncome], // Data dalam juta
-                            'stock_critical' => [3, 5, 2, 8, 4, 2, random_int(1, 6)],
-                            'utility' => [88, 12]
+                            'stock_critical' => [3, 5, 2, 8, 4, 2, $stock_warning],
+                            'stock_warning' => $stock_warning . " Produk Warning",
+                            'utility' => $utility,
+                            "utility_count" => $activeUnits . " Unit", // Data dinamis teks tengah
+                            "utility_label" => "Aktif"
                         ];
             }
 
-            // CORRECT EXAMPLE IF SENDING JSON
             return json_response($data);
         }
     }

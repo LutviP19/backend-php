@@ -10,6 +10,14 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/bootstrap.php';
 
+// Load All Middleware
+$apiMiddlewarePath = BASEPATH . '/servers/middleware/api/*.php';
+foreach (glob($apiMiddlewarePath) as $filePath) {
+    if (is_file($filePath)) {
+        require_once $filePath;
+    }
+}
+
 $serverip = "127.0.0.1";
 // $serverport = 8080;
 $serverport = 8008;
@@ -23,6 +31,7 @@ ini_set('session.use_strict_mode', 1);
 
 // use App\Core\Support\Config;
 // use FastRoute\RouteCollector;
+use Servers\Middleware\Api\{MiddlewareSetup, MiddlewareA, MiddlewareB};
 use OpenSwoole\Core\Psr\Middleware\StackHandler;
 use OpenSwoole\Core\Psr\Response;
 use Psr\Http\Message\ResponseInterface;
@@ -144,151 +153,6 @@ $server->on('Task', function (Swoole\Server $server, $task_id, $reactorId, $data
     echo "#{$server->worker_id}\tonTask: [PID={$server->worker_pid}]: task_id=$task_id, data_len=" . strlen((string) $data) . "." . PHP_EOL;
     $server->finish($data);
 });
-
-class MiddlewareSetup implements MiddlewareInterface
-{
-    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
-    {
-        global $server;
-
-        $serverParams = $request->getServerParams() ?? [];
-        initializeServerConstant(array_merge($serverParams, $request->getHeaders() ?? []));
-
-        if (config('app.debug')) {
-            echo "[" . date('Y-m-d H:i:s') . "] Middleware start clientIP:" .clientIP() . "\n";
-        }
-        // \App\Core\Support\Log::debug($_SERVER, 'ApiServer.MiddlewareSetup.process.$serverP');
-        // \App\Core\Support\Log::debug(getallheaders(), 'ApiServer.MiddlewareSetup.process.getallheaders()');
-
-        // Check Status Server
-        $localIps = config('local_ips');
-        if (in_array(clientIP(), $localIps)
-            && stripos($request->getUri()->getPath(), '/health') === 0) {
-
-            return new Response('Server running.', 200, '', ['Content-Type' => 'text/plain']);
-        }
-
-        // Metric Server Stats
-        if (in_array(clientIP(), $localIps)
-            && stripos($request->getUri()->getPath(), '/metric') === 0) {
-
-            // echo 'URI-Metric: '.$request->getUri()->getPath() . PHP_EOL;
-            // memory leak example
-            // global $c;
-            // $c[] = new A();
-            // Notice: add ACL rules and don't expose the metrics to the internet
-            return new Response($server->stats(\OPENSWOOLE_STATS_OPENMETRICS), 200, '', ['Content-Type' => 'text/plain']);
-        }
-
-        // EnsureIpIsValid
-        if (!in_array(clientIP(), config('trusted_ips'))) {
-            return new Response('Service Unavailable', 503, '', ['Content-Type' => 'text/plain']);
-        }
-
-        // Validate Header
-        $headers = getallheaders();
-        $valid_headers = array_keys_exists(config('valid_headers'), $headers);
-        if (false === $valid_headers || ! isset($headers['X-Api-Token'])) {
-
-            if (false === $valid_headers) {
-                $statusCode = 500;
-                $json = [
-                            'status' => false,
-                            'statusCode' => $statusCode,
-                            'message' => 'Invalid header!',
-                        ];
-            }
-
-            if (! isset($headers['X-Api-Token'])) {
-                $statusCode = 403;
-                $json = [
-                            'status' => false,
-                            'statusCode' => $statusCode,
-                            'message' => 'Missing api token header!',
-                        ];
-            }
-
-            if (config('app.debug')) {
-                echo "[" . date('Y-m-d H:i:s') . "] [ERROR] MiddlewareSetup failed. Invalid headers!\n";
-            }
-
-            return new Response(\json_encode($json), $statusCode, 'Missing credentials', ['Content-Type' => 'application/json']);
-        }
-
-        // Validate Api Token
-        if (matchEncryptedData(config('app.token_api'), $headers['X-Api-Token'][0]) === false) {
-            $statusCode = 403;
-            $json = [
-                        'status' => false,
-                        'statusCode' => $statusCode,
-                        'message' => 'Invalid api token!',
-                    ];
-
-            if (config('app.debug')) {
-                echo "[" . date('Y-m-d H:i:s') . "] [ERROR] MiddlewareSetup failed. Invalid API Token!\n";
-            }
-
-            return new Response(\json_encode($json), $statusCode, '', ['Content-Type' => 'application/json']);
-        }
-
-        // Check Token Client Header
-        if (stripos($request->getUri()->getPath(), '/user') === 0 || stripos($request->getUri()->getPath(), '/api') === 0) {
-            // echo "URI-Api: ". $request->getUri()->getPath() . PHP_EOL;
-
-            $status = true;
-            if (! isset($headers['X-Client-Token'])) {
-                $status = false;
-                $statusCode = 403;
-                $json = [
-                            'status' => false,
-                            'statusCode' => $statusCode,
-                            'message' => 'Missing client token header!',
-                        ];
-            }
-
-            if (false === $status) {
-                if (config('app.debug')) {
-                    echo "[" . date('Y-m-d H:i:s') . "] [ERROR] MiddlewareSetup failed. Invalid Client Token!\n";
-                }
-
-                return new Response(\json_encode($json), $statusCode, 'Missing credentials', ['Content-Type' => 'application/json']);
-            }
-
-        }
-
-        $response = $handler->handle($request);
-
-        if (config('app.debug')) {
-            echo "[" . date('Y-m-d H:i:s') . "] [OK] MiddlewareSetup passed\n";
-        }
-
-        return $response;
-    }
-}
-
-class MiddlewareA implements MiddlewareInterface
-{
-    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
-    {
-        $requestBody = $request->getBody();
-        var_dump('A1');
-        $response = $handler->handle($request);
-        var_dump('A2');
-        return $response;
-    }
-}
-
-class MiddlewareB implements MiddlewareInterface
-{
-    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
-    {
-        $requestBody = $request->getBody();
-        var_dump('B1');
-        $response = $handler->handle($request);
-        var_dump('B2');
-        return $response;
-    }
-}
 
 // Routing API here
 $dispatcher = include __DIR__ .'/../routes/api-server.php';

@@ -9,11 +9,16 @@ function cleanTmpFiles($tmpDir, $daysOld = 3)
 {
     // Calculate the timestamp for the threshold
     $thresholdTimestamp = strtotime("-$daysOld days");
+    $tmpDir = rtrim($tmpDir, '/\\');
 
     // Check if the directory exists and is readable
     if (!is_dir($tmpDir) || !is_readable($tmpDir)) {
-        echo "Error: Temporary directory '$tmpDir' does not exist or is not readable.\n";
-        exit;
+        echo "Warning: Temporary directory '{$tmpDir}' does not exist or is not readable.\n";
+        if (!isSwoole()) {
+            exit;
+        }
+
+        return;
     }
 
     // Open the directory
@@ -21,10 +26,14 @@ function cleanTmpFiles($tmpDir, $daysOld = 3)
         while (false !== ($file = readdir($handle))) {
             // Skip '.' and '..'
             if ($file != "." && $file != ".." && $file != ".gitignore") {
-                $filePath = $tmpDir . '/' . $file;
+                $filePath = $tmpDir . DIRECTORY_SEPARATOR . $file;
+
+                if (!file_exists($filePath)) {
+                    continue;
+                }
 
                 // Check if it's a file and get its modification time
-                if (is_file($filePath) && file_exists($filePath)) {
+                if (is_file($filePath)) {
                     $fileModTime = filemtime($filePath);
 
                     // If the file's modification time is older than the threshold, delete it
@@ -45,9 +54,9 @@ function cleanTmpFiles($tmpDir, $daysOld = 3)
 }
 
 // Clean tmp-rate_limits
-$tmpDir = BASEPATH . "/storage/framework/tmp/rate_limits";
+$tmpDir = storage_path('framework/tmp/rate_limits');
 cleanTmpFiles($tmpDir, 1);
 
 // Clean Session
-$tmpDir = BASEPATH . "/storage/framework/sessions";
+$tmpDir = storage_path('framework/sessions');
 cleanTmpFiles($tmpDir, 2);

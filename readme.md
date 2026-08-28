@@ -4,6 +4,7 @@
 <div align="center" style="display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom:1em">
   <img src="public/assets/icons/apple-touch-icon.png" alt="Logo" width="80" height="80">
   <img src="public/assets/icons/Logo-Ui-UX.png" alt="UI-UX" width="80" height="80">
+  <img src="public/assets/icons/Logo-SCF.jpeg" alt="SCF" width="80" height="80">
 </div>
 
 
@@ -28,6 +29,10 @@ A lightweight, high-performance PHP framework built on modern architecture patte
 ### FCM Notification Management
 ![FCM Notification](public/assets/screenshoot/notification.png) 
 
+### Desktop App Ready (Electron Wrapper)
+![Electron Wrapper Login](public/assets/screenshoot/electron-login.png) 
+![Electron Wrapper Dashboard](public/assets/screenshoot/electron-dashboard.png) 
+
 ---
 
 ## Prerequisites & System Requirements
@@ -36,8 +41,9 @@ Before setting up the framework, ensure your local machine meets the minimum run
 
 ### 1. Core Core Runtimes & Environments
 * **PHP 8.3+** (Must include `redis`, `ffi` and `openswoole` extensions enabled in your `php.ini`).
-* **[OpenSwoole 24.x+](https://openswoole.com/docs/get-started/installation)** (Required for running high-concurrency HTTP/WebSocket servers).
+* **[OpenSwoole 22.x+](https://openswoole.com/docs/get-started/installation)** (Required for running high-concurrency HTTP/WebSocket servers).
 * **Docker Desktop** (Required if you choose to spin up infrastructure dependencies via containers. Compatible with macOS, Windows, and Linux).
+* **[Electron Wrapper](https://github.com/LutviP19/electron-app-wrapper)** (Optional if you want to wrapping up application with desktop app. Installer ready for macOS, Windows, and Linux).
 
 ### 2. Databases & Infrastructure Services
 You can install these directly on your host machine or run them instantly via the provided Docker containers:
@@ -53,8 +59,8 @@ The framework boots up multiple isolated server instances simultaneously. Ensure
 | :--- | :--- | :--- | :--- |
 | **Web Application** | `8009` | HTTP | Local web asset rendering and user frontend router |
 | **API Router** | `8080` - `8089` | HTTP | Asynchronous API router and long-lived HTTP traffic handler |
-| **WebSocket Engine** | `9501` | WebSocket | Socket connections and long-lived HTTP traffic handler |
-| **Socket Engine** | `9502` | TCP / HTTP | Live streaming bidirectional socket connections and relays |
+| **HTTP WebSocket Engine** | `9501` | WebSocket | Socket connections and long-lived HTTP traffic handler |
+| **Monitoring Socket Engine** | `9502` | TCP / HTTP | SSE, Live streaming bidirectional socket connections and relays |
 
 > 💡 **Troubleshooting Tip:** If you get a `Bind address already in use` error when starting up the servers, run `lsof -i :<port>` (macOS/Linux) or `netstat -ano | findstr <port>` (Windows) to identify and stop the blocking application.
 

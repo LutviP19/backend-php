@@ -18,6 +18,8 @@ foreach (glob($apiMiddlewarePath) as $filePath) {
     }
 }
 
+use App\Core\Support\App;
+use App\Dispatchers\DynamicEventDispatcher;
 use Servers\Middleware\Websocket\{MiddlewareSetup, MainRequestHandler};
 use OpenSwoole\Core\Psr\Middleware\StackHandler;
 use OpenSwoole\Http\Server;
@@ -28,6 +30,11 @@ $serverip   = "0.0.0.0";
 $serverport = 9502;
 
 $server = new Server($serverip, $serverport);
+
+// Register instance server ke Container saat server startup
+App::register(Server::class, $server);
+// Register events config
+App::register('events', require BASEPATH . "/routes/events.php");
 
 $server->set([
     'worker_num'            => 2,
@@ -80,9 +87,22 @@ $server->on('Task', function (Server $server, \OpenSwoole\Server\Task $task) {
         require_once BASEPATH . '/cron/cleanTmp.php';
         echo "[TASK] Maintenance cron finished successfully.\n";
     }
+
+    if (is_array($data) && isset($data['listener'], $data['method'], $data['event'])) {
+        try {
+            // Eksekusi listener di background worker
+            DynamicEventDispatcher::executeListener(
+                $data['listener'],
+                $data['method'],
+                $data['event']
+            );
+        } catch (\Throwable $e) {
+            echo "Error executing task listener {$data['listener']}: " . $e->getMessage() . PHP_EOL;
+        }
+    }
+    
     $task->finish(['status' => 'done']);
 });
-
 
 // =========================================================================
 // REGISTER KE STACK HANDLER SERVER

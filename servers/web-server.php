@@ -21,6 +21,7 @@ use App\Core\Http\Router;
 use App\Core\Support\App;
 use App\Core\Database\DatabasePoolManager;
 use App\Core\Support\CacheSwoole;
+use App\Dispatchers\DynamicEventDispatcher;
 
 // 1. APPLICATION BOOTSTRAP (Only executed once when the server is turned on)
 require __DIR__ . '/../app/Core/swoole_init.php';
@@ -30,6 +31,10 @@ require __DIR__ . '/../app/Core/swoole_init.php';
 Runtime::enableCoroutine(true);
 
 $server = new Server("127.0.0.1", 8009);
+// Register instance server ke Container saat server startup
+App::register(Server::class, $server);
+// Register events config
+App::register('events', require BASEPATH . "/routes/events.php");
 
 $server->set([
     'worker_num'            => 2,
@@ -37,6 +42,10 @@ $server->set([
     'enable_static_handler' => true,                             // <--- LOAD ASSETS
     'static_handler_locations' => ['/css', '/js', '/assets', '/images', '/favicon.ico', '/backend-php-sw.js'], // <--- (Opsional) Folder/File asset
     'enable_coroutine' => true,
+
+    // Task worker
+    'task_worker_num'       => 2,
+    'task_enable_coroutine' => true,
 
     // --- KOREKSI PENTING UNTUK MENCEGAH DEADLOCK ---
     'max_wait_time'            => 3,    // Toleransi waktu (detik) saat worker reload/stop sebelum force kill coroutine
@@ -50,19 +59,50 @@ $server->on("Start", function (Server $server) {
     echo "Swoole web server is started at http://" . $serverip . ":" . $serverport . "\n";
 });
 
+// =========================================================================
+// EVENT FINISH (Wajib ada jika task_worker_num > 0)
+// =========================================================================
+$server->on('Finish', function (OpenSwoole\Server $server, int $taskId, mixed $data) {
+    // Callback ini dipanggil saat Task Worker selesai mengeksekusi tugas
+    // $data adalah nilai yang dikirim dari $task->finish($data) atau return $data
+
+    // Anda bisa mengosongkannya jika tidak ada aksional khusus setelah task selesai
+    echo "[TASK FINISHED] Task #{$taskId} execution completed.\n";
+});
+
+// Task Handler untuk Heavy Cron Job
+$server->on('Task', function (Server $server, \OpenSwoole\Server\Task $task) {
+    $data = $task->data;
+
+    if (is_array($data) && isset($data['listener'], $data['method'], $data['event'])) {
+        try {
+            // Eksekusi listener di background worker
+            DynamicEventDispatcher::executeListener(
+                $data['listener'],
+                $data['method'],
+                $data['event']
+            );
+        } catch (\Throwable $e) {
+            echo "Error executing task listener {$data['listener']}: " . $e->getMessage() . PHP_EOL;
+        }
+    }
+
+    $task->finish(['status' => 'done']);
+});
+
 // PENTING: Inisialisasi Pool DI DALAM WorkerStart (Per Worker Process)
 $server->on('WorkerStart', function ($server, int $workerId) {
     // VERY SAFE FOR AUTO-REFRESH:
-    // The file below will be reloaded every time the worker is reloaded 
-    if(config('app.env') === 'local') {
+    // The file below will be reloaded every time the worker is reloaded
+    if (config('app.env') === 'local') {
         require_once __DIR__ . '/../app/Core/swoole_init.php';
     }
-    
+
     try {
         // // Setiap worker akan membuat ClientPool-nya sendiri
         // DatabasePoolManager::init(config('default_db'));
 
-        $defaultDb = config('default_db') ?? 'pgsql';        
+        $defaultDb = config('default_db') ?? 'pgsql';
         // 1. Set default connection secara eksplisit (opsional tapi bagus untuk kepastian)
         DatabasePoolManager::setDefaultConnection($defaultDb);
         // 2. Inisialisasi Pool khusus untuk Worker ini
@@ -171,7 +211,7 @@ $server->on('Request', function (OpenSwooleRequest $request, OpenSwooleResponse 
     $_SERVER['REQUEST_METHOD'] = $request->server['request_method'] ?? 'GET';
     $_SERVER['HTTP_USER_AGENT'] = $userAgent;
 
-     // Ambil Session ID dari Cookie / Header ---
+    // Ambil Session ID dari Cookie / Header ---
     $sessionId = $_COOKIE[session_name()] ?? $_COOKIE['sessionKey'] ?? $headers['sessionKey'] ?? null;
     if ($sessionId) {
         $prefixKey = strlen($sessionId) > 100 ? decryptData($sessionId) : $sessionId;
@@ -216,7 +256,7 @@ $server->on('Request', function (OpenSwooleRequest $request, OpenSwooleResponse 
         // -------------------------------------------------------------
         // HANDLER RESPONSE JSON
         // -------------------------------------------------------------
-        
+
         // 1. If the output is an Array or Object (Automatically encode to JSON)
         if (is_array($finalOutput) || is_object($finalOutput)) {
             // echo "1. If the output is an Array or Object (Automatically encode to JSON)";
@@ -226,7 +266,7 @@ $server->on('Request', function (OpenSwooleRequest $request, OpenSwooleResponse 
         }
 
         if (is_string($finalOutput)) {
-            
+
             // Clean string jika ada delimiter @|@
             $contents = explode('@|@', $finalOutput);
             $rawContent = $contents[0] ?? $finalOutput;
@@ -241,7 +281,7 @@ $server->on('Request', function (OpenSwooleRequest $request, OpenSwooleResponse 
 
                     // Ambil HTTP StatusCode dinamis dari JSON jika ada (misal: 422, 400, 500)
                     $rawStatus = $convertArr['statusCode'] ?? $convertArr['status'] ?? $convertArr['code'] ?? 200;
-                    
+
                     $statusCode = (is_numeric($rawStatus) && (int)$rawStatus >= 100 && (int)$rawStatus <= 599)
                         ? (int)$rawStatus
                         : 200;
@@ -279,8 +319,8 @@ $server->on('Request', function (OpenSwooleRequest $request, OpenSwooleResponse 
             $errorMessage = 'Layanan database sedang tidak merespons. Silakan coba lagi.';
 
             $response->status($statusCode);
-            
-            if(is_json_request($request)) {
+
+            if (is_json_request($request)) {
                 $json = [
                         'status' => false,
                         'statusCode' => $statusCode,
@@ -347,7 +387,7 @@ $server->on('Request', function (OpenSwooleRequest $request, OpenSwooleResponse 
             ob_end_clean();
         }
 
-        if(config('app.debug')) {
+        if (config('app.debug')) {
             // Print error to Swoole terminal for debugging
             echo "=== FATAL ERROR AT " . Request::uri() . " ===\n";
             echo $e->getMessage() . "\n";
@@ -362,13 +402,13 @@ $server->on('Request', function (OpenSwooleRequest $request, OpenSwooleResponse 
 
         if ($response->isWritable()) {
             $statusCode = 500;
-            $errorMessage = config('app.debug') 
+            $errorMessage = config('app.debug')
                 ? $e->getMessage() . " in " . str_replace(BASE_PATH, '', $e->getFile()) . ":" . $e->getLine()
                 : 'Internal Server Error';
 
             $response->status($statusCode);
 
-            if(is_json_request($request)) {
+            if (is_json_request($request)) {
                 $json = [
                         'status' => false,
                         'statusCode' => $statusCode,
@@ -377,7 +417,7 @@ $server->on('Request', function (OpenSwooleRequest $request, OpenSwooleResponse 
                     ];
                 $response->header('Content-Type', 'application/json; charset=UTF-8');
                 $response->end(json_encode($json, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
-            } else {                
+            } else {
                 $response->end($errorMessage);
             }
         }

@@ -17,7 +17,13 @@ class EventDispatcher
 {
     public function dispatch($event, $method)
     {
-        $eventName = $event::NAME;
+        // $eventName = $event::NAME;
+
+        $eventName = defined(get_class($event) . '::NAME') ? $event::NAME : null;
+
+        if (!$eventName) {
+            return;
+        }
 
         /**
          * Registering event listeners with the Event Dispatcher.

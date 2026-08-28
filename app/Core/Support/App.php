@@ -120,18 +120,30 @@ class App
 
         $parameters = $constructor->getParameters();
         $dependencies = [];
+
         foreach ($parameters as $parameter) {
             $type = $parameter->getType();
 
+            // If the parameter has no type-hint or is a built-in data type (string, int, etc.)
             if (!$type || $type->isBuiltin()) {
                 if ($parameter->isDefaultValueAvailable()) {
                     $dependencies[] = $parameter->getDefaultValue();
                     continue;
                 }
+
+                // Add additional protection if the parameter is nullable (?string $host = null)
+                if ($parameter->allowsNull()) {
+                    $dependencies[] = null;
+                    continue;
+                }
+
                 throw new Exception("Cannot resolve parameter [{$parameter->getName()}] in class [{$className}] because it does not have a valid class type.");
             }
 
+            // Class / Object type resolution
             $dependencyClassName = $type->getName();
+            
+            // Take from the container
             $dependencies[] = self::get($dependencyClassName);
         }
 

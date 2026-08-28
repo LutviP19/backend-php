@@ -28,6 +28,25 @@ class MainRequestHandler implements MiddlewareInterface
         $this->serverStats['requests_total']++;
         $uri = $request->getUri()->getPath();
 
+        if ($uri === '/extra') {
+            $orderData = ['id' => 123, 'items' => ['item1', 'item2']];
+            $eventInstance = new \App\Events\OrderPlacedEvent($orderData);
+
+            // Gunakan DynamicEventDispatcher untuk melempar event ke Task Queue otomatis
+            $dispatcher = new \App\Dispatchers\DynamicEventDispatcher($this->server);
+            $dispatcher->dispatchAsync($eventInstance, 'onOrderPlaced');
+
+            return new ResponsePsr(
+                json_encode([
+                    'status'  => 'success',
+                    'message' => 'Task Event-onOrderPlaced triggered successfully via OpenSwoole Task.'
+                ]),
+                200,
+                'OK',
+                ['Content-Type' => 'application/json']
+            );
+        }
+
         // ---------------------------------------------------------------------
         // ROUTE A: Health Check API (/health)
         // ---------------------------------------------------------------------
@@ -80,9 +99,8 @@ class MainRequestHandler implements MiddlewareInterface
         // ---------------------------------------------------------------------
         if ($uri === '/sse/realtime-monitor') {
 
-
             // ===== SSE Middleware
-
+            
             // 1. Ambil header Origin dari Request
             $origin = $request->getHeaderLine('Origin');
 
@@ -107,7 +125,6 @@ class MainRequestHandler implements MiddlewareInterface
 
             // Set CORS header secara dinamis (fallback ke '*' jika non-browser)
             $corsOrigin = !empty($origin) ? $origin : '*';
-
 
             // 1. Ambil ticket dari Query Param
             $queryParams = $request->getQueryParams();

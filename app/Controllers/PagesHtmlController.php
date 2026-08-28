@@ -9,9 +9,9 @@ use App\Core\Http\{Request, Response};
 use App\Core\Message\Broker;
 // use App\Core\Support\Config;
 // use App\Core\Support\Session;
-// Events
-use App\Core\Events\EventDispatcher;
-use App\Services\OrderService;
+// // Events
+// use App\Core\Events\EventDispatcher;
+// use App\Services\OrderService;
 
 use function Amp\async;
 
@@ -126,11 +126,19 @@ class PagesHtmlController extends Controller
          */
         echo "===================================================<br>\r\n";
         echo "Main output to place an order and trigger the event-driven process.<br>\r\n";
-        $dispatcher = new EventDispatcher();
-        $orderService = new OrderService($dispatcher);
 
-        $order = ['id' => 123, 'items' => ['item1', 'item2']];
-        $orderService->placeOrder($order);
+        $orderData = ['id' => 123, 'items' => ['item1', 'item2']];
+
+        // // Static - Old
+        // $dispatcher = new \App\Core\Events\EventDispatcher();
+        // $orderService = new \App\Services\OrderService($dispatcher);
+        // $orderService->placeOrder($orderData);
+
+        // Dynamic - New
+        $event = new \App\Events\OrderPlacedEvent($orderData);
+        $dispatcher = new \App\Dispatchers\DynamicEventDispatcher();
+        $dispatcher->dispatchAsync($event, 'onOrderPlaced');
+        
         echo "<br>";
         /**
          * END Main script to place an order and trigger the event-driven process.

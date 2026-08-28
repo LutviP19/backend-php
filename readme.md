@@ -2,7 +2,7 @@
 # Backend PHP - Framework
 
 <div align="center" style="display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom:1em">
-  <img src="public/assets/icons/apple-touch-icon.png" alt="Logo" width="80" height="80">
+  <img src="public/assets/icons/Logo-app.png" alt="Logo" width="80" height="80">
   <img src="public/assets/icons/Logo-Ui-UX.png" alt="UI-UX" width="80" height="80">
   <img src="public/assets/icons/Logo-SCF.jpeg" alt="SCF" width="80" height="80">
 </div>

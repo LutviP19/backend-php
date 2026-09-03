@@ -20,17 +20,6 @@ if (!function_exists('b64url')) {
 }
 
 /**
- * get environment variable.
- *
- * @param array $data
- * @return void
- */
-function env($key, $alt = '')
-{
-    return $_ENV[$key] ?? $alt;
-}
-
-/**
  * get config
  *
  * @param  [string] $key
@@ -453,7 +442,7 @@ function checkValidJSON($rawBody): bool
  */
 function database_path($db_name)
 {
-    return BASE_PATH . 'storage/database/' . $db_name;
+    return BASEPATH . 'storage/database/' . $db_name;
 }
 
 /**
@@ -465,7 +454,7 @@ function database_path($db_name)
  */
 function storage_path($filePath)
 {
-    return BASE_PATH . 'storage/' . $filePath;
+    return BASEPATH . 'storage/' . $filePath;
 }
 
 /**
@@ -477,7 +466,7 @@ function storage_path($filePath)
  */
 function assets_path($filePath)
 {
-    return BASE_PATH . 'public/assets/' . $filePath;
+    return BASEPATH . 'public/assets/' . $filePath;
 }
 
 /**
@@ -1019,11 +1008,12 @@ function generateRandomString($len = 64, $base64 = false, $special = true): stri
  */
 function generateUlid($lowercased = false, $timestamp = null): string
 {
-    if (!is_null($timestamp)) {
-        return (string) \Ulid\Ulid::fromTimestamp($timestamp, $lowercased);
+    $ulid = \App\Core\Support\UlidGenerator::generate();
+    if ($lowercased) {
+        return strtolower($ulid);
     }
 
-    return (string) \Ulid\Ulid::generate($lowercased);
+    return $ulid;
 }
 
 /**
@@ -1261,10 +1251,13 @@ function get_short_ua(bool $is_hash = false): string
  * @param bool $is hash If true, returns MD5 hash (32 characters).
  * @return string
  */
-function get_device_fingerprint(bool $is_hash = true): string
+function get_device_fingerprint(bool $is_hash = true, string $extra = ''): string
 {
     // Combine Platform + UA + IP (Optional: add IP to make it tighter)
     $fingerprint = get_short_ua() . "_" . clientIP();
+    if($extra !== '') {
+        $fingerprint = $fingerprint . "_" . $extra;
+    }
 
     return $is_hash ? md5($fingerprint) : $fingerprint;
 }

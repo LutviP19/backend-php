@@ -5,6 +5,94 @@
  * @author Lutvi <lutvip19@gmail.com>
  */
 
+/**
+ * Loading variables from a .env file into the PHP environment
+ */
+if (!function_exists("load_env")) {
+    function load_env($path = null)
+    {
+        if ($path === null) {
+            $path = BASEPATH . DIRECTORY_SEPARATOR . ".env";
+        }
+
+        if (!file_exists($path)) {
+            return false;
+        }
+
+        $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        foreach ($lines as $line) {
+            // Ignore lines that start with the # comment
+            if (str_starts_with(trim($line), "#")) {
+                continue;
+            }
+
+            // Split based on the equal sign (=)
+            [$name, $value] = explode("=", $line, 2);
+            $name = trim($name);
+            $value = trim($value);
+
+            // Remove the quotes if any (for example: "SECRET_KEY" or 'SECRET_KEY')
+            $value = trim($value, '"\'');
+
+            $value = trim($value, " \t\n\r\0\x0B\"'");
+
+            // --- VARIABLE SUBSTITUTION LOGIC ---
+            // Looking for the pattern ${VAR_NAME}
+            preg_match_all('/\${([^}]+)}/', $value, $matches);
+
+            if (!empty($matches[1])) {
+                foreach ($matches[1] as $embeddedVar) {
+                    // Take the value from $_ENV or getenv that has been previously processed
+                    $replacement = $_ENV[$embeddedVar] ?? (getenv($embeddedVar) ?? "");
+                    $value = str_replace('${' . $embeddedVar . "}", $replacement, $value);
+                }
+            }
+            // ----------------------------------
+
+            // Enter into the PHP environment
+            if (!array_key_exists($name, $_SERVER) && !array_key_exists($name, $_ENV)) {
+                putenv(sprintf("%s=%s", $name, $value));
+                $_ENV[$name] = $value;
+                $_SERVER[$name] = $value;
+            }
+        }
+        return true;
+    }
+}
+
+/**
+ * Retrieving values from the environment with support for default values
+ */
+if (!function_exists("env")) {
+    function env($key, $default = null)
+    {
+        $value = getenv($key);
+        if ($value === false) {
+            return $default;
+        }
+        // Convert string data type to boolean if necessary
+        return match (strtolower($value)) {
+            "true" => true,
+            "false" => false,
+            "null" => null,
+            default => $value,
+        };
+    }
+}
+
+/**
+ * Converting selected environment variables to JSON format for the Frontend.
+ */
+if (!function_exists("env_to_json")) {
+    function env_to_json(array $keys)
+    {
+        $output = [];
+        foreach ($keys as $key) {
+            $output[$key] = env($key);
+        }
+        return json_encode($output);
+    }
+}
 
 /**
  * Check if the current script execution is inside an active OpenSwoole HTTP Worker.

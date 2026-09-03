@@ -1,7 +1,7 @@
 <?php
 
-if (!defined('BASE_PATH')) {
-    define('BASE_PATH', str_replace('config', '', __DIR__));
+if (!defined('BASEPATH')) {
+    define('BASEPATH', str_replace('config', '', __DIR__));
 }
 
 /**
@@ -22,7 +22,7 @@ return [
         'token' => env('HEADER_TOKEN'),
         'token_api' => env('HEADER_TOKEN_API'),
         'url' => env('APP_URL', 'http://localhost'),
-        'path' => BASE_PATH,
+        'path' => BASEPATH,
         'env' => env('APP_ENV', 'production'),
         'debug' => (bool) env('APP_DEBUG', false),
         'logdir' => __DIR__ . '/../storage/logs/',

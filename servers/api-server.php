@@ -273,7 +273,7 @@ class RouteMiddleware implements MiddlewareInterface
 
             $statusCode = 500;
             $errorMessage = config('app.debug')
-                ? $e->getMessage() . " in " . str_replace(BASE_PATH, '', $e->getFile()) . ":" . $e->getLine()
+                ? $e->getMessage() . " in " . str_replace(BASEPATH, '', $e->getFile()) . ":" . $e->getLine()
                 : 'Internal Server Error';
             $json = [
                         'status' => false,

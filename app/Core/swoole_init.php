@@ -18,9 +18,8 @@ if (!defined("BASEPATH_FFI")) {
 
 require_once BASEPATH . '/vendor/autoload.php';
 
-// Load .env only once when the server is on
-$dotenv = Dotenv\Dotenv::createUnsafeImmutable(BASEPATH);
-$dotenv->load();
+// Load .env file at the root directory
+load_env();
 
 use App\Core\Support\App;
 

@@ -27,9 +27,8 @@ ini_set("html_errors", 1);
 ini_set("error_prepend_string", "<pre style='color: #333; font-face:monospace; font-size:14px;'>");
 ini_set("error_append_string ", "</pre>");
 
-// Looking for .env at the root directory
-$dotenv = Dotenv\Dotenv::createUnsafeImmutable(__DIR__ . '/../..');
-$dotenv->load();
+// Load .env file at the root directory
+load_env();
 
 // Register the configuration to the application.
 use App\Core\Support\App;

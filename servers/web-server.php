@@ -403,7 +403,7 @@ $server->on('Request', function (OpenSwooleRequest $request, OpenSwooleResponse 
         if ($response->isWritable()) {
             $statusCode = 500;
             $errorMessage = config('app.debug')
-                ? $e->getMessage() . " in " . str_replace(BASE_PATH, '', $e->getFile()) . ":" . $e->getLine()
+                ? $e->getMessage() . " in " . str_replace(BASEPATH, '', $e->getFile()) . ":" . $e->getLine()
                 : 'Internal Server Error';
 
             $response->status($statusCode);

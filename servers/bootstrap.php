@@ -20,9 +20,8 @@ require_once __DIR__ . '/../vendor/autoload.php';
  * @author Lutvi <lutvip19@gmail.com>
  */
 /* ----------------------------- Default settings START -------------------------------- */
-// Looking for .env at the root directory
-$dotenv = Dotenv\Dotenv::createUnsafeImmutable(__DIR__.'/..');
-$dotenv->load();
+// Load .env file at the root directory
+load_env();
 
 // Register the configuration to the application.
 use App\Core\Support\App;

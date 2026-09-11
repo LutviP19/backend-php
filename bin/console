@@ -10,22 +10,61 @@ require_once BASEPATH . 'vendor/autoload.php';
  * Bootstrap the Application.
  */
 /* ----------------------------- Default settings START -------------------------------- */
+// // Looking for .env at the root directory
+// $dotenv = Dotenv\Dotenv::createUnsafeImmutable(__DIR__ . '/..');
+// $dotenv->load();
+
 // Load .env file at the root directory
 load_env();
 
 date_default_timezone_set(env('APP_TIMEZONE', 'Asia/Jakarta'));
 
 //Starting the session will be the first we do.
-ini_set('session.save_handler', env('SESSION_DRIVER', 'file'));
-if (env('SESSION_DRIVER') === "redis") {
-    ini_set('session.save_path', "tcp://" . env('REDIS_HOST') . ":" . env('REDIS_PORT') . "?auth" . env('REDIS_PASSWORD'));
-    ini_set('session.gc_maxlifetime', (env('SESSION_LIFETIME', 120) * 60)); // Set default to 2 hours
-} else {
-    ini_set('session.save_path', storage_path('framework/sessions/'));
-}
+if (session_status() === PHP_SESSION_NONE) {
+    try {
+        $driver = env('SESSION_DRIVER', 'files');
+        ini_set('session.save_handler', $driver);
 
-session_name('BACKENDPHPSESSID'); // Set a custom session name
-session_start();
+        if ($driver === "redis") {
+            $redisHost = config("redis.default.host", "127.0.0.1");
+            $redisPort = config("redis.default.port", 6379);
+            $redisPass = config("redis.default.password");
+            $lifetime  = (int) config("session.lifetime", 120) * 60;
+
+
+            $redisPath = "tcp://{$redisHost}:{$redisPort}";
+            if (!is_null($redisPass) && $redisPass !== '') {
+                $redisPath .= "?auth=" . urlencode((string)$redisPass);
+            }
+
+            ini_set("session.save_path", $redisPath);
+            ini_set("session.gc_maxlifetime", $lifetime);
+        } else {
+            ini_set('session.save_handler', 'files');
+            ini_set('session.save_path', storage_path('framework/sessions'));
+        }
+    } catch (\Exception $e) {
+        $errLog = "An unexpected error occurred during session init: " . $e->getMessage();
+        if (function_exists('write_log')) {
+            write_log('error', $errLog, 'session.save_path.Setup');
+        }
+
+        // Fallback aman ke driver files jika Redis bermasalah
+        ini_set('session.save_handler', 'files');
+        ini_set('session.save_path', storage_path('framework/sessions'));
+    }
+
+    // Set nama session custom
+    session_name('BACKENDPHPSESSID');
+
+    // Jalankan fungsi pembuka session bawaan helper yang sudah dioptimasi
+    if (function_exists('bp_session_start')) {
+        bp_session_start();
+    } else {
+        ini_set('session.use_strict_mode', 1);
+        @session_start();
+    }
+}
 /* ----------------------------- Default settings END -------------------------------- */
 
 

@@ -1,4 +1,5 @@
 <?php
+
 /**
  *  @package Backend-PHP
  */
@@ -11,19 +12,17 @@ use App\Core\Http\{Request, Response};
 // use App\Core\Validation\Validator;
 use App\Controllers\Controller;
 
-
 class MyController extends Controller
 {
-
     public function __construct()
     {
         parent::__construct();
-        
+
         // Allow insomnia, etc...
         $user_agent = trim($_SERVER['HTTP_USER_AGENT'] ?? '');
         $dev_agents = ['insomnia'];
         $agentAllow = false;
-        foreach ($dev_agents as $agent) { 
+        foreach ($dev_agents as $agent) {
             if (str_contains(strtolower($user_agent), strtolower($agent))) {
                 $agentAllow = true;
             }
@@ -31,9 +30,9 @@ class MyController extends Controller
         // dd($agentAllow);
 
         // Handler reload manual
-        if(!$agentAllow) {
+        if (!$agentAllow) {
             $ignore_uri = ['login', 'htmx'];
-            if (request()->method() === 'GET' && ! in_array(request()->uri(), $ignore_uri) && !$this->__isHtmxRequest()) {
+            if (request()->method() === 'GET' && ! in_array(request()->uri(), $ignore_uri) && !\isHtmx()) {
                 response()->redirect('/htmx');
             }
         }
@@ -68,7 +67,7 @@ class MyController extends Controller
 
         // Simulasi Cek Login
         if ($user === 'admin' && $pass === 'desa2026') {
-            
+
             // 1. Kirim sinyal ke Alpine.js untuk munculkan Toast
             // Format: HX-Trigger: {"namaEvent": "isiData"}
             header('HX-Trigger: {"show-toast": "Login Berhasil! Mengalihkan..."}');
@@ -76,7 +75,7 @@ class MyController extends Controller
             // 2. Tunggu 1.5 detik (simulasi proses) lalu redirect
             // Catatan: Redirect HTMX dilakukan via header
             header('HX-Redirect: /htmx');
-            
+
             // exit();
             customExit();
 

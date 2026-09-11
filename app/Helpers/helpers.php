@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Global helpers.
  * @author Lutvi <lutvip19@gmail.com>
@@ -10,14 +12,6 @@
 // use App\Core\Support\Session;
 use App\Core\Support\App;
 use App\Core\Support\Config;
-
-/** ===== Utils ===== */
-if (!function_exists('b64url')) {
-    function b64url($data)
-    {
-        return rtrim(strtr(base64_encode((string) $data), '+/', '-_'), '=');
-    }
-}
 
 /**
  * get config
@@ -70,7 +64,7 @@ function handle_cors()
 
     // Set output header ke browser
     header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
-    header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, hx-request, hx-target, hx-current-url, hx-trigger, hx-trigger-name");
+    header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, hx-request, hx-target, hx-trigger");
     header("Access-Control-Allow-Credentials: true");
 
     // Handle "Preflight" requests (browser sends OPTIONS method before POST/PUT)
@@ -318,21 +312,18 @@ function is_json_request($request = null): bool
 /**
  * Sends a standard JSON response and stops script execution.
  */
-function json_response($data, $status = 200, $message = "", $errors = [])
+function json_response($data, $statusCode = 200, $message = "", $errors = [])
 {
-    header("Content-Type: application/json");
-    http_response_code($status);
-
     // Format output JSON
     if ($message !== "") {
         $data = [
-            "statusCode" => $status,
+            "statusCode" => $statusCode,
             "message" => $message,
             "data" => $data,
         ];
     } else {
         $data = [
-            "statusCode" => $status,
+            "statusCode" => $statusCode,
             "data" => $data,
         ];
     }
@@ -342,12 +333,11 @@ function json_response($data, $status = 200, $message = "", $errors = [])
         $data["errors"] = $errors;
     }
     // Unset data if status >= 300
-    if ($status >= 300) {
+    if ($statusCode >= 300) {
         unset($data["data"]);
     }
 
-    echo json_encode($data, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
-    customExit();
+    exit_response($data, $statusCode);
 }
 
 // Alias exit_response for open swoole /FPM
@@ -982,6 +972,33 @@ function decryptData($value, $key = null)
 }
 
 /**
+ * hashData function
+ *
+ * @param [string] $value
+ * @param string $key
+ * @param string $mode
+ * @return string
+ */
+function hashData($value, $key = '', $mode = 'string')
+{
+    return \App\Core\Security\Hash::create($value, $key, $mode);
+}
+
+/**
+ * matchHashData function
+ *
+ * @param [string] $str
+ * @param [string] $hash
+ * @param string $key
+ * @param string $mode
+ * @return bool
+ */
+function matchHashData($str, $hash, $key = '', $mode = 'string')
+{
+    return \App\Core\Security\Hash::matchHash($str, $hash, $key, $mode);
+}
+
+/**
  * sort function to generate random string
  *
  * @param  integer $len
@@ -1198,7 +1215,7 @@ function readJson($key = null, $payload = null, $default = null)
 function get_short_ua(bool $is_hash = false): string
 {
     $ua = $_SERVER["HTTP_USER_AGENT"] ?? "Unknown";
-    
+
     // Make sure $ua is actually a pure string, not an array of other global modifications
     $uaString = is_array($ua) ? implode(" ", $ua) : (string) $ua;
 
@@ -1218,10 +1235,10 @@ function get_short_ua(bool $is_hash = false): string
 
     // 2. Identify Major Browsers & Versions
     $browser = "Unknown";
-    
+
     // Reset the contents of the $m variable before the browser regex for data security
     $m = [];
-    
+
     if (preg_match("/(Edg|Edge)\/([\d\.]+)/i", $uaString, $m)) {
         $browser = "Edge" . (int) $m[2];
     } elseif (preg_match("/OPR\/([\d\.]+)/i", $uaString, $m)) {
@@ -1251,13 +1268,45 @@ function get_short_ua(bool $is_hash = false): string
  * @param bool $is hash If true, returns MD5 hash (32 characters).
  * @return string
  */
-function get_device_fingerprint(bool $is_hash = true, string $extra = ''): string
+function get_device_fingerprint(bool $is_hash = true, string|int|null $extra = ''): string
 {
     // Combine Platform + UA + IP (Optional: add IP to make it tighter)
     $fingerprint = get_short_ua() . "_" . clientIP();
-    if($extra !== '') {
+    if ($extra !== null && (string) $extra !== '') {
         $fingerprint = $fingerprint . "_" . $extra;
     }
 
-    return $is_hash ? md5($fingerprint) : $fingerprint;
+    return $is_hash ? hashData($fingerprint) : $fingerprint;
+}
+
+/**
+ * Retrieve Token Bearer from HTTP Header (FPM & OpenSwoole Compatible)
+ *
+ * @param mixed $swooleRequest \Request object from OpenSwoole (optional)
+ */
+function getBearerToken(mixed $swooleRequest = null): ?string
+{
+    $authorizationHeader = null;
+
+    if ($swooleRequest !== null && isset($swooleRequest->header['authorization'])) {
+        $authorizationHeader = $swooleRequest->header['authorization'];
+    } elseif (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+        $authorizationHeader = $_SERVER['HTTP_AUTHORIZATION'];
+    } elseif (isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
+        $authorizationHeader = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
+    } elseif (function_exists('getallheaders')) {
+        $headers = getallheaders();
+        $headers = array_change_key_case($headers, CASE_LOWER);
+        $authorizationHeader = $headers['authorization'] ?? null;
+    }
+
+    if (empty($authorizationHeader)) {
+        return null;
+    }
+
+    if (preg_match('/Bearer\s+(\S+)/i', $authorizationHeader, $matches)) {
+        return $matches[1];
+    }
+
+    return null;
 }

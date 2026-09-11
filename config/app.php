@@ -30,6 +30,15 @@ return [
         'cache_driver' => env('CACHE_DRIVER', 'files'),
     ],
 
+    'auth' => [
+        'default' => env('AUTH_DEFAULT', 'Sodium'), // JWT, Sodium or Sodium-v4
+        'jwt_secret' => env('JWT_SECRET', '152*vd61174Df9@eba3b4Y6ed9d452adae762j!b13H4Deym36i6Qo1f9m4d^n76'),
+        'sodium_key' => env('SODIUM_KEY', '6f673df096af3fb34e1d70f7e2555cc5dbacc18b3b9c0983d402627f88839de2'),
+        'sodium_private_key' => env('SODIUM_PRIVATE_KEY', 'd3cba28f81b3cd84e8d348aec4342cccd1bf16ec2fee74f3830967027833f2cebb74185d8c99c538eb96d7bef632f023c33f24f98822a00bb835e90a55bbbb17'),
+        'sodium_public_key' => env('SODIUM_PUBLIC_KEY', 'bb74185d8c99c538eb96d7bef632f023c33f24f98822a00bb835e90a55bbbb17'),
+        'sodium_prefix' => env('SODIUM_PREFIX', 'v1.access.backendphp'),
+    ],
+
     'trusted_ips' => [
         '', '::1', '0.0.0.0', '127.0.0.1', 'localhost', 'host.docker.internal', // whitelist ips
     ],

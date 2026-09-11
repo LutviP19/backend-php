@@ -15,7 +15,7 @@ use App\Core\Security\CSRF;
  */
 class ApiController extends BaseController
 {
-    protected $jwtToken;
+    protected $authToken;
     protected $filter;
     protected $requestServer;
     protected $sessionId;
@@ -43,19 +43,7 @@ class ApiController extends BaseController
         $this->jsonData = [];
 
         if (\isSwoole() || $this->requestServer instanceof \OpenSwoole\Http\Request) { // on OpenSwoole Server
-
-            // // Format Headers
-            // foreach($this->requestServer->header as $key => $value) {
-            //     $this->headers[ucwords((string) $key, "-")] = $value;
-            // }
-
-            // $rawBody = $this->requestServer->rawContent();
-            // if (! empty($rawBody) && checkValidJSON($rawBody)) {
-            //     $this->jsonData = \is_string($rawBody) ? \json_decode($rawBody, true, 512, \JSON_BIGINT_AS_STRING | \JSON_THROW_ON_ERROR) : [];
-            // } else {
-            //     $this->jsonData = [];
-            // }
-
+        
             // Format Headers
             if (!empty($this->requestServer->header) && is_array($this->requestServer->header)) {
                 foreach ($this->requestServer->header as $key => $value) {
@@ -79,11 +67,15 @@ class ApiController extends BaseController
 
         // Accepted type is JSON
         $validate = $this->onlyAcceptedJSON();
-        if ($validate) return $validate;
-        
+        if ($validate) {
+            return $validate;
+        }
+
         // Validate JSON
         $validate = $this->checkValidJSON($rawBody);
-        if ($validate) return $validate;
+        if ($validate) {
+            return $validate;
+        }
 
 
         // Clean Errors MessageBag
@@ -98,9 +90,9 @@ class ApiController extends BaseController
         $this->validateApiToken();
 
         // Validate with session data
-        if (Session::has('uid') && Session::has('secret') && Session::has('jwtId')) {
-            // JWT
-            $this->jwtToken = $this->initJwtToken();
+        if (Session::has('uid') && Session::has('secret') && Session::has('authId')) {
+            // New-BaseAuth
+            $this->authToken = $this->initAuthToken();
         }
     }
 
@@ -156,28 +148,38 @@ class ApiController extends BaseController
      */
     protected function setLoginSession($user)
     {
+        // Simpan ke DB jika belum ada ulid
+        // $db->query("UPDATE {$this->table} SET ulid) = ? WHERE id = ?", [$newUlid, $user_id]);
+
         $sessionData = [];
         foreach ($user as $key => $value) {
-            if ($key === 'ulid') {
-                $key = 'uid';
-            }
-            $sessionData[$key] = $value;
+            [$newKey, $newValue] = match ($key) {
+                'id', 'user_id' => ['user_id', is_string($value) ? $value : encryptData($value)],
+                'ulid'          => ['uid', $value],
+                default         => [$key, $value],
+            };
+
+            $sessionData[$newKey] = $newValue;
         }
 
         $gnr = generateRandomString(32, true);
-        $userId = $user['ulid'] ?? $sessionData['uid'] ?? \get_device_fingerprint() ?? null;
+        $userId = $user->ulid ?? $sessionData['uid'] ?? \get_device_fingerprint();
         $sessionData['gnr'] = $gnr;
-        
+
+        // hapus cache by uid
+        delCache("client_token:{$userId}");
+        delCache("user_abilities:{$userId}");
+
         $validateClient = new \App\Core\Security\Middleware\ValidateClient($userId);
         $clientToken = $validateClient->getToken();
         $clientTokenGen = $validateClient->generateToken();
 
         $sessionData['client_token'] = $clientTokenGen;
 
-        // Clear Redis Session Cache
+        // Hapus cache session di Redis
         if (isSwoole()) {
             $sessionKey = sessionKeyFormat($userId);
-            (new \App\Core\Support\CacheSwoole())->flush($sessionKey);
+            delCache($sessionKey);
         }
 
         if (false === $validateClient->matchToken($clientTokenGen)) {
@@ -188,37 +190,48 @@ class ApiController extends BaseController
             return false;
         }
 
-        // JWT & Secret initialization
+        // Set Basic Sessions
+        foreach ($sessionData as $sKey => $sVal) {
+            Session::set($sKey, $sVal);
+        }
+
+        // Secret initialization
         Session::set('secret', encryptData($clientToken, $gnr));
         $sessionData['secret'] = Session::get('secret');
-        $sessionData['jwtId'] = generateUlid();
+        $sessionData['authId'] = generateUlid();
 
-        // initJwtToken & create tokenJwt
-        $jwtToken = $this->initJwtToken();
-        $info = 'Web jwt-' . $userId;
-        $subject = 'Access API for web user:' . $userId;
-        $tokenJwt = $jwtToken->createToken($userId, $info, $subject);
-        $sessionData['tokenJwt'] = $tokenJwt;
+        // initAuthToken
+        $authToken = $this->initAuthToken($sessionData);
+        $tokenAuth = $authToken->generateToken([
+                'uid' => $userId,
+                // "user_permissions" => cacheContent('get', "user_abilities:{$userId}")
+            ]) ?? null;
+        $sessionData['tokenAuth'] = $tokenAuth['access_token'] ?? '';
 
-        // Persistence Based on Flag isSwoole()
+
+        // Persistence berdasarkan Flag isSwoole()
         if (isSwoole()) {
             $this->sessionId = session_create_id('bp-');
             $prefixKey = sessionKeyFormat($userId, $this->sessionId);
             $sessionData['sessionKey'] = $prefixKey;
 
-            (new \App\Core\Support\CacheSwoole())->set($prefixKey, $sessionData, config('session.exptime'));
+            (new \App\Core\Support\CacheSwoole(config("session.exptime", 7200)))->set($prefixKey, $sessionData, config('session.exptime'));
 
-            // Saved to the Swoole Request Context so it can be accessed in the Controller
+            // Disimpan ke Context Request Swoole agar dapat diakses di Controller
             if (class_exists('\OpenSwoole\Coroutine')) {
                 \OpenSwoole\Coroutine::getContext()['session'] = $sessionData;
             }
         }
-        
+
         foreach ($sessionData as $sKey => $sVal) {
+            if (Session::has($sKey)) {
+                continue;
+            }
+
             Session::set($sKey, $sVal);
         }
 
-        return $tokenJwt;
+        return $tokenAuth;
     }
 
     /**
@@ -249,19 +262,24 @@ class ApiController extends BaseController
             $this->validateApiToken();
         } else {
             // Validate header X-Client-Token
-            // \App\Core\Support\Log::debug($this->headers, 'WebAuth.updateToken.$headers');
             $validate = $this->validateClientToken();
-            if($validate) return $validate;
+            if ($validate) {
+                return $validate;
+            }
 
-            // Validate Jwt
-            $validate = $this->validateJwt();
-            if($validate) return $validate;
+            // Validate Auth
+            $validateAuth = $this->validateAuthToken();
+            if ($validateAuth) {
+                return $validateAuth;
+            }
 
             // Validate using session data
-            if (Session::has('uid') && Session::has('secret') && Session::has('jwtId')) {
+            if (Session::has('uid') && Session::has('secret') && Session::has('authId')) {
                 // ValidateSession
                 $validate = (new \App\Core\Security\Middleware\ValidateSession())->handle();
-                if($validate) return $validate;
+                if ($validate) {
+                    return $validate;
+                }
             }
         }
     }
@@ -296,19 +314,17 @@ class ApiController extends BaseController
         if ($csrf) {
 
             // Check isDev
-            // \App\Core\Support\Log::debug($this->isDev, 'ApiController.validateApiToken.csrf.isDev');
             if($this->isDev === true) {
                 $request_token = CSRF::generate();
             } else {
                 // Assuming token is sent in X-CSRF-Token header
                 $request_token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
             }
-
-            // \App\Core\Support\Log::debug($request_token, 'ApiController.validateApiToken.csrf.$request_token');
+            
             if (CSRF::match($request_token) === false) {
 
                 $request_token = filter_input(INPUT_COOKIE, 'XSRF-TOKEN', FILTER_SANITIZE_SPECIAL_CHARS) ?? '';
-                // \App\Core\Support\Log::debug($request_token, 'ApiController.validateApiToken.csrf.$request_token2');
+
                 if (CSRF::match($request_token) === false) {
                     // Middleware - Rate limiter
                     $identifier = 'CSRF_TOKEN-'.\clientIP();
@@ -339,13 +355,9 @@ class ApiController extends BaseController
      */
     protected function validateClientToken()
     {
-        // $header = $request->headers();
-
         $clientId = Session::get('uid'); // Get from session
         $validateClient = new \App\Core\Security\Middleware\ValidateClient($clientId);
-        // $clientToken = $validateClient->getToken();
 
-        // \App\Core\Support\Log::debug($clientId, 'ApiController.validateClientToken.clientId');
         if (empty($clientId)) {
             return endResponse(
                 $this->getOutput(false, 401, [
@@ -355,7 +367,6 @@ class ApiController extends BaseController
             );
         }
 
-        // \App\Core\Support\Log::debug(isset($header['X-Client-Token']), 'ApiController.validateClientToken.X-Client-Token');        
         if(! isset($this->headers['X-Client-Token'])) {
             return endResponse(
                 $this->getOutput(false, 403, [
@@ -376,22 +387,23 @@ class ApiController extends BaseController
         }
     }
 
-    protected function validateJwt()
+    // New-BaseAuth
+    protected function validateAuthToken(?string $permission = null)
     {
         $user = Session::all();
-        $tokenJwt = Session::get('tokenJwt');
+        $tokenAuth = Session::get('tokenAuth');
         $bearerToken = $this->getBearerToken();
-        // dd($tokenJwt, true);
 
         if (empty($user) ||
-            is_null($this->jwtToken) ||
-            $bearerToken !== $tokenJwt ||
-            false === $this->jwtToken->validateToken($bearerToken)) {
+            is_null($bearerToken) ||
+            is_null($this->authToken) ||
+            $bearerToken !== $tokenAuth ||
+            false === $this->authToken->validateToken($bearerToken, $permission)) {
 
             return endResponse(
                 $this->getOutput(false, 401, [
-                    'jwt' => 'Invalid jwt!',
-                ], 'Please login!'), 
+                    'token' => 'Invalid WEB token!',
+                ], 'Please login!'),
                 401
             );
         }
@@ -435,31 +447,7 @@ class ApiController extends BaseController
             $formated[$formatKey] = $value;
         }
 
-        // dd($formated, true);
         return $formated;
-
-        // if(count($formated)) {
-        //     foreach($formated as $key => $value) {
-        //         if (is_numeric($value) && strpos($value, '.') === false) {
-        //             $value = (int)$value;
-        //         } elseif (is_numeric($value) && strpos($value, '.') !== false) {
-        //             $value = (float)$value;
-        //         } elseif (is_bool($value)) {
-        //             $value = (bool)$value;
-        //         } elseif (is_array($value)) {
-        //             $value = (array)$value;
-        //         } elseif (is_object($value)) {
-        //             $value = (object)$value;
-        //         }  elseif (is_string($value)) {
-        //             $value = (string)$value;
-        //         } else {
-        //             $value = null;
-        //         }
-        //         $output[$key] = $value;
-        //     }
-        // }        
-
-        // return $output;
     }
 
 }

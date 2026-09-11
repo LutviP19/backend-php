@@ -1,8 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Core\Support;
 
-use App\Core\Support\Config;
+// use App\Core\Support\Config;
 
 /**
  * Handle all the stuff related to session.
@@ -16,11 +18,11 @@ class Session
      *
      * @return array
      */
-    public static function all(): array
+    public static function all(array $allow = []): array
     {
         $sessions = [];
         $csrfTokenKey = (string) Config::get("session.csrf_token", 'csrf_token');
-        
+
         $escaped = [
             "sessionKey",
             "sessionKeyApi",
@@ -32,18 +34,31 @@ class Session
             "destroyed",
             "userAgent",
             "IPaddress",
+            "user_id",
             "password",
             "pin",
             "errors",
             "secret",
-            "jwtId",
-            "tokenJwt",
+            "authId",
+            "tokenAuth",
             "gnr",
             "_previous_uri",
             "_old_input",
         ];
 
         $isEncrypted = (bool) config("session.encrypt");
+
+        // allow specific keys
+        if (!empty($allow) && is_array($allow)) {
+            foreach ($allow as $item) {
+                $key = array_search($item, $escaped, true);
+                if ($key !== false) {
+                    unset($escaped[$key]);
+                }
+            }
+
+            $escaped = array_values($escaped);
+        }
 
         if (isset($_SESSION) && is_array($_SESSION)) {
             foreach ($_SESSION as $key => $value) {
@@ -55,7 +70,7 @@ class Session
                 if (is_null($data) || $data === '') {
                     continue;
                 }
-                
+
                 if (is_string($data)) {
                     $decoded = json_decode($data, true);
                     $sessions[$key] = (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) ? $decoded : $data;
@@ -77,7 +92,7 @@ class Session
     public static function get($key)
     {
         if (!self::has($key)) {
-            return "";
+            return null;
         }
 
         $value = $_SESSION[$key];
@@ -109,8 +124,8 @@ class Session
     public static function set($key, $value)
     {
         // Jika value berupa array atau objek, ubah ke JSON murni
-        $processedValue = (is_array($value) || is_object($value)) 
-            ? json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) 
+        $processedValue = (is_array($value) || is_object($value))
+            ? json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
             : $value;
 
         if (config("session.encrypt")) {
@@ -169,7 +184,7 @@ class Session
             session_destroy();
         }
 
-        // Jalankan bp_session_start() atau session_start() jika fungsi ini dipanggil 
+        // Jalankan bp_session_start() atau session_start() jika fungsi ini dipanggil
         // agar data token baru bisa disimpan ke media penyimpanan (storage)
         if (function_exists('bp_session_start')) {
             bp_session_start();
@@ -193,7 +208,7 @@ class Session
 
         $csrfTokenKey = (string) Config::get("session.csrf_token", 'csrf_token');
         $ignoreKeys = [$csrfTokenKey, "_previous_uri", "IPaddress", "userAgent"];
-        
+
         foreach ($_SESSION as $key => $value) {
             if (!in_array($key, $ignoreKeys)) {
                 unset($_SESSION[$key]);
@@ -215,7 +230,7 @@ class Session
             self::unset($key);
             return $flash;
         }
-        
+
         self::set($key, $value);
         return null;
     }
@@ -250,12 +265,12 @@ class Session
     public static function getOldInput($key)
     {
         $oldInputs = self::get("_old_input");
-        
+
         // PENTING: Cegah error "offset null / type error array" di PHP 8.1+
         if (is_array($oldInputs) && isset($oldInputs[$key])) {
             return $oldInputs[$key];
         }
-        
+
         return "";
     }
 
@@ -267,7 +282,7 @@ class Session
     public static function setOldInput()
     {
         $inputs = [];
-        
+
         if (isset($_POST) && is_array($_POST)) {
             foreach ($_POST as $input => $value) {
                 // Gunakan helper e() yang aman (menggunakan htmlspecialchars bawaan revisi sebelumnya)

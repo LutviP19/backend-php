@@ -1,19 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controllers\Api\v1;
 
+use App\Core\Auth\BaseAuth;
 use App\Core\Support\Session;
 use App\Core\Support\Config;
 use App\Models\User;
 use App\Core\Security\Middleware\ValidateClient;
-use App\Core\Security\Middleware\JwtToken;
 use App\Controllers\Api\ApiController;
 use App\Core\Http\{Request,Response};
 use App\Core\Security\Hash;
 use App\Core\Security\Encryption;
 use App\Core\Validation\Validator;
 use Exception;
-// use ReallySimpleJWT\Token;
 
 class WebhookController extends ApiController
 {
@@ -62,7 +63,7 @@ class WebhookController extends ApiController
     {
         // global $requestServer;
 
-        // if(\isSwoole()) { // on OpenSwoole Server
+        // if ( \in_array($_SERVER['SERVER_PORT'], config('app.ignore_port'))) { // on OpenSwoole Server
 
         //     $headers = $requestServer->header;
         //     $jsonData = \is_string($requestServer->rawContent()) ? \json_decode($requestServer->rawContent(), true) : [];
@@ -137,14 +138,16 @@ class WebhookController extends ApiController
         $pass = 'password123';
         $password = $hash->makePassword($pass);
 
-        $clientId =  User::getUlid(1) ?: null;
+        $id = 1;
+        $clientId =  User::getUlid($id) ?? null;
         // $clientId =  '01JP9MA549R9NNVNGHTHJFTNXJ';
+        // \json_response($clientId);
 
         // Init ValidateClient
-        // $validateClient = new ValidateClient(1, 'id');
+        // $validateClient = new ValidateClient($id, 'id');
         $validateClient = new ValidateClient($clientId);
 
-        // Update Token
+        // // Update Token
         // $validateClient->updateToken();
         // (new User())->updateClientToken('ulid', $clientId);
 
@@ -154,40 +157,64 @@ class WebhookController extends ApiController
 
         // generate ULID
         $ulid = generateUlid();
-        // dd($ulid, true);
 
-        // JWT
-        $userId = $clientId;
-        $secret = $clientStrToken;
-        $expirationTime = 3600;
-        $jwtId = generateUlid();
-        $issuer = clientIP();
-        $audience = Config::get('app.url');
-        // Init JwtToken
-        $jwtToken = new JwtToken($secret, $expirationTime, $jwtId, $issuer, $audience);
-        // create specific Token
-        $info = 'Webhook jwt';
-        $subject = 'Access Webhook API';
-        $tokenJwt = $jwtToken->createToken($userId, $info, $subject);
+        Session::set('uid', $clientId);
+        $uid = Session::get('uid');
 
-        $token_api = encryptData($this->getPass());
+        // BaseAuth Key Generator
+        $keygenJwt = generateRandomString(64);
+        $keygenSodium = generateUniqueString(32);
+        $keygenSodiumV4 = (new \App\Core\Auth\SodiumAuthV4())->generateKeys();
+
+        // Init BaseAuth Token
+        $authTokenJwt = new BaseAuth('JWT', Config::get('session.exptime'));
+        $authTokenJwt->setCustomKeys($keygenJwt); // Custom Key
+        $tokenAuthJwt = $authTokenJwt->generateToken(['uid' => $ulid]);
+
+        $authToken = new BaseAuth('Sodium', Config::get('session.exptime'));
+        $authToken->setCustomKeys($keygenSodium); // Custom Key
+        $tokenAuth = $authToken->generateToken(['uid' => $uid, "user_permissions" => cacheContent('get', "user_abilities:{$uid}")]);
+        $tokenAuthRefresh = $authToken->refreshToken($tokenAuth['refresh_token'] ?? '');
+
+        $authTokenV4 = new BaseAuth('Sodium-v4', Config::get('session.exptime'));
+        // ['private' => $privateKey, 'public' => $publicKey] = $keygenSodiumV4;
+        // $authTokenV4->setCustomKeys($privateKey, $publicKey); // Custom Keys
+        $authTokenV4->setCustomKeys(...array_values($keygenSodiumV4)); // Simple Custom Keys
+        $tokenAuthV4 = $authTokenV4->generateToken(['uid' => $ulid]);
+
+        $genPass = encryptData($this->getPass());
         $output = $this->getOutput(true, 200, [
                 'message' => 'Hello world!',
                 'server' =>  \isSwoole() ? "OpenSwoole" : "PHP FPM",
                 'client_ip' => clientIP(),
                 'session_id' => session_id(),
                 'ulid' => $ulid,
-                'token_jwt' => $tokenJwt,
-                'parse_jwt' => $jwtToken->parseJwt($tokenJwt),
-                'match_jwt' => $jwtToken->validateToken($tokenJwt),
+                'client_id' => $clientId,
+
+                // BaseAuth
+                'keygenJwt' => $keygenJwt,
+                'keygenSodium' => $keygenSodium,
+                'keygenSodiumV4' => $keygenSodiumV4,
+                'token_jwt' => $tokenAuthJwt,
+                'match_jwt' => $authTokenJwt->validateToken($tokenAuthJwt['access_token']),
+                'token_auth' => $tokenAuth,
+                'match_auth' => $authToken->validateToken($tokenAuth['access_token']),
+                'token_auth_refresh' => $tokenAuthRefresh,
+                'abilities_auth' => cacheContent('get', "user_abilities:{$uid}"),
+                // 'validateAuthToken' => $this->validateAuthToken('super.view'),
+
+                'token_auth_v4' => $tokenAuthV4,
+                'match_auth_v4' => $authTokenV4->validateToken($tokenAuthV4['access_token']),
+
+                // Others Encrypt
                 'token' => $clientToken,
                 'str_token' =>  $clientStrToken,
                 'match_token' => $validateClient->matchToken($clientToken),
-                'strlen' => strlen('5gbSVtgMFs96tGNGyBKVyjwREtj6uzPHmVnauvyhFpkLuZXEW4GIh8HGM2lW'),
+                'strlen' => strlen('1Lzmakn0yrtdW0Ws1GF!AK9MDm6V305p*KKK8ED!2XNm8^aAnhg!PV9n5G5ubjyp'),
                 'genkey' => Encryption::generateKey(),
-                'pass' => $token_api,
-                'decrypt_pass' => \decryptData($token_api),
-                'match_pass' => matchEncryptedData($this->getPass(), $token_api),
+                'pass' => $genPass,
+                'decrypt_pass' => \decryptData($genPass),
+                'match_pass' => matchEncryptedData($this->getPass(), $genPass),
                 'myhash' => $myhash,
                 'check_hash' => $hash->matchHash($unik, $myhash),
                 'password' => $password,

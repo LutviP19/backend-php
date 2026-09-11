@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Core\Support;
 
 use Predis\Client as PredisClient;
@@ -15,15 +17,16 @@ class CacheSwoole
 {
     private static ?Channel $pool = null;
     private string $storagePath;
-    private int $defaultExpiry = 3600;
+    private int $defaultExpiry;
 
-    public function __construct()
+    public function __construct(int $defaultExpiry = 3600)
     {
         $this->storagePath = storage_path("/framework/cache/");
+        $this->defaultExpiry = $defaultExpiry;
     }
 
     /**
-     * Initialization Predis Connection Pool untuk OpenSwoole
+     * Inisialisasi Predis Connection Pool untuk OpenSwoole
      */
     public static function initPool(): void
     {
@@ -42,20 +45,20 @@ class CacheSwoole
                 $config["password"] = $password;
             }
 
-            // Populate channel With instance Predis Client
+            // Populate channel dengan instance Predis Client
             for ($i = 0; $i < $poolSize; $i++) {
                 try {
                     $client = new PredisClient($config);
                     self::$pool->push($client);
                 } catch (\Throwable $e) {
-                    // Error log if client initialization fails
+                    // Log error jika gagal inisialisasi client
                 }
             }
         }
     }
 
     /**
-     * Helper to retrieve and restore Redis connections from Channel Pool
+     * Helper untuk mengambil & mengembalikan koneksi Predis dari Channel Pool
      */
     private function executeRedis(callable $callback)
     {
@@ -63,7 +66,7 @@ class CacheSwoole
             return null;
         }
 
-        // Take 1 Predis client from the pool (Timeout 2.0 seconds)
+        // Ambil 1 client Predis dari pool (Timeout 2.0 detik)
         /** @var PredisClient|false $redis */
         $redis = self::$pool->pop(2.0);
 
@@ -97,6 +100,7 @@ class CacheSwoole
 
     public function get(string $key)
     {
+        // 1. Cek Redis via Pool
         $data = $this->executeRedis(function (PredisClient $redis) use ($key) {
             $res = $redis->get($key);
             return $res !== null ? $res : false;
@@ -106,6 +110,7 @@ class CacheSwoole
             return @unserialize($data);
         }
 
+        // 2. Fallback File Cache
         $file = $this->storagePath . md5($key) . ".cache";
         if (file_exists($file)) {
             $content = @unserialize(file_get_contents($file));
@@ -126,6 +131,7 @@ class CacheSwoole
 
         $serialized = serialize($data);
 
+        // 1. Simpan ke Redis
         $saved = $this->executeRedis(function (PredisClient $redis) use ($key, $expiry, $serialized) {
             $res = $redis->setex($key, $expiry, $serialized);
             return $res ? true : null;
@@ -135,6 +141,7 @@ class CacheSwoole
             return;
         }
 
+        // 2. Fallback Simpan ke File
         if (!is_dir($this->storagePath)) {
             @mkdir($this->storagePath, 0775, true);
         }
@@ -149,6 +156,7 @@ class CacheSwoole
 
     public function flush(string $key): void
     {
+        // 1. Flush Redis
         $this->executeRedis(function (PredisClient $redis) use ($key) {
             if (str_contains($key, '*')) {
                 $keys = $redis->keys($key);
@@ -160,6 +168,7 @@ class CacheSwoole
             }
         });
 
+        // 2. Flush File
         if (str_contains($key, '*')) {
             $files = glob($this->storagePath . "*.cache");
             if ($files) {

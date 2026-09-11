@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controllers\Api\v1;
 
 use App\Core\Http\Client\NativeCurlStreamer;
@@ -24,16 +26,18 @@ class ClientController extends ApiController
 
     public function profile(Request $request, Response $response)
     {
-         try {
+        // echo "Client controller, with default client middleware(useMiddleware).";
+        try {
             $headers = [];
             $callback = false;
+            $user = null;
             $message = '';
             $validator = new Validator();
             $validator->validate($this->jsonData, [
                 'email' => 'required|email',
+                // 'password'  => 'required|min:8|max:100',
             ]);
             $errors = \App\Core\Support\Session::get('errors');
-            // \App\Core\Support\Log::debug($errors, 'WebAuth.login.$errors');
 
             if ($errors) {
                 $statusCode = 422;
@@ -45,16 +49,14 @@ class ClientController extends ApiController
 
                 // Filter Input
                 $jsonData = $this->filter->filter($this->jsonData, [
-                    'email' => 'trim|sanitize_string',
+                    'email' => 'trim|sanitize_string'
                 ]);
 
                 // Sanitize Input
                 $payload = $this->filter->sanitize($jsonData, ['email']);
-
                 $email = readJson('email', $payload);
-                $callback = false;
 
-                // A. TEST SINGLE STREAM 
+                // A. TEST SINGLE STREAM
                 $headers = getallheaders();
                 $streamer = new NativeCurlStreamer();
                 $singleTask = App::externalApi('backend_profile', [
@@ -64,29 +66,39 @@ class ClientController extends ApiController
                     ]
                 ]);
                 $single = $streamer->singleStream($singleTask);
+                // exit_response($single, $single['statusCode']);
                 // exit_response($single['body'], $single['statusCode']);
 
                 if ($single['error']) {
                     exit_response($single['body'], $single['statusCode']);
                 } else {
                     $data = json_decode((string) $single['body'], true);
-                    $user = readJson('data.account', $data);
+                    $user = (object) readJson('data.account', $data);
                     $rspEmail = readJson('data.account.email', $data);
 
-                    if(!$user) {
+                    if (!$user) {
                         exit_response($single['body'], $single['statusCode']);
                     }
 
-                    $callback = ($email === $user['email'] && Session::get('email') === $rspEmail);
+                    $callback = (!empty($user) && $email === ($user->email ?? null) && Session::get('email') === $rspEmail);
                 }
             }
 
             // // Middleware
+            // // TODO:
+            // // Invalid username_prefix dari get_device_fingerprint()
+            // // decrease RateLimit lebih lama * (total kegagalan)
             // if ($this->rateLimit) {
             //     $this->setRatelimiter('login_request', 1200, 5);
             // }
 
-            if ($callback && !empty($user)) {
+            // // Test Gate - permission
+            // // $this->validateAuthToken('super.view');
+            // $this->validateAuthToken('administrator.view');
+
+            // json_response(Session::all(), 200, "test");
+
+            if ($callback) {
 
                 // Cache session data by uid
                 if (\isSwoole()) {
@@ -94,14 +106,13 @@ class ClientController extends ApiController
                     // Clean old keys
                     // delCache($_SESSION['uid'].'*', 'bp_session');
                     // cacheContent('set', $_SESSION['uid'] .'-'. $this->sessionId, 'bp_session', $_SESSION);
-                    
+
                     // delCache($_SESSION['uid']);
                     // cacheContent('set', $_SESSION['uid'] .'-'. $this->sessionId, $_SESSION);
                 }
 
                 return endResponse(
                     $this->getOutput(true, 201, [
-                            // 'token' => $tokenJwt,
                             // 'all' => $_SESSION,
                             // 'sessionKey' => Session::get('sessionKey'),
                             'account' => Session::all()
@@ -111,7 +122,7 @@ class ClientController extends ApiController
                 );
 
             } else {
-                
+
                 return endResponse(
                     $this->getOutput(false, $statusCode, [
                         $errors

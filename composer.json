@@ -23,9 +23,7 @@
         "roolith/event": "^1.0",
         "nesbot/carbon": "^3.11",
         "neuron-core/neuron-ai": "^2.11",
-        "phpstreamserver/scheduler": "^0.8.0",
-
-        "rbdwllr/reallysimplejwt": "^5.0"
+        "phpstreamserver/scheduler": "^0.8.0"
     },
     "bin": [
         "bin/console"

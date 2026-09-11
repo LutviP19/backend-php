@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Cache class
  * Supported drivers: files(default) and redis
@@ -16,10 +18,10 @@ class Cache
 {
     // Object class
     private $redisClient;
-    private $storagePath;
-    private $defaultExpiry = 3600;
+    private string $storagePath;
+    private int $defaultExpiry;
 
-    public function __construct()
+    public function __construct(int $defaultExpiry = 3600)
     {
         $this->redisClient = null;
 
@@ -38,6 +40,7 @@ class Cache
 
         // Define cache folder (Adapt to your folder structure)
         $this->storagePath = storage_path("/framework/cache/");
+        $this->defaultExpiry = $defaultExpiry;
     }
 
     /**
@@ -94,6 +97,13 @@ class Cache
     {
         //  Only cache if data is not empty
         if (!empty($data)) {
+            // //  Only cache if total data not 0
+            // if (is_array($data)) {
+            //     $total = $data['total'] ?? $data['data']['total'] ?? null;
+            //     if ($total === 0) {
+            //         return;
+            //     }
+            // }
 
             //  Only cache if total data not 0
             if (is_array($data) && count($data) <= 0) {
@@ -129,10 +139,25 @@ class Cache
      */
     public function flush($key)
     {
+        // // Delete in Redis
+        // if ($this->redisClient) {
+        //     try {
+        //         $this->redisClient->del($key);
+        //     } catch (Exception) {
+        //     }
+        // }
+
+        // // Delete in Files
+        // $file = $this->storagePath . md5((string) $key) . ".cache";
+        // if (file_exists($file)) {
+        //     unlink($file);
+        // }
+
         // 1. Handling Redis Cache
         if ($this->redisClient) {
             try {
                 if (str_contains($key, '*')) {
+                    // Cari semua key Redis yang sesuai pattern
                     $keys = $this->redisClient->keys($key);
                     if (!empty($keys)) {
                         $this->redisClient->del($keys);
@@ -141,23 +166,23 @@ class Cache
                     $this->redisClient->del($key);
                 }
             } catch (\Throwable $e) {
-                // Log errors if needed
+                // Log error jika diperlukan
             }
         }
 
         // 2. Handling File Cache
         if (str_contains($key, '*')) {
-            // If there are wildcards, iterate over the entire .cache file and match the hashes
-            // Note: If the cache file is saved in md5(key) form, the wildcard is at the beginning of the original string
-            // cannot be searched directly via glob(md5(key)).
-            // Best solution for files: save key or use pattern matching in manifest/folder.
-            
+            // Jika ada wildcard, iterasi seluruh file .cache dan cocokkan hash-nya
+            // Catatan: Jika file cache disimpan dalam bentuk md5(key), wildcard di awal string asli
+            // tidak bisa dicari langsung via glob(md5(key)).
+            // Solusi terbaik untuk file: simpan key atau gunakan pattern matching pada manifest/folder.
+
             $files = glob($this->storagePath . "*.cache");
             if ($files) {
                 $prefix = str_replace('*', '', $key);
                 foreach ($files as $file) {
-                    // Retrieve the contents of the original key if stored in the file header /delete according to the criteria
-                    unlink($file); 
+                    // Mengambil isi key asli jika disimpan di header file / hapus sesuai kriteria
+                    unlink($file);
                 }
             }
         } else {

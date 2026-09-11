@@ -14,7 +14,7 @@ class ServerApiController extends BaseController
 {
     protected $filter;
     protected $headers;
-    protected $jwtToken;
+    protected $authToken;
     protected $sessionId;
     protected $sessionName;
     protected $activeClientMiddleware = true;
@@ -27,18 +27,16 @@ class ServerApiController extends BaseController
         $this->sessionName = \session_name() ?? '';
         $this->sessionId = $_COOKIE[$this->sessionName] ?? null;
 
-        // \App\Core\Support\Log::debug($_SERVER, 'ServerApiController.__construct.$_SERVER');
-        // \App\Core\Support\Log::debug($this->headers, 'ServerApiController.__construct.$this->headers');
-
         // Clean Errors MessageBag
         Session::unset('errors');
 
         // Auto detect from config
         $this->activeClientMiddleware = (!in_array(\clientIP(), config('local_ips')));
 
-        // Start JWT - only for public
+        // Start Auth - only for public
         if($this->activeClientMiddleware) {
-            $this->jwtToken = $this->initJwtToken();
+            // New-BaseAuth
+            $this->authToken = $this->initAuthToken();
         }
     }
 
@@ -81,73 +79,89 @@ class ServerApiController extends BaseController
      */
     protected function setLoginSession($user)
     {
-        $tokenJwt = '';
+        // Simpan ke DB jika belum ada ulid
+        // $db->query("UPDATE {$this->table} SET ulid) = ? WHERE id = ?", [$newUlid, $user_id]);
+
         $sessionData = [];
         foreach ($user as $key => $value) {
-            if ($key === 'ulid') {
-                $key = 'uid';
-            }
-            $sessionData[$key] = $value;
+            [$newKey, $newValue] = match ($key) {
+                'id', 'user_id' => ['user_id', encryptData($value)],
+                'ulid'          => ['uid', $value],
+                default         => [$key, $value],
+            };
+
+            $sessionData[$newKey] = $newValue;
         }
 
         $gnr = generateRandomString(32, true);
-        $userId = $user->ulid ?? $sessionData['uid'] ?? \get_device_fingerprint() ?? null;
+        $userId = $user->ulid ?? $sessionData['uid'] ?? \get_device_fingerprint();
         $sessionData['gnr'] = $gnr;
-        
+
+        // hapus cache by uid
+        delCache("client_token:{$userId}");
+        delCache("user_abilities:{$userId}");
+
         $validateClient = new \App\Core\Security\Middleware\ValidateClient($userId);
         $clientToken = $validateClient->getToken();
         $clientTokenGen = $validateClient->generateToken();
 
         $sessionData['client_token'] = $clientTokenGen;
 
-        // Clear Redis Session Cache
+        // Hapus cache session di Redis
         $sessionKeyApi = sessionKeyFormat($userId);
-        (new \App\Core\Support\CacheSwoole())->flush($sessionKeyApi);        
+        delCache($sessionKeyApi);
 
         if (false === $validateClient->matchToken($clientTokenGen)) {
-            // if (!isSwoole()) {
-            //     Session::destroy();
-            // }
 
             return false;
         }
 
-        // JWT & Secret initialization
-        if ($this->activeClientMiddleware) {
-            Session::set('secret', encryptData($clientToken, $gnr));
-            $sessionData['secret'] = Session::get('secret');
-            $sessionData['jwtId'] = generateUlid();
+        // Set Basic Sessions
+        foreach ($sessionData as $sKey => $sVal) {
+            Session::set($sKey, $sVal);
+        }
 
-            // initJwtToken & create tokenJwt
-            $jwtToken = $this->initJwtToken();
-            $info = 'Api jwt-' . $userId;
-            $subject = 'Access API for web user:' . $userId;
-            $tokenJwt = $jwtToken->createToken($userId, $info, $subject);
-            $sessionData['tokenJwt'] = $tokenJwt;
+        // Secret initialization
+        Session::set('secret', encryptData($clientToken, $gnr));
+        $sessionData['secret'] = Session::get('secret');
+        $sessionData['authId'] = generateUlid();
+
+        // initAuthToken
+        $tokenAuth = "";
+        if ($this->activeClientMiddleware) {
+
+            $authToken = $this->initAuthToken($sessionData);
+            $tokenAuth = $authToken->generateToken([
+                'uid' => $userId,
+                // "user_permissions" => cacheContent('get', "user_abilities:{$userId}")
+            ]) ?? null;
+            $sessionData['tokenAuth'] = $tokenAuth['access_token'] ?? '';
         }
 
         // Persistence Session di Swoole
         $this->sessionId = session_create_id('bpapi-');
         $prefixKey = sessionKeyFormat($userId, $this->sessionId);
         $sessionData['sessionKeyApi'] = $prefixKey;
-        
-        \App\Core\Support\Log::debug($sessionData, 'Controller.Debug.sessionData');
 
-         (new \App\Core\Support\CacheSwoole())->set($prefixKey, $sessionData, config('session.exptime'));
+        (new \App\Core\Support\CacheSwoole(config("session.exptime", 7200)))->set($prefixKey, $sessionData, config('session.exptime'));
 
-        // Saved to the Swoole Request Context so it can be accessed in the Controller
+        // Disimpan ke Context Request Swoole agar dapat diakses di Controller
         if (class_exists('\OpenSwoole\Coroutine')) {
             \OpenSwoole\Coroutine::getContext()['session'] = $sessionData;
         }
 
-        // // Example Take a session from an active Coroutine Context
-        // $session = Coroutine::getContext()['session'] ?? null;        
-        
+        // // Ambil session dari Coroutine Context aktif
+        // $session = Coroutine::getContext()['session'] ?? null;
+
         foreach ($sessionData as $sKey => $sVal) {
+            if (Session::has($sKey)) {
+                continue;
+            }
+
             Session::set($sKey, $sVal);
         }
 
-        return $tokenJwt;
+        return $tokenAuth;
     }
 
     /**
@@ -176,12 +190,14 @@ class ServerApiController extends BaseController
         if($this->activeClientMiddleware) {
             // Validate header X-Client-Token
             $validate = $this->validateClientToken();
-            if($validate) return $validate;
-
-            // Validate Jwt        
-            $validate = $this->validateJwt();
             if ($validate) {
                 return $validate;
+            }
+
+            // Validate Auth
+            $validateAuth = $this->validateAuth();
+            if ($validateAuth) {
+                return $validateAuth;
             }
         }
     }
@@ -229,17 +245,19 @@ class ServerApiController extends BaseController
         return false;
     }
 
-    public function validateJwt()
+    // New-BaseAuth
+    public function validateAuth()
     {
         try {
             $user = Session::all();
-            $tokenJwt = Session::get('tokenJwt');
-            $bearerToken = str_replace('Bearer ', '', $this->headers['Authorization'][0] ?? '');
+            $tokenAuth = Session::get('tokenAuth');
+            $bearerToken = $this->getBearerToken();
 
             if (empty($user) ||
-                is_null($this->jwtToken) ||
-                $bearerToken !== $tokenJwt ||
-                false === $this->jwtToken->validateToken($bearerToken)) {
+                is_null($this->authToken) ||
+                is_null($bearerTokenn) ||
+                $bearerToken !== $tokenAuth ||
+                false === $this->authToken->validateToken($bearerToken)) {
 
                 $statusCode = 401;
                 $message = 'Please login!';
@@ -270,7 +288,7 @@ class ServerApiController extends BaseController
                 "busy" => ["Please try again after {$afteText}."],
             ];
 
-            json_response([], 429, "Too many requests", $errors);
+            return $this->SetOpenSwooleResponse(false, 429, $errors, "Too many requests");
         }
     }
 

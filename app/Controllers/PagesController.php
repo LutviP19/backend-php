@@ -43,8 +43,8 @@ class PagesController extends Controller
         // $headers = bp_session_regenerate_id($oldSessionId);
         // setHeaders($headers);
 
-        // // Session::set('jwtId', generateUlid());
-        // dd(Session::get('jwtId'));
+        // // Session::set('authId', generateUlid());
+        // dd(Session::get('authId'));
         $server = \isSwoole() ? "OpenSwoole" : "PHP FPM";
 
         $this->view('spa.index', ['users' => $users, 'server' => $server]);

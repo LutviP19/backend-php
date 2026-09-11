@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Controllers\Api\v1\Auth;
+declare(strict_types=1);
 
+namespace App\Controllers\Api\v1\Auth;
 
 use App\Core\Http\Client\NativeCurlStreamer;
 use App\Core\Support\App;
@@ -89,9 +90,9 @@ class AuthController extends ApiController
                     exit_response($single['body'], $single['statusCode']);
                 } else {
                     $data = json_decode((string) $single['body'], true);
-                    $user = readJson('data.account', $data);
+                    $user = (object) readJson('data.account', $data);
 
-                    if($email === $user['email']) {
+                    if ($email === $user->email) {
                         $callback = true;
                     }
                 }
@@ -103,9 +104,9 @@ class AuthController extends ApiController
             // }
 
             if ($callback && !empty($user)) {
-                
-                $tokenJwtValid = $this->setLoginSession($user);
-                if (!$tokenJwtValid) {
+
+                $tokenAuthValid = $this->setLoginSession($user);
+                if (false === $tokenAuthValid) {
                     return endResponse(
                         $this->getOutput(false, 401, [
                           'auth' => 'Client not found!',
@@ -120,21 +121,21 @@ class AuthController extends ApiController
                 $sessionName = $this->sessionName;
                 $sessionId = Session::get('sessionKey');
                 $sessionExp = config('session.exptime');
-                $headers[] = ['Set-Cookie' => "{$sessionName}={$sessionId}; Max-Age={$sessionExp}; Path=/; SameSite=Lax;"];
 
                 // Cache session data by uid
                 if (\isSwoole()) {
-                    $prefixKey = encryptData(sessionKeyFormat(($user['uid'] ?? $user['ulid']), $this->sessionId));
+                    $prefixKey = encryptData(sessionKeyFormat((Session::get('uid') ?? $user->ulid), $this->sessionId));
                     $headers[] = ['Set-Cookie' => "sessionKey={$prefixKey}; Max-Age={$sessionExp}; Path=/; SameSite=Lax;"];
-                    // \App\Core\Support\Log::debug($headers, 'AuthController.login.$headers');
+                } else {
+                    $headers[] = ['Set-Cookie' => "{$sessionName}={$sessionId}; Max-Age={$sessionExp}; Path=/; SameSite=Lax;"];
                 }
 
                 return endResponse(
-                    $this->getOutput(true, 201, [                            
+                    $this->getOutput(true, 201, [
                             'jwt_token' => $tokenJwtValid,
                             'account' => Session::all(),
                             // 'client_token' => Session::get('client_token'),
-                            // 'sessionKey' => $prefixKey,                            
+                            // 'sessionKey' => $prefixKey,
                             // 'jwt_secret' =>  Session::get('secret')
                     ]),
                     201,
@@ -142,7 +143,7 @@ class AuthController extends ApiController
                 );
 
             } else {
-                
+
                 return endResponse(
                     $this->getOutput(false, $statusCode, [
                         $errors
@@ -322,7 +323,7 @@ class AuthController extends ApiController
                 $validateClient->delToken();
 
                 // Delete Cache session data by uid
-                if(\isSwoole()) {
+                if (\isSwoole()) {
 
                     // Clean old keys
                     delCache($userId.'*');

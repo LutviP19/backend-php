@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Core\Http;
 
-use App\Core\Security\Middleware\JwtToken;
+use App\Core\Auth\BaseAuth;
 use App\Core\Support\Config;
 use App\Core\Support\Session;
 use App\Core\Security\CSRF;
@@ -17,17 +17,17 @@ use Exception;
  */
 class BaseController
 {
-    public function __construct()
-    {
-
-    }
-
     /**
      * Path to views directory.
      *
      * @var string
      */
     protected $viewPath = __DIR__.'/../../../views/';
+
+    public function __construct()
+    {
+
+    }
 
     /**
      * Display a view.
@@ -153,32 +153,19 @@ class BaseController
         return config('app.token');
     }
 
-    /**
-     * initJwtToken function
-     *
-     * @return void
-     */
-    public function initJwtToken()
+    // New-BaseAuth
+    public function initAuthToken(?array $sessionData = [])
     {
-        $secret = Session::get('secret') ?? generateRandomString(32, true);
-        $expirationTime = config('session.exptime');
-        $jwtId = Session::get('jwtId') ?? generateUlid();
-        $issuer = \get_device_fingerprint(false);
-        $audience = Config::get('app.url');
+        // loadAbilities
+        \App\Core\Auth\Gate::loadAbilities($sessionData['user_id'] ?? '', $sessionData['current_team_id'] ?? '');
 
-        // Init JwtToken
-        return (new JwtToken($secret, $expirationTime, $jwtId, $issuer, $audience));
+        // Init BaseAuth Token
+        return new BaseAuth(Config::get('auth.default'), Config::get('session.exptime'));
     }
 
-    protected function getBearerToken()
+    protected function getBearerToken(mixed $swooleRequest = null)
     {
-        $headers = $this->request()->headers();
-
-        if (!isset($headers['Authorization'])) {
-            return false;
-        }
-
-        return str_replace('Bearer ', '', $headers['Authorization']);
+        return \getBearerToken($swooleRequest);
     }
 
     /**
@@ -228,10 +215,5 @@ class BaseController
     protected function request()
     {
         return new Request();
-    }
-
-    protected function __isHtmxRequest()
-    {
-        return isset($_SERVER['HTTP_HX_REQUEST']) && $_SERVER['HTTP_HX_REQUEST'] === 'true';
     }
 }

@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Core\Security\Middleware;
+declare(strict_types=1);
 
+namespace App\Core\Security\Middleware;
 
 use App\Models\User;
 use App\Core\Support\Config;
@@ -15,7 +16,7 @@ class ValidateClient
 {
     // protected $clientId;
     // protected $columnId;
-    protected $minutes_to_expire;
+    protected $time_to_expire;
     protected $hash;
     protected $redis;
 
@@ -23,10 +24,10 @@ class ValidateClient
     {
         $this->clientId = $clientId;
         $this->columnId = $columnId;
-        // $this->minutes_to_expire = (env('SESSION_LIFETIME', 120) * 60);
+        // $this->time_to_expire = (env('SESSION_LIFETIME', 120) * 60);
         // 1. Simpan nilai ini dalam satuan DETIK murni (120 menit * 60 = 7200 detik)
-        $this->minutes_to_expire = (int)env('SESSION_LIFETIME', 120) * 60;
-        
+        $this->time_to_expire = (int) config("session.exptime", 7200);
+
         $this->hash = new Hash();
 
         $this->redis = new \Predis\Client([
@@ -47,17 +48,17 @@ class ValidateClient
     {
         $key = 'client_token:' . $this->clientId;
         $token = $this->redis->get($key);
-        
+
         if ($token !== false && !is_null($token) && $token !== '') {
             return base64_decode($token);
         }
 
         // Populate token
         $this->__checkColumnId($this->columnId);
-        $token = User::getClientId($this->clientId, $this->columnId);        
+        $token = User::getClientId($this->clientId, $this->columnId);
 
         if ($token != '') {
-            $this->redis->setex($key, $this->minutes_to_expire, base64_encode($token));
+            $this->redis->setex($key, $this->time_to_expire, base64_encode($token));
 
             return $token;
         }
@@ -93,7 +94,7 @@ class ValidateClient
         if (! is_null($token)) { // delete cache from redis
             $key = 'client_token:'.$this->clientId;
             $this->redis->mset([$key => base64_encode($token)]);
-            $this->redis->expire($key, $this->minutes_to_expire);
+            $this->redis->expire($key, $this->time_to_expire);
         } else {
             return false;
         }

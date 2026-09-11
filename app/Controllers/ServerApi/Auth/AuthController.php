@@ -43,6 +43,7 @@ class AuthController extends ServerApiController
         $status = $callback = false;
         $output = $headers = [];
         $message = $tokenJwt =  '';
+        $tokenAuth = [];
 
         try {
 
@@ -87,10 +88,9 @@ class AuthController extends ServerApiController
 
             if ($callback && isset($user->ulid)) {
 
-                // Set Session and generate new JwtToken
-                // dd($user, true);
-                $tokenJwt = $this->setLoginSession($user);
-                if ($this->activeClientMiddleware && false === $tokenJwt) {
+                // New-BaseAuth
+                $tokenAuth = $this->setLoginSession($user);
+                if ($this->activeClientMiddleware && false === $tokenAuth) {
 
                     $statusCode = 401;
                     return $this->SetOpenSwooleResponse($status, $statusCode, ['auth' => 'Client not found!'], 'Invalid Client!');
@@ -101,33 +101,32 @@ class AuthController extends ServerApiController
                 $sessionId = Session::get('sessionKeyApi');
                 $sessionExp = config('session.exptime');
 
-                // Initialize array $headers $this->activeClientMiddleware && 
-                if($sessionId !== "") {
+                // Initialize array $headers $this->activeClientMiddleware
+                if ($sessionId !== "") {
                     $cookies = [];
-                    
+
                     $cookies[] = "{$this->sessionName}={$sessionId}; Max-Age={$sessionExp}; Path=/; SameSite=Lax; HttpOnly";
                     $prefixKey = encryptData(sessionKeyFormat($user->ulid, $this->sessionId));
                     $cookies[]  = "sessionKeyApi={$prefixKey}; Max-Age={$sessionExp}; Path=/; SameSite=Lax; HttpOnly";
 
-                    // 3. Masukkan ke $headers (Siap dikirim ke SetOpenSwooleResponse)
                     $headers = [
                         'Set-Cookie' => $cookies
                     ];
-                    \App\Core\Support\Log::debug($headers, 'AuthController.login.$headers');
                 }
-                
+
                 $status = true;
                 $statusCode = 201;
-                $output = [                            
-                            'jwt_token' => $tokenJwt,
-                            'account' => Session::all(),
+                $output = [
+                            'token' => $tokenAuth,
+                            'account' => Session::all(['user_id']),
+                            // 'user_id' => encryptData(Session::get('user_id')),
                             // 'client_token' => Session::get('client_token'),
                             // 'api_token' => encryptData(config('app.token_api')),
                             'sessid' => decryptData(Session::get('sessionKeyApi')),
                             // 'all' => $_SESSION,
                         ];
-                        
-                return $this->SetOpenSwooleResponse($status, $statusCode, $output, '', $headers);                
+
+                return $this->SetOpenSwooleResponse($status, $statusCode, $output, '', $headers);
             } else {
 
                 return $this->SetOpenSwooleResponse($status, $statusCode, $errors, $message);

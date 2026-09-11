@@ -134,7 +134,7 @@ if (! \isSwoole()) { // Ignore OpenSwoole Server
 
     // Set session from cache
     if (isset($_SESSION['uid'])) {
-        $_SESSION = array_merge($_SESSION, cacheContent('get', $_SESSION['uid'] .'-'. $_COOKIE[session_name()]) ?: []);
+        $_SESSION = array_merge($_SESSION, cacheContent('get', $_SESSION['uid'] .'-'. $_COOKIE[session_name()]) ?: [], config("session.exptime", 7200));
     }
 }
 

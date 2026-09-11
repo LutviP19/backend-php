@@ -178,7 +178,7 @@ $server->on('Request', function (OpenSwooleRequest $request, OpenSwooleResponse 
     }
 
     // -------------------------------------------------------------
-    // 2.CHECK BLOCKED USER AGENT
+    // 2. PREPARE Environment
     // -------------------------------------------------------------
     $userAgent = $request->header['user-agent'] ?? '';
     $blockedAgents = ['python-httpx', 'go-http-client'];
@@ -190,23 +190,9 @@ $server->on('Request', function (OpenSwooleRequest $request, OpenSwooleResponse 
         }
     }
 
-    // --- FASE CHECK: Block User Agent (Replacement for index.php) ---
-    $userAgent = $request->header['user-agent'] ?? '';
-    $blockedAgents = ['python-httpx', 'go-http-client'];
+    // // Test Session
+    // $_SESSION['ClientIP'] = get_device_fingerprint(false);
 
-    foreach ($blockedAgents as $agent) {
-        if (str_contains(strtolower($userAgent), strtolower($agent))) {
-            $response->status(403);
-            $response->end('Access denied.');
-            return; // Use RETURN, NOT exit() /die()!
-        }
-    }
-
-    // --- FASE POPULATE: Environment Synchronization ---
-    $_GET     = $request->get ?? [];
-    $_POST    = $request->post ?? [];
-    $_REQUEST = array_merge($_GET, $_POST);
-    $_COOKIE  = $request->cookie ?? [];
     $_SERVER['REQUEST_URI']    = $request->server['request_uri'] ?? '/';
     $_SERVER['REQUEST_METHOD'] = $request->server['request_method'] ?? 'GET';
     $_SERVER['HTTP_USER_AGENT'] = $userAgent;

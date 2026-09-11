@@ -13,7 +13,7 @@ class FirebaseCloudMessaging
         $this->config_path = $config_path ?: $this->config_path;
 
         if (! \file_exists($this->config_path)) {
-            throw new Exception("File service-account Not Exists.");
+            throw new \Exception("File service-account Not Exists.");
 
             \App\Core\Support\Log::error([
                 'message' => "File service-account.json Not Exists."
@@ -38,21 +38,21 @@ class FirebaseCloudMessaging
 
             return null;
         }
-        $header = b64url(json_encode(['alg' => 'RS256', 'typ' => 'JWT']));
+        $header = base64url_encode(json_encode(['alg' => 'RS256', 'typ' => 'JWT']));
         $now = time();
-        $claim = b64url(json_encode([
+        $claim = base64url_encode(json_encode([
           'iss'   => $sa['client_email'],
           'scope' => 'https://www.googleapis.com/auth/firebase.messaging',
           'aud'   => 'https://oauth2.googleapis.com/token',
           'iat'   => $now,
           'exp'   => $now + 3600
         ]));
-    
+
         $input = $header . '.' . $claim;
         $signature = '';
         openssl_sign($input, $signature, $sa['private_key'], 'SHA256');
-        $jwt = $input . '.' . b64url($signature);
-    
+        $jwt = $input . '.' . base64url_encode($signature);
+
         $ch = curl_init('https://oauth2.googleapis.com/token');
         curl_setopt_array($ch, [
           CURLOPT_POST => true,
@@ -94,7 +94,7 @@ class FirebaseCloudMessaging
         }
 
         $accessToken = $json['access_token'] ?: null;
-        
+
         // \App\Core\Support\Log::debug($accessToken, 'FirebaseCloudMessaging.createAccessToken.accessToken');
         return $accessToken;
     }
@@ -103,7 +103,7 @@ class FirebaseCloudMessaging
     {
         $accessToken = $accessToken ?: $this->createAccessToken();
 
-        if(\is_null($accessToken)) {
+        if (\is_null($accessToken)) {
             \App\Core\Support\Log::error([
                 'message' => "Failed createAccessToken for token: {$token}"
             ], 'FirebaseCloudMessaging.sendMessage.$accessToken');
@@ -115,7 +115,7 @@ class FirebaseCloudMessaging
 
         $projectId = \readJson('project_id', $this->config);
         $url = "https://fcm.googleapis.com/v1/projects/{$projectId}/messages:send";
-        $payload = [ 
+        $payload = [
                         'message' => [
                             'token' => $token,
                             'notification' => [
@@ -158,7 +158,7 @@ class FirebaseCloudMessaging
 
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         bp_curl_close($ch);
-        
+
         return [$code, $res];
     }
 }

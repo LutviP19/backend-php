@@ -145,7 +145,7 @@ $server->on('Request', function (OpenSwooleRequest $request, OpenSwooleResponse 
     $headers = getallheaders();
 
     $uri = $request->server['request_uri'] ?? '/';
-    $publicDir = realpath(__DIR__ . '/../public');
+    $publicDir = realpath(BASEPATH . '/public');
     $filePath  = $publicDir . $uri;
 
     // -------------------------------------------------------------
@@ -216,8 +216,7 @@ $server->on('Request', function (OpenSwooleRequest $request, OpenSwooleResponse 
 
         // Dispatch route
         $router->setSwooleResponse($response);
-        // $output = $router->dispatch(Request::uri(), Request::method());
-        $output = $router->dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
+        $output = $router->dispatch($request->server['request_uri'], $request->server['request_method']);
         $bufferedOutput = ob_get_clean();
         $finalOutput = !empty($output) ? $output : $bufferedOutput;
 

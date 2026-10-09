@@ -927,6 +927,9 @@ function matchEncryptedData($value, $encryptedData, $key = null)
  */
 function encryptData($value, $key = null)
 {
+    if(!$value || empty($value))
+        return null;
+
     try {
         $encryption = new \App\Core\Security\Encryption($key);
         return $encryption->encrypt($value);
@@ -954,6 +957,9 @@ function encryptData($value, $key = null)
  */
 function decryptData($value, $key = null)
 {
+    if(!$value || empty($value))
+        return null;
+
     try {
         $encryption = new \App\Core\Security\Encryption($key);
         return $encryption->decrypt($value);

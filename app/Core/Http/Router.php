@@ -23,7 +23,7 @@ class Router
         'GET'    => [],
         'POST'   => [],
         'PUT'    => [],
-        'PATCH'  => [],
+        // 'PATCH'  => [],
         'DELETE' => [],
     ];
 
@@ -161,7 +161,7 @@ class Router
 
         $this->matchRoute();
 
-        if ($this->getMatchedRoute()) {
+        if ($this->getMatchedRoute() && isset($this->routes[$method][$uri])) {
             //We got a matching route.
             return $this->callAction(
                 ...explode('@', $this->getRouteAction())
@@ -175,7 +175,7 @@ class Router
                     [
                         'status' => false,
                         'statusCode' => 405,
-                        'message' => 'Method Not Allowed',
+                        'message' => "Method '$method' Not Allowed",
                         'errors' => [
                             'Invalid method to access '.$_SERVER['REQUEST_URI']
                         ]

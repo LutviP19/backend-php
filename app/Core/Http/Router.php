@@ -23,6 +23,7 @@ class Router
         'GET'    => [],
         'POST'   => [],
         'PUT'    => [],
+        'PATCH'  => [],
         'DELETE' => [],
     ];
 
@@ -170,7 +171,7 @@ class Router
             if (! \isSwoole()) { // non OpenSwoole Server
                 $this->notFound();
             } else {
-                return endResponse(
+                exit_response(
                     [
                         'status' => false,
                         'statusCode' => 405,
@@ -534,30 +535,49 @@ class Router
             $after = $perSeconds / 60;
             $afteText = $after > 1 ? "{$after} minutes" : "{$after} minute";
             $message = "Too many requests. Please try again after {$afteText}.";
-            // $errors = [
-            //     'busy' => ["Too many requests. Please try again after {$afteText}."]
-            // ];
-            // return endResponse(
-            //     $this->getOutput(false, 429, [
-            //        $errors
-            //     ]),
-            //     429
-            // );
 
-            header('HTTP/1.1 429 Too Many Requests');
-            header('Retry-After: ' . $perSeconds); // Optional: Recommend waiting $perSeconds
-            // Optionally, you can include content for the 429 page
-            echo "<h1>404 Not Found</h1>";
-            echo "<p>The page you requested could not be found.</p>";
-            // exit(); // Terminate script execution after sending the 429
-            customExit();
+            if(is_json_request()) {
+                exit_response(
+                    [
+                        'status' => false,
+                        'statusCode' => 429,
+                        'message' => $message,
+                        'errors' => [
+                            'busy' => "Too many requests. Please try again after {$afteText}."
+                        ]
+                    ],
+                    429
+                );
+            } else {
+                header('HTTP/1.1 429 Too Many Requests');
+                header('Retry-After: ' . $perSeconds); // Optional: Recommend waiting $perSeconds
+                // Optionally, you can include content for the 429 page
+                echo "<h1>404 Not Found</h1>";
+                echo "<p>The page you requested could not be found.</p>";
+                // Terminate script execution after sending the 429
+                customExit();
+            }
         }
 
-        header("HTTP/1.0 404 Not Found");
-        // Optionally, you can include content for the 404 page
-        echo "<h1>404 Not Found</h1>";
-        echo "<p>The page you requested could not be found.</p>";
-        // exit(); // Terminate script execution after sending the 404
-        customExit();
+        if(is_json_request()) {
+            exit_response(
+                [
+                    'status' => false,
+                    'statusCode' => 404,
+                    'message' => "404 Not Found<",
+                    'errors' => [
+                        'busy' => "The page you requested could not be found."
+                    ]
+                ],
+                404
+            );
+        } else {
+            header("HTTP/1.0 404 Not Found");
+            // Optionally, you can include content for the 404 page
+            echo "<h1>404 Not Found</h1>";
+            echo "<p>The page you requested could not be found.</p>";
+            // Terminate script execution after sending the 404
+            customExit();
+        }
     }
 }

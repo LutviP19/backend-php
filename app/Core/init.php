@@ -160,7 +160,7 @@ $messageBag->setMessages(Session::set('errors', null));
 App::register('errors', $messageBag);
 
 //Call the appropriate route.
-$output = Router::load(__DIR__ . '/../../routes/routes.php')
+$output = Router::load(BASEPATH . '/routes/routes.php')
             ->dispatch(Request::uri(), Request::method());
 
 //For requests that expect json results.

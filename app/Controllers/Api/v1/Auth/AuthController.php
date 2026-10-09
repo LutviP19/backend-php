@@ -132,7 +132,7 @@ class AuthController extends ApiController
 
                 return endResponse(
                     $this->getOutput(true, 201, [
-                            'jwt_token' => $tokenJwtValid,
+                            'auth_token' => $tokenAuthValid,
                             'account' => Session::all(),
                             // 'client_token' => Session::get('client_token'),
                             // 'sessionKey' => $prefixKey,

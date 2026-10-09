@@ -65,19 +65,51 @@ while (true) {
         }
     }
 
+    // if ($fileChanged) {
+    //     $lastMtime = time();
+
+    //     // Cache PID master agar tidak perlu pgrep berulang kali
+    //     static $masterPid = null;
+
+    //     if ($masterPid === null || !posix_kill($masterPid, 0)) { // Sinyal 0 mengecek apakah proses masih hidup
+    //         $masterPid = trim(shell_exec("pgrep -f 'php servers/web-server.php' | head -n 1"));
+    //     }
+
+    //     if (!empty($masterPid) && is_numeric($masterPid)) {
+    //         posix_kill((int)$masterPid, SIGUSR1);
+    //         echo "\033[32m[OpenSwoole]\033[0m Signal SIGUSR1 terkirim ke Master PID ({$masterPid}). Worker di-reload!\n";
+    //     } else {
+    //         $masterPid = null; // Reset cache jika tidak ditemukan
+    //         echo "\033[31m[Warning]\033[0m Server OpenSwoole (web-server.php) tidak ditemukan/belum berjalan.\n";
+    //     }
+    // }
+
     if ($fileChanged) {
         $lastMtime = time();
-
-        // Cache PID master agar tidak perlu pgrep berulang kali
+    
+        // Cache PID master agar tidak perlu pgrep/ps berulang kali
         static $masterPid = null;
 
-        if ($masterPid === null || !posix_kill($masterPid, 0)) { // Sinyal 0 mengecek apakah proses masih hidup
-            $masterPid = trim(shell_exec("pgrep -f 'php servers/web-server.php' | head -n 1"));
-        }
+        // Sinyal 0 mengecek apakah proses masih hidup
+        if ($masterPid === null || !@posix_kill((int)$masterPid, 0)) {
+            if (PHP_OS_FAMILY === 'Darwin') {
+                // Opsi khusus macOS (menghindari keterbatasan pgrep & konflik utilitas 'head')
+                $command = "ps aux | grep -F 'servers/web-server.php' | grep -v grep | awk 'NR==1{print $2}'";
+            } else {
+                // Opsi Linux / OS lainnya
+                $command = "pgrep -f 'php .*servers/web-server.php' | head -n 1";
+            }
 
+            $masterPid = trim((string) shell_exec($command));
+        }
+    
         if (!empty($masterPid) && is_numeric($masterPid)) {
-            posix_kill((int)$masterPid, SIGUSR1);
-            echo "\033[32m[OpenSwoole]\033[0m Signal SIGUSR1 terkirim ke Master PID ({$masterPid}). Worker di-reload!\n";
+            if (@posix_kill((int)$masterPid, SIGUSR1)) {
+                echo "\033[32m[OpenSwoole]\033[0m Signal SIGUSR1 terkirim ke Master PID ({$masterPid}). Worker di-reload!\n";
+            } else {
+                $masterPid = null;
+                echo "\033[31m[Error]\033[0m Gagal mengirim sinyal ke PID {$masterPid}. Pastikan permission/process sesuai.\n";
+            }
         } else {
             $masterPid = null; // Reset cache jika tidak ditemukan
             echo "\033[31m[Warning]\033[0m Server OpenSwoole (web-server.php) tidak ditemukan/belum berjalan.\n";

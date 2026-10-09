@@ -121,6 +121,7 @@ class WebhookController extends ApiController
         $canDelete = readJson('credentials.delete', $payload);
 
         $status = $canRead;
+        $user = null;
         if ($status) {
             // \App\Core\Support\Log::debug($status, 'WebhookController.index.CREDENTIAL');
 
@@ -163,7 +164,7 @@ class WebhookController extends ApiController
 
         // BaseAuth Key Generator
         $keygenJwt = generateRandomString(64);
-        $keygenSodium = generateUniqueString(32);
+        // $keygenSodium = generateUniqueString(32);
         $keygenSodiumV4 = (new \App\Core\Auth\SodiumAuthV4())->generateKeys();
 
         // Init BaseAuth Token
@@ -172,7 +173,7 @@ class WebhookController extends ApiController
         $tokenAuthJwt = $authTokenJwt->generateToken(['uid' => $ulid]);
 
         $authToken = new BaseAuth('Sodium', Config::get('session.exptime'));
-        $authToken->setCustomKeys($keygenSodium); // Custom Key
+        // $authToken->setCustomKeys($keygenSodium); // Custom Key
         $tokenAuth = $authToken->generateToken(['uid' => $uid, "user_permissions" => cacheContent('get', "user_abilities:{$uid}")]);
         $tokenAuthRefresh = $authToken->refreshToken($tokenAuth['refresh_token'] ?? '');
 
@@ -193,7 +194,7 @@ class WebhookController extends ApiController
 
                 // BaseAuth
                 'keygenJwt' => $keygenJwt,
-                'keygenSodium' => $keygenSodium,
+                'keygenSodium' => $keygenSodium ?? null,
                 'keygenSodiumV4' => $keygenSodiumV4,
                 'token_jwt' => $tokenAuthJwt,
                 'match_jwt' => $authTokenJwt->validateToken($tokenAuthJwt['access_token']),

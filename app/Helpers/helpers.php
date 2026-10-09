@@ -792,11 +792,11 @@ function e($str, $doubleEncode = true)
     // //     return $str;
     // // }
 
-    // return htmlentities($str, ENT_QUOTES, 'UTF-8');
-    // // return htmlspecialchars($str ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8', $doubleEncode);
+    // return htmlentities((string) $str, ENT_QUOTES, 'UTF-8');
+    // // return htmlspecialchars((string) $str ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8', $doubleEncode);
 
     // The Best and Most Compatible Choice
-    return htmlspecialchars($str ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8', $doubleEncode);
+    return htmlspecialchars((string) $str ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8', $doubleEncode);
 }
 
 function remove_php_comments($code)

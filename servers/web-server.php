@@ -193,8 +193,8 @@ $server->on('Request', function (OpenSwooleRequest $request, OpenSwooleResponse 
     // // Test Session
     // $_SESSION['ClientIP'] = get_device_fingerprint(false);
 
-    $_SERVER['REQUEST_URI']    = $request->server['request_uri'] ?? '/';
-    $_SERVER['REQUEST_METHOD'] = $request->server['request_method'] ?? 'GET';
+    $_SERVER['REQUEST_URI']    = $request->server['request_uri'] ?? Request::uri() ?? '/';
+    $_SERVER['REQUEST_METHOD'] = $request->server['request_method'] ?? Request::method() ?? 'GET';
     $_SERVER['HTTP_USER_AGENT'] = $userAgent;
 
     // Ambil Session ID dari Cookie / Header ---
@@ -216,7 +216,8 @@ $server->on('Request', function (OpenSwooleRequest $request, OpenSwooleResponse 
 
         // Dispatch route
         $router->setSwooleResponse($response);
-        $output = $router->dispatch(Request::uri(), Request::method());
+        // $output = $router->dispatch(Request::uri(), Request::method());
+        $output = $router->dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
         $bufferedOutput = ob_get_clean();
         $finalOutput = !empty($output) ? $output : $bufferedOutput;
 

@@ -927,8 +927,9 @@ function matchEncryptedData($value, $encryptedData, $key = null)
  */
 function encryptData($value, $key = null)
 {
-    if(!$value || empty($value))
+    if (!$value || empty($value)) {
         return null;
+    }
 
     try {
         $encryption = new \App\Core\Security\Encryption($key);
@@ -957,8 +958,9 @@ function encryptData($value, $key = null)
  */
 function decryptData($value, $key = null)
 {
-    if(!$value || empty($value))
+    if (!$value || empty($value)) {
         return null;
+    }
 
     try {
         $encryption = new \App\Core\Security\Encryption($key);
@@ -1019,6 +1021,23 @@ function generateRandomString($len = 64, $base64 = false, $special = true): stri
     }
 
     return \App\Core\Security\Hash::randomString($len, $special);
+}
+
+/**
+ * sort function to generate random unique string
+ *
+ * @param  integer $len
+ * @param  boolean $base64
+ *
+ * @return string
+ */
+function generateUniqueString($len = 32, $base64 = false): string
+{
+    if ($base64) {
+        return base64_encode(\App\Core\Security\Hash::unique($len));
+    }
+
+    return \App\Core\Security\Hash::unique($len);
 }
 
 /**

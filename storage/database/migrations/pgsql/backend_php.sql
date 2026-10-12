@@ -2,12 +2,12 @@
 -- PostgreSQL database dump
 --
 
-\restrict d9BHQkORxvzdmyb9ZPPCxBKiLr7CyNGmFlcMofLNljoyNE1ApKf0ciV5nLBEanj
+\restrict SUk1ijHI2GB3hzGaGtbCRhGV7Lw3Jp9SY2bRVuApJCFRiU6mJMpgs6br2eSTMR6
 
 -- Dumped from database version 16.14
--- Dumped by pg_dump version 18.4 (Ubuntu 18.4-0ubuntu0.26.04.1)
+-- Dumped by pg_dump version 18.6 (Ubuntu 18.6-0ubuntu0.26.04.1)
 
--- Started on 2026-08-15 20:07:14 WIB
+-- Started on 2026-10-12 07:50:24 WIB
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -32,7 +32,7 @@ CREATE SCHEMA public;
 ALTER SCHEMA public OWNER TO pg_database_owner;
 
 --
--- TOC entry 3647 (class 0 OID 0)
+-- TOC entry 3657 (class 0 OID 0)
 -- Dependencies: 4
 -- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: pg_database_owner
 --
@@ -80,7 +80,7 @@ CREATE SEQUENCE public.activities_id_seq
 ALTER SEQUENCE public.activities_id_seq OWNER TO postgres;
 
 --
--- TOC entry 3648 (class 0 OID 0)
+-- TOC entry 3658 (class 0 OID 0)
 -- Dependencies: 218
 -- Name: activities_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -118,7 +118,7 @@ CREATE SEQUENCE public.asset_categories_id_seq
 ALTER SEQUENCE public.asset_categories_id_seq OWNER TO postgres;
 
 --
--- TOC entry 3649 (class 0 OID 0)
+-- TOC entry 3659 (class 0 OID 0)
 -- Dependencies: 222
 -- Name: asset_categories_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -162,7 +162,7 @@ CREATE SEQUENCE public.asset_maintenance_logs_id_seq
 ALTER SEQUENCE public.asset_maintenance_logs_id_seq OWNER TO postgres;
 
 --
--- TOC entry 3650 (class 0 OID 0)
+-- TOC entry 3660 (class 0 OID 0)
 -- Dependencies: 224
 -- Name: asset_maintenance_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -207,7 +207,7 @@ CREATE SEQUENCE public.assets_id_seq
 ALTER SEQUENCE public.assets_id_seq OWNER TO postgres;
 
 --
--- TOC entry 3651 (class 0 OID 0)
+-- TOC entry 3661 (class 0 OID 0)
 -- Dependencies: 220
 -- Name: assets_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -247,7 +247,7 @@ CREATE SEQUENCE public.categories_id_seq
 ALTER SEQUENCE public.categories_id_seq OWNER TO postgres;
 
 --
--- TOC entry 3652 (class 0 OID 0)
+-- TOC entry 3662 (class 0 OID 0)
 -- Dependencies: 226
 -- Name: categories_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -289,7 +289,7 @@ CREATE SEQUENCE public.fcm_tokens_id_seq
 ALTER SEQUENCE public.fcm_tokens_id_seq OWNER TO postgres;
 
 --
--- TOC entry 3653 (class 0 OID 0)
+-- TOC entry 3663 (class 0 OID 0)
 -- Dependencies: 228
 -- Name: fcm_tokens_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -355,7 +355,7 @@ CREATE SEQUENCE public.permissions_id_seq
 ALTER SEQUENCE public.permissions_id_seq OWNER TO postgres;
 
 --
--- TOC entry 3654 (class 0 OID 0)
+-- TOC entry 3664 (class 0 OID 0)
 -- Dependencies: 231
 -- Name: permissions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -400,7 +400,7 @@ CREATE SEQUENCE public.personal_access_tokens_id_seq
 ALTER SEQUENCE public.personal_access_tokens_id_seq OWNER TO postgres;
 
 --
--- TOC entry 3655 (class 0 OID 0)
+-- TOC entry 3665 (class 0 OID 0)
 -- Dependencies: 234
 -- Name: personal_access_tokens_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -443,7 +443,7 @@ CREATE SEQUENCE public.products_id_seq
 ALTER SEQUENCE public.products_id_seq OWNER TO postgres;
 
 --
--- TOC entry 3656 (class 0 OID 0)
+-- TOC entry 3666 (class 0 OID 0)
 -- Dependencies: 236
 -- Name: products_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -498,7 +498,7 @@ CREATE SEQUENCE public.roles_id_seq
 ALTER SEQUENCE public.roles_id_seq OWNER TO postgres;
 
 --
--- TOC entry 3657 (class 0 OID 0)
+-- TOC entry 3667 (class 0 OID 0)
 -- Dependencies: 238
 -- Name: roles_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -557,7 +557,7 @@ CREATE SEQUENCE public.users_id_seq
 ALTER SEQUENCE public.users_id_seq OWNER TO postgres;
 
 --
--- TOC entry 3658 (class 0 OID 0)
+-- TOC entry 3668 (class 0 OID 0)
 -- Dependencies: 241
 -- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -566,7 +566,32 @@ ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
 
 
 --
--- TOC entry 3378 (class 2604 OID 16425)
+-- TOC entry 243 (class 1259 OID 17564)
+-- Name: v_user_permissions; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.v_user_permissions AS
+ SELECT u.id AS user_id,
+    u.ulid AS user_ulid,
+    u.name AS user_name,
+    u.current_team_id,
+    r.id AS role_id,
+    r.name AS role_name,
+    r.slug AS role_slug,
+    p.id AS permission_id,
+    p.name AS permission_name
+   FROM ((((public.users u
+     JOIN public.role_users ur ON (((u.id)::numeric = ur.user_id)))
+     JOIN public.roles r ON ((ur.role_id = r.id)))
+     JOIN public.permission_role rp ON ((r.id = rp.role_id)))
+     JOIN public.permissions p ON ((rp.permission_id = (p.id)::numeric)))
+  WHERE (u.status = true);
+
+
+ALTER VIEW public.v_user_permissions OWNER TO postgres;
+
+--
+-- TOC entry 3382 (class 2604 OID 16425)
 -- Name: activities id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -574,7 +599,7 @@ ALTER TABLE ONLY public.activities ALTER COLUMN id SET DEFAULT nextval('public.a
 
 
 --
--- TOC entry 3387 (class 2604 OID 16444)
+-- TOC entry 3391 (class 2604 OID 16444)
 -- Name: asset_categories id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -582,7 +607,7 @@ ALTER TABLE ONLY public.asset_categories ALTER COLUMN id SET DEFAULT nextval('pu
 
 
 --
--- TOC entry 3388 (class 2604 OID 16449)
+-- TOC entry 3392 (class 2604 OID 16449)
 -- Name: asset_maintenance_logs id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -590,7 +615,7 @@ ALTER TABLE ONLY public.asset_maintenance_logs ALTER COLUMN id SET DEFAULT nextv
 
 
 --
--- TOC entry 3382 (class 2604 OID 16435)
+-- TOC entry 3386 (class 2604 OID 16435)
 -- Name: assets id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -598,7 +623,7 @@ ALTER TABLE ONLY public.assets ALTER COLUMN id SET DEFAULT nextval('public.asset
 
 
 --
--- TOC entry 3393 (class 2604 OID 16458)
+-- TOC entry 3397 (class 2604 OID 16458)
 -- Name: categories id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -606,7 +631,7 @@ ALTER TABLE ONLY public.categories ALTER COLUMN id SET DEFAULT nextval('public.c
 
 
 --
--- TOC entry 3396 (class 2604 OID 16465)
+-- TOC entry 3400 (class 2604 OID 16465)
 -- Name: fcm_tokens id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -614,7 +639,7 @@ ALTER TABLE ONLY public.fcm_tokens ALTER COLUMN id SET DEFAULT nextval('public.f
 
 
 --
--- TOC entry 3399 (class 2604 OID 16477)
+-- TOC entry 3403 (class 2604 OID 16477)
 -- Name: permissions id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -622,7 +647,7 @@ ALTER TABLE ONLY public.permissions ALTER COLUMN id SET DEFAULT nextval('public.
 
 
 --
--- TOC entry 3400 (class 2604 OID 16487)
+-- TOC entry 3404 (class 2604 OID 16487)
 -- Name: personal_access_tokens id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -630,7 +655,7 @@ ALTER TABLE ONLY public.personal_access_tokens ALTER COLUMN id SET DEFAULT nextv
 
 
 --
--- TOC entry 3401 (class 2604 OID 16494)
+-- TOC entry 3405 (class 2604 OID 16494)
 -- Name: products id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -638,7 +663,7 @@ ALTER TABLE ONLY public.products ALTER COLUMN id SET DEFAULT nextval('public.pro
 
 
 --
--- TOC entry 3406 (class 2604 OID 16503)
+-- TOC entry 3410 (class 2604 OID 16503)
 -- Name: roles id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -646,7 +671,7 @@ ALTER TABLE ONLY public.roles ALTER COLUMN id SET DEFAULT nextval('public.roles_
 
 
 --
--- TOC entry 3408 (class 2604 OID 16516)
+-- TOC entry 3412 (class 2604 OID 16516)
 -- Name: users id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -654,7 +679,7 @@ ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_
 
 
 --
--- TOC entry 3618 (class 0 OID 16422)
+-- TOC entry 3628 (class 0 OID 16422)
 -- Dependencies: 219
 -- Data for Name: activities; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -684,7 +709,7 @@ COPY public.activities (id, category_id, title, member, "time", status, icon, co
 
 
 --
--- TOC entry 3622 (class 0 OID 16441)
+-- TOC entry 3632 (class 0 OID 16441)
 -- Dependencies: 223
 -- Data for Name: asset_categories; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -699,7 +724,7 @@ COPY public.asset_categories (id, category_name, slug) FROM stdin;
 
 
 --
--- TOC entry 3624 (class 0 OID 16446)
+-- TOC entry 3634 (class 0 OID 16446)
 -- Dependencies: 225
 -- Data for Name: asset_maintenance_logs; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -734,7 +759,7 @@ COPY public.asset_maintenance_logs (id, asset_id, maintenance_date, task, status
 
 
 --
--- TOC entry 3620 (class 0 OID 16432)
+-- TOC entry 3630 (class 0 OID 16432)
 -- Dependencies: 221
 -- Data for Name: assets; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -752,7 +777,6 @@ COPY public.assets (id, asset_id, category_id, name, status, health, icon, color
 10	KBT-01	1	Traktor Kubota L4400	ready	85	fa-tractor	emerald	2026-01-07 20:39:47+00	2026-01-07 20:39:47+00
 11	KBT-02	1	Traktor Kubota L4400	maintenance	32	fa-tractor	rose	2026-01-07 20:39:47+00	2026-01-07 20:39:47+00
 12	KBT-03	1	Traktor Kubota L4400	ready	100	fa-tractor	emerald	2026-01-08 12:44:33+00	2026-01-13 12:55:55+00
-13	KBT-04	1	Traktor Kubota L4400	working	74	fa-tractor	orange	2026-01-08 12:46:33+00	2026-01-18 19:48:09+00
 14	KBT-05	1	Traktor Kubota L4400	ready	100	fa-tractor	emerald	2026-01-08 12:48:29+00	2026-01-08 12:48:29+00
 15	KBT-06	1	Traktor Kubota L4400	working	100	fa-tractor	emerald	2026-01-08 12:50:46+00	2026-01-12 16:46:54+00
 16	KBT-07	1	Traktor Kubota L4400	ready	100	fa-tractor	emerald	2026-01-08 12:51:54+00	2026-01-08 12:51:54+00
@@ -773,13 +797,14 @@ COPY public.assets (id, asset_id, category_id, name, status, health, icon, color
 31	DRN-04	2	DJI Mavic 3 (Mapping)	working	100	fa-helicopter	sky	2026-01-08 14:59:23+00	2026-01-08 16:48:08+00
 32	DRN-05	2	Drone Pemindai Lahan	ready	100	fa-helicopter	emerald	2026-01-18 19:57:21+00	2026-01-18 19:58:29+00
 33	DRN-06	2	Drone Pemindai Lahan	ready	100	fa-helicopter	emerald	2026-01-18 20:03:35+00	2026-01-18 20:03:35+00
-34	DRN-07	2	DJI Agras T40 (Sprayer)	ready	100	fa-plane-up	indigo	2026-01-18 20:16:44+00	2026-01-18 20:16:44+00
 35	DRN-08	2	DJI Mavic 3 (Mapping)	ready	100	fa-plane-up	rose	2026-01-18 20:18:42+00	2026-01-18 20:18:42+00
+34	DRN-07	2	DJI Agras T40 (Sprayer)	ready	100	fa-plane-up	indigo	2026-01-18 20:16:44+00	2026-08-15 13:58:25.60136+00
+13	KBT-04	1	Traktor Kubota L4400	working	74	fa-tractor	orange	2026-01-08 12:46:33+00	2026-08-19 10:44:56.200548+00
 \.
 
 
 --
--- TOC entry 3626 (class 0 OID 16455)
+-- TOC entry 3636 (class 0 OID 16455)
 -- Dependencies: 227
 -- Data for Name: categories; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -792,7 +817,7 @@ COPY public.categories (id, slug, display_name, default_icon, default_color) FRO
 
 
 --
--- TOC entry 3628 (class 0 OID 16462)
+-- TOC entry 3638 (class 0 OID 16462)
 -- Dependencies: 229
 -- Data for Name: fcm_tokens; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -806,7 +831,7 @@ COPY public.fcm_tokens (id, user_id, user_type, token, token_expiry, created_at,
 
 
 --
--- TOC entry 3629 (class 0 OID 16468)
+-- TOC entry 3639 (class 0 OID 16468)
 -- Dependencies: 230
 -- Data for Name: password_reset_tokens; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -816,7 +841,7 @@ COPY public.password_reset_tokens (email, token, created_at) FROM stdin;
 
 
 --
--- TOC entry 3632 (class 0 OID 16478)
+-- TOC entry 3642 (class 0 OID 16478)
 -- Dependencies: 233
 -- Data for Name: permission_role; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -852,11 +877,12 @@ COPY public.permission_role (permission_id, role_id) FROM stdin;
 28	1
 29	1
 30	1
+6	2
 \.
 
 
 --
--- TOC entry 3631 (class 0 OID 16474)
+-- TOC entry 3641 (class 0 OID 16474)
 -- Dependencies: 232
 -- Data for Name: permissions; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -901,7 +927,7 @@ COPY public.permissions (id, name, created_at, updated_at) FROM stdin;
 
 
 --
--- TOC entry 3634 (class 0 OID 16484)
+-- TOC entry 3644 (class 0 OID 16484)
 -- Dependencies: 235
 -- Data for Name: personal_access_tokens; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -911,7 +937,7 @@ COPY public.personal_access_tokens (id, tokenable_type, tokenable_id, name, toke
 
 
 --
--- TOC entry 3636 (class 0 OID 16491)
+-- TOC entry 3646 (class 0 OID 16491)
 -- Dependencies: 237
 -- Data for Name: products; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -928,7 +954,6 @@ COPY public.products (id, nama, kategori, stok, harga, status_kritis, created_at
 9	Pupuk NPK Mutiara 16-16-16	pupuk	250	115000.00	t	2026-01-01 01:55:59+00	2026-01-07 12:46:20+00
 10	Raydock 28 EC	pestisida	120	30000.00	t	2026-01-08 19:17:20+00	2026-01-12 16:49:00+00
 11	Fenval 200 EC	pestisida	100	70000.00	t	2026-01-08 19:17:54+00	2026-01-08 19:17:54+00
-12	Varitas 3 GR	pestisida	5	67000.00	t	2026-01-08 19:18:21+00	2026-01-08 19:22:03+00
 13	Meteor 25 EC	pestisida	50	125000.00	t	2026-01-08 19:18:51+00	2026-01-18 18:43:42+00
 14	Pupuk Cair EM4 Kuning	pupuk	150	12000.00	t	2026-01-01 01:04:16+00	2026-01-12 18:20:21+00
 15	Pupuk Cair EM4 Merah	pupuk	100	18000.00	t	2026-01-01 01:04:39+00	2026-01-01 17:21:48+00
@@ -941,23 +966,25 @@ COPY public.products (id, nama, kategori, stok, harga, status_kritis, created_at
 22	Raydock 28 EC	pestisida	120	30000.00	t	2026-01-08 19:17:20+00	2026-01-12 16:49:00+00
 23	Fenval 200 EC	pestisida	100	70000.00	t	2026-01-08 19:17:54+00	2026-01-08 19:17:54+00
 24	Varitas 3 GR	pestisida	5	67000.00	t	2026-01-08 19:18:21+00	2026-01-08 19:22:03+00
-25	Meteor 25 EC	pestisida	50	125000.00	t	2026-01-08 19:18:51+00	2026-01-18 18:43:42+00
+12	Varitas 3 GR N	pestisida	15	67000.00	t	2026-01-08 19:18:21+00	2026-08-15 13:59:45.622359+00
+25	Meteor 25 EC	pestisida	50	125000.00	t	2026-01-08 19:18:51+00	2026-08-15 14:16:20.759457+00
 \.
 
 
 --
--- TOC entry 3639 (class 0 OID 16507)
+-- TOC entry 3649 (class 0 OID 16507)
 -- Dependencies: 240
 -- Data for Name: role_users; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.role_users (user_id, role_id, created_at, updated_at) FROM stdin;
 1	1	2025-09-30 16:48:38+00	2025-09-30 16:48:43+00
+2	2	2025-09-30 16:48:38+00	2025-09-30 16:48:38+00
 \.
 
 
 --
--- TOC entry 3638 (class 0 OID 16500)
+-- TOC entry 3648 (class 0 OID 16500)
 -- Dependencies: 239
 -- Data for Name: roles; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -972,13 +999,12 @@ COPY public.roles (id, slug, name, created_at, updated_at) FROM stdin;
 
 
 --
--- TOC entry 3641 (class 0 OID 16513)
+-- TOC entry 3651 (class 0 OID 16513)
 -- Dependencies: 242
 -- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.users (id, ulid, name, email, email_verified_at, password, two_factor_secret, two_factor_recovery_codes, two_factor_confirmed_at, client_token, remember_token, current_team_id, profile_photo_path, first_name, last_name, phone, address_line1, address_line2, city, default_url, status, created_at, updated_at, deleted_at) FROM stdin;
-1	01JP9MA549R9NNVNGHTHJFTNXJ	Admin	admin@example.com	\N	$2y$10$DNGjs3OU3BIvoqCDsxjiCO.VQJe45BO0bUo55LwnMV2ueJ0d6i0WK	\N	\N	\N	jHd4uFGBV0RPgxSW*TRI^b@IQZb#XKlQCHh#hAPlr8yXK7ELXr@I9$UMl^Dp%7tm	5gbSVtgMFs96tGNGyBKVyjwREtj6uzPHmVnauvyhFpkLuZXEW4GIh8HGM2lW	1	\N	\N	\N	\N	\N	\N	\N	\N	t	2025-03-14 10:44:03+00	2025-03-16 12:16:10+00	\N
 2	01K58Z4P34ZHADC974APH89PQ3	Admin2	admin2@example.com	\N	$2y$10$DNGjs3OU3BIvoqCDsxjiCO.VQJe45BO0bUo55LwnMV2ueJ0d6i0WK	\N	\N	\N	lCqGXYmoOnC$53JGddawFqSonNAK2fLVug.crPbqNkIK2KDEYPZkLvndrjcHD6YQ	4nHlxJ09Sg^dFB#0JwdS8kAmGagi7SiEj@cZ3H*f6LV8eejd%ksLSCMX#zQvYUTB	1	\N	\N	\N	\N	\N	\N	\N	\N	t	2025-03-15 14:47:21+00	2025-03-15 14:49:25+00	\N
 3	01K58Z55E65CZCGMJJJSEMSMY0	Admin3	admin3@example.com	\N	$2y$10$DNGjs3OU3BIvoqCDsxjiCO.VQJe45BO0bUo55LwnMV2ueJ0d6i0WK	\N	\N	\N	mgpiewufeMEVB6OA7s2Ca1vgNYPWTkdGFyaHfJxJ9n25jfGiELXKP8egsgJu		1	\N	\N	\N	\N	\N	\N	\N	\N	t	2025-03-15 15:20:29+00	2025-03-15 15:26:24+00	\N
 4	01K58Z5J41YKCN31H9C5GAMFKA	Admin4	admin4@example.com	\N	$2y$10$DNGjs3OU3BIvoqCDsxjiCO.VQJe45BO0bUo55LwnMV2ueJ0d6i0WK	\N	\N	\N	BRaX6JLNzt2uiGLAcGrk3q6qGevlSJOepuGmKqJlVFmOJYtmrS4Qdl3ahVNI		1	\N	\N	\N	\N	\N	\N	\N	\N	t	2025-03-15 15:28:07+00	2025-03-15 15:28:07+00	\N
@@ -986,11 +1012,12 @@ COPY public.users (id, ulid, name, email, email_verified_at, password, two_facto
 6	01K58Z6C2KJKQ0QZ9M79S3MJ3S	Admin6	admin6@example.com	\N	$2y$10$DNGjs3OU3BIvoqCDsxjiCO.VQJe45BO0bUo55LwnMV2ueJ0d6i0WK	\N	\N	\N	5gbSVtgMFs96tGNGyBKVyjwREtj6uzPHmVnauvyhFpkLuZXEW4GIh8HGM2lW		1	\N	\N	\N	\N	\N	\N	\N	\N	t	2025-03-15 15:39:33+00	2025-03-15 15:39:33+00	\N
 7	01K58Z6P2DJGDJGMH0WWFYBTG3	Admin7	admin7@example.com	\N	$2y$10$DNGjs3OU3BIvoqCDsxjiCO.VQJe45BO0bUo55LwnMV2ueJ0d6i0WK	\N	\N	\N	5gbSVtgMFs96tGNGyBKVyjwREtj6uzPHmVnauvyhFpkLuZXEW4GIh8HGM2lW		1	\N	\N	\N	\N	\N	\N	\N	\N	t	2025-03-15 15:41:15+00	2025-03-15 15:41:15+00	\N
 8	01K58Z71Y4AYC1K42J1J4AEGC7	Admin8	admin8@example.com	\N	$2y$10$DNGjs3OU3BIvoqCDsxjiCO.VQJe45BO0bUo55LwnMV2ueJ0d6i0WK	\N	\N	\N	5gbSVtgMFs96tGNGyBKVyjwREtj6uzPHmVnauvyhFpkLuZXEW4GIh8HGM2lW		5	\N	\N	\N	\N	\N	\N	\N	\N	f	2025-03-15 16:14:31+00	2025-03-15 16:14:31+00	\N
+1	01JP9MA549R9NNVNGHTHJFTNXJ	Admin	admin@example.com	\N	$2y$10$DNGjs3OU3BIvoqCDsxjiCO.VQJe45BO0bUo55LwnMV2ueJ0d6i0WK	\N	\N	\N	h5x*Et0ULq3Gxf&@55x1i5pHIl8FWY7HX92BSiwrON5Gf#0QE6Mwtk8*YcIK1cO6	5gbSVtgMFs96tGNGyBKVyjwREtj6uzPHmVnauvyhFpkLuZXEW4GIh8HGM2lW	1	\N	\N	\N	\N	\N	\N	\N	\N	t	2025-03-14 10:44:03+00	2025-03-16 12:16:10+00	\N
 \.
 
 
 --
--- TOC entry 3659 (class 0 OID 0)
+-- TOC entry 3669 (class 0 OID 0)
 -- Dependencies: 218
 -- Name: activities_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -999,7 +1026,7 @@ SELECT pg_catalog.setval('public.activities_id_seq', 20, true);
 
 
 --
--- TOC entry 3660 (class 0 OID 0)
+-- TOC entry 3670 (class 0 OID 0)
 -- Dependencies: 222
 -- Name: asset_categories_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -1008,7 +1035,7 @@ SELECT pg_catalog.setval('public.asset_categories_id_seq', 5, true);
 
 
 --
--- TOC entry 3661 (class 0 OID 0)
+-- TOC entry 3671 (class 0 OID 0)
 -- Dependencies: 224
 -- Name: asset_maintenance_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -1017,7 +1044,7 @@ SELECT pg_catalog.setval('public.asset_maintenance_logs_id_seq', 25, true);
 
 
 --
--- TOC entry 3662 (class 0 OID 0)
+-- TOC entry 3672 (class 0 OID 0)
 -- Dependencies: 220
 -- Name: assets_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -1026,7 +1053,7 @@ SELECT pg_catalog.setval('public.assets_id_seq', 35, true);
 
 
 --
--- TOC entry 3663 (class 0 OID 0)
+-- TOC entry 3673 (class 0 OID 0)
 -- Dependencies: 226
 -- Name: categories_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -1035,7 +1062,7 @@ SELECT pg_catalog.setval('public.categories_id_seq', 3, true);
 
 
 --
--- TOC entry 3664 (class 0 OID 0)
+-- TOC entry 3674 (class 0 OID 0)
 -- Dependencies: 228
 -- Name: fcm_tokens_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -1044,7 +1071,7 @@ SELECT pg_catalog.setval('public.fcm_tokens_id_seq', 15, true);
 
 
 --
--- TOC entry 3665 (class 0 OID 0)
+-- TOC entry 3675 (class 0 OID 0)
 -- Dependencies: 231
 -- Name: permissions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -1053,7 +1080,7 @@ SELECT pg_catalog.setval('public.permissions_id_seq', 35, true);
 
 
 --
--- TOC entry 3666 (class 0 OID 0)
+-- TOC entry 3676 (class 0 OID 0)
 -- Dependencies: 234
 -- Name: personal_access_tokens_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -1062,7 +1089,7 @@ SELECT pg_catalog.setval('public.personal_access_tokens_id_seq', 1, true);
 
 
 --
--- TOC entry 3667 (class 0 OID 0)
+-- TOC entry 3677 (class 0 OID 0)
 -- Dependencies: 236
 -- Name: products_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -1071,7 +1098,7 @@ SELECT pg_catalog.setval('public.products_id_seq', 25, true);
 
 
 --
--- TOC entry 3668 (class 0 OID 0)
+-- TOC entry 3678 (class 0 OID 0)
 -- Dependencies: 238
 -- Name: roles_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -1080,7 +1107,7 @@ SELECT pg_catalog.setval('public.roles_id_seq', 5, true);
 
 
 --
--- TOC entry 3669 (class 0 OID 0)
+-- TOC entry 3679 (class 0 OID 0)
 -- Dependencies: 241
 -- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -1089,7 +1116,7 @@ SELECT pg_catalog.setval('public.users_id_seq', 8, true);
 
 
 --
--- TOC entry 3424 (class 2606 OID 16571)
+-- TOC entry 3428 (class 2606 OID 16571)
 -- Name: activities idx_16422_primary; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1098,7 +1125,7 @@ ALTER TABLE ONLY public.activities
 
 
 --
--- TOC entry 3428 (class 2606 OID 16566)
+-- TOC entry 3432 (class 2606 OID 16566)
 -- Name: assets idx_16432_primary; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1107,7 +1134,7 @@ ALTER TABLE ONLY public.assets
 
 
 --
--- TOC entry 3431 (class 2606 OID 16572)
+-- TOC entry 3435 (class 2606 OID 16572)
 -- Name: asset_categories idx_16441_primary; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1116,7 +1143,7 @@ ALTER TABLE ONLY public.asset_categories
 
 
 --
--- TOC entry 3435 (class 2606 OID 16568)
+-- TOC entry 3439 (class 2606 OID 16568)
 -- Name: asset_maintenance_logs idx_16446_primary; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1125,7 +1152,7 @@ ALTER TABLE ONLY public.asset_maintenance_logs
 
 
 --
--- TOC entry 3438 (class 2606 OID 16577)
+-- TOC entry 3442 (class 2606 OID 16577)
 -- Name: categories idx_16455_primary; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1134,7 +1161,7 @@ ALTER TABLE ONLY public.categories
 
 
 --
--- TOC entry 3440 (class 2606 OID 16574)
+-- TOC entry 3444 (class 2606 OID 16574)
 -- Name: fcm_tokens idx_16462_primary; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1143,7 +1170,7 @@ ALTER TABLE ONLY public.fcm_tokens
 
 
 --
--- TOC entry 3443 (class 2606 OID 16579)
+-- TOC entry 3447 (class 2606 OID 16579)
 -- Name: password_reset_tokens idx_16468_primary; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1152,7 +1179,7 @@ ALTER TABLE ONLY public.password_reset_tokens
 
 
 --
--- TOC entry 3445 (class 2606 OID 16567)
+-- TOC entry 3449 (class 2606 OID 16567)
 -- Name: permissions idx_16474_primary; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1161,7 +1188,7 @@ ALTER TABLE ONLY public.permissions
 
 
 --
--- TOC entry 3448 (class 2606 OID 16569)
+-- TOC entry 3452 (class 2606 OID 16569)
 -- Name: permission_role idx_16478_primary; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1170,7 +1197,7 @@ ALTER TABLE ONLY public.permission_role
 
 
 --
--- TOC entry 3452 (class 2606 OID 16578)
+-- TOC entry 3458 (class 2606 OID 16578)
 -- Name: personal_access_tokens idx_16484_primary; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1179,7 +1206,7 @@ ALTER TABLE ONLY public.personal_access_tokens
 
 
 --
--- TOC entry 3456 (class 2606 OID 16570)
+-- TOC entry 3462 (class 2606 OID 16570)
 -- Name: products idx_16491_primary; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1188,7 +1215,7 @@ ALTER TABLE ONLY public.products
 
 
 --
--- TOC entry 3458 (class 2606 OID 16575)
+-- TOC entry 3464 (class 2606 OID 16575)
 -- Name: roles idx_16500_primary; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1197,7 +1224,7 @@ ALTER TABLE ONLY public.roles
 
 
 --
--- TOC entry 3460 (class 2606 OID 16576)
+-- TOC entry 3466 (class 2606 OID 16576)
 -- Name: role_users idx_16507_primary; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1206,7 +1233,7 @@ ALTER TABLE ONLY public.role_users
 
 
 --
--- TOC entry 3463 (class 2606 OID 16573)
+-- TOC entry 3471 (class 2606 OID 16573)
 -- Name: users idx_16513_primary; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1215,7 +1242,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- TOC entry 3422 (class 1259 OID 16543)
+-- TOC entry 3426 (class 1259 OID 16543)
 -- Name: idx_16422_fk_activity_category; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1223,7 +1250,7 @@ CREATE INDEX idx_16422_fk_activity_category ON public.activities USING btree (ca
 
 
 --
--- TOC entry 3425 (class 1259 OID 16533)
+-- TOC entry 3429 (class 1259 OID 16533)
 -- Name: idx_16432_asset_id; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1231,7 +1258,7 @@ CREATE UNIQUE INDEX idx_16432_asset_id ON public.assets USING btree (asset_id);
 
 
 --
--- TOC entry 3426 (class 1259 OID 16532)
+-- TOC entry 3430 (class 1259 OID 16532)
 -- Name: idx_16432_category_id; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1239,7 +1266,7 @@ CREATE INDEX idx_16432_category_id ON public.assets USING btree (category_id);
 
 
 --
--- TOC entry 3429 (class 1259 OID 16544)
+-- TOC entry 3433 (class 1259 OID 16544)
 -- Name: idx_16441_idx_category_name; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1247,7 +1274,7 @@ CREATE INDEX idx_16441_idx_category_name ON public.asset_categories USING btree 
 
 
 --
--- TOC entry 3432 (class 1259 OID 16548)
+-- TOC entry 3436 (class 1259 OID 16548)
 -- Name: idx_16441_slug; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1255,7 +1282,7 @@ CREATE UNIQUE INDEX idx_16441_slug ON public.asset_categories USING btree (slug)
 
 
 --
--- TOC entry 3433 (class 1259 OID 16535)
+-- TOC entry 3437 (class 1259 OID 16535)
 -- Name: idx_16446_fk_logs_asset_id; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1263,7 +1290,7 @@ CREATE INDEX idx_16446_fk_logs_asset_id ON public.asset_maintenance_logs USING b
 
 
 --
--- TOC entry 3436 (class 1259 OID 16555)
+-- TOC entry 3440 (class 1259 OID 16555)
 -- Name: idx_16455_idx_slug; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1271,7 +1298,7 @@ CREATE UNIQUE INDEX idx_16455_idx_slug ON public.categories USING btree (slug);
 
 
 --
--- TOC entry 3441 (class 1259 OID 16550)
+-- TOC entry 3445 (class 1259 OID 16550)
 -- Name: idx_16462_uniq; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1279,7 +1306,7 @@ CREATE UNIQUE INDEX idx_16462_uniq ON public.fcm_tokens USING btree (token);
 
 
 --
--- TOC entry 3446 (class 1259 OID 16540)
+-- TOC entry 3450 (class 1259 OID 16540)
 -- Name: idx_16478_permission_role_role_id_foreign; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1287,7 +1314,7 @@ CREATE INDEX idx_16478_permission_role_role_id_foreign ON public.permission_role
 
 
 --
--- TOC entry 3449 (class 1259 OID 16558)
+-- TOC entry 3455 (class 1259 OID 16558)
 -- Name: idx_16484_personal_access_tokens_token_unique; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1295,7 +1322,7 @@ CREATE UNIQUE INDEX idx_16484_personal_access_tokens_token_unique ON public.pers
 
 
 --
--- TOC entry 3450 (class 1259 OID 16556)
+-- TOC entry 3456 (class 1259 OID 16556)
 -- Name: idx_16484_personal_access_tokens_tokenable_type_tokenable_id_in; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1303,7 +1330,7 @@ CREATE INDEX idx_16484_personal_access_tokens_tokenable_type_tokenable_id_in ON 
 
 
 --
--- TOC entry 3453 (class 1259 OID 16539)
+-- TOC entry 3459 (class 1259 OID 16539)
 -- Name: idx_16491_idx_kategori; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1311,7 +1338,7 @@ CREATE INDEX idx_16491_idx_kategori ON public.products USING btree (kategori);
 
 
 --
--- TOC entry 3454 (class 1259 OID 16542)
+-- TOC entry 3460 (class 1259 OID 16542)
 -- Name: idx_16491_idx_stok; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1319,7 +1346,7 @@ CREATE INDEX idx_16491_idx_stok ON public.products USING btree (stok);
 
 
 --
--- TOC entry 3461 (class 1259 OID 16553)
+-- TOC entry 3467 (class 1259 OID 16553)
 -- Name: idx_16507_role_user_role_id_foreign; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1327,7 +1354,7 @@ CREATE INDEX idx_16507_role_user_role_id_foreign ON public.role_users USING btre
 
 
 --
--- TOC entry 3464 (class 1259 OID 16549)
+-- TOC entry 3472 (class 1259 OID 16549)
 -- Name: idx_16513_users_email_unique; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1335,7 +1362,47 @@ CREATE UNIQUE INDEX idx_16513_users_email_unique ON public.users USING btree (em
 
 
 --
--- TOC entry 3471 (class 2620 OID 16608)
+-- TOC entry 3453 (class 1259 OID 17563)
+-- Name: idx_permission_role_perm_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_permission_role_perm_id ON public.permission_role USING btree (permission_id);
+
+
+--
+-- TOC entry 3454 (class 1259 OID 17561)
+-- Name: idx_permission_role_role_perm; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_permission_role_role_perm ON public.permission_role USING btree (permission_id, role_id);
+
+
+--
+-- TOC entry 3468 (class 1259 OID 17560)
+-- Name: idx_role_users; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_role_users ON public.role_users USING btree (user_id, role_id);
+
+
+--
+-- TOC entry 3469 (class 1259 OID 17562)
+-- Name: idx_role_users_role_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_role_users_role_id ON public.role_users USING btree (role_id);
+
+
+--
+-- TOC entry 3473 (class 1259 OID 17569)
+-- Name: idx_users_id_ulid_team_id_status; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_users_id_ulid_team_id_status ON public.users USING btree (id, ulid, current_team_id, status);
+
+
+--
+-- TOC entry 3480 (class 2620 OID 16608)
 -- Name: asset_maintenance_logs on_update_current_timestamp; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -1343,7 +1410,7 @@ CREATE TRIGGER on_update_current_timestamp BEFORE UPDATE ON public.asset_mainten
 
 
 --
--- TOC entry 3470 (class 2620 OID 16606)
+-- TOC entry 3479 (class 2620 OID 16606)
 -- Name: assets on_update_current_timestamp; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -1351,7 +1418,7 @@ CREATE TRIGGER on_update_current_timestamp BEFORE UPDATE ON public.assets FOR EA
 
 
 --
--- TOC entry 3472 (class 2620 OID 16610)
+-- TOC entry 3481 (class 2620 OID 16610)
 -- Name: fcm_tokens on_update_current_timestamp; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -1359,7 +1426,7 @@ CREATE TRIGGER on_update_current_timestamp BEFORE UPDATE ON public.fcm_tokens FO
 
 
 --
--- TOC entry 3473 (class 2620 OID 16612)
+-- TOC entry 3482 (class 2620 OID 16612)
 -- Name: products on_update_current_timestamp; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -1367,7 +1434,7 @@ CREATE TRIGGER on_update_current_timestamp BEFORE UPDATE ON public.products FOR 
 
 
 --
--- TOC entry 3466 (class 2606 OID 16585)
+-- TOC entry 3475 (class 2606 OID 16585)
 -- Name: assets assets_ibfk_1; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1376,7 +1443,7 @@ ALTER TABLE ONLY public.assets
 
 
 --
--- TOC entry 3465 (class 2606 OID 16580)
+-- TOC entry 3474 (class 2606 OID 16580)
 -- Name: activities fk_activity_category; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1385,7 +1452,7 @@ ALTER TABLE ONLY public.activities
 
 
 --
--- TOC entry 3467 (class 2606 OID 16590)
+-- TOC entry 3476 (class 2606 OID 16590)
 -- Name: asset_maintenance_logs fk_logs_asset_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1394,7 +1461,7 @@ ALTER TABLE ONLY public.asset_maintenance_logs
 
 
 --
--- TOC entry 3468 (class 2606 OID 16595)
+-- TOC entry 3477 (class 2606 OID 16595)
 -- Name: permission_role permission_role_role_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1403,7 +1470,7 @@ ALTER TABLE ONLY public.permission_role
 
 
 --
--- TOC entry 3469 (class 2606 OID 16600)
+-- TOC entry 3478 (class 2606 OID 16600)
 -- Name: role_users role_user_role_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1411,10 +1478,10 @@ ALTER TABLE ONLY public.role_users
     ADD CONSTRAINT role_user_role_id_foreign FOREIGN KEY (role_id) REFERENCES public.roles(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
--- Completed on 2026-08-15 20:07:14 WIB
+-- Completed on 2026-10-12 07:50:24 WIB
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict d9BHQkORxvzdmyb9ZPPCxBKiLr7CyNGmFlcMofLNljoyNE1ApKf0ciV5nLBEanj
+\unrestrict SUk1ijHI2GB3hzGaGtbCRhGV7Lw3Jp9SY2bRVuApJCFRiU6mJMpgs6br2eSTMR6

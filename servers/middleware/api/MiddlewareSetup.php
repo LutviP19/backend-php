@@ -1,8 +1,8 @@
-<?php 
+<?php
+
 declare(strict_types=1);
 
 namespace Servers\Middleware\Api;
-
 
 use OpenSwoole\Core\Psr\Response;
 use Psr\Http\Message\ResponseInterface;
@@ -83,7 +83,7 @@ class MiddlewareSetup implements MiddlewareInterface
         }
 
         // Validate Api Token
-        if (matchEncryptedData(config('app.token_api'), $headers['X-Api-Token'][0]) === false) {
+        if (matchEncryptedData(config('app.token'), $headers['X-Api-Token'][0]) === false) {
             $statusCode = 403;
             $json = [
                         'status' => false,
@@ -91,10 +91,10 @@ class MiddlewareSetup implements MiddlewareInterface
                         'message' => 'Invalid api token!',
                     ];
 
-            if(config('app.debug')) {
+            if (config('app.debug')) {
                 // var_dump('MiddlewareSetup failed. Invalid API Token!');
                 echo "[" . date('Y-m-d H:i:s') . "] [ERROR] MiddlewareSetup failed. Invalid API Token!\n";
-            }            
+            }
 
             return new Response(\json_encode($json), $statusCode, '', ['Content-Type' => 'application/json']);
         }

@@ -20,12 +20,12 @@ return [
         'key' => env('ENCRYPTION_KEY'),
         'hash_key' => env('HASH_KEY'),
         'token' => env('HEADER_TOKEN'),
-        'token_api' => env('HEADER_TOKEN_API'),
+        'token_api' => env('HEADER_TOKEN_API'), // External-API Token
         'url' => env('APP_URL', 'http://localhost'),
         'path' => BASEPATH,
         'env' => env('APP_ENV', 'production'),
         'debug' => (bool) env('APP_DEBUG', false),
-        'logdir' => __DIR__ . '/../storage/logs/',
+        'logdir' => BASEPATH . '/storage/logs/',
         'ignore_port' => [8009, 8080, 9501, 9502], // OpenSwoole Server port
         'cache_driver' => env('CACHE_DRIVER', 'files'),
     ],

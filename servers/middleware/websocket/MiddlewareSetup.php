@@ -1,4 +1,5 @@
-<?php 
+<?php
+
 declare(strict_types=1);
 
 namespace Servers\Middleware\Websocket;
@@ -82,7 +83,7 @@ class MiddlewareSetup implements MiddlewareInterface
         // }
 
         // // Validate Api Token
-        // if (matchEncryptedData(config('app.token_api'), $headers['X-Api-Token'][0]) === false) {
+        // if (matchEncryptedData(config('app.token'), $headers['X-Api-Token'][0]) === false) {
         //     $statusCode = 403;
         //     $json = [
         //                 'status' => false,

@@ -27,6 +27,16 @@ return [
             'X-Api-Token' => encryptData(config('app.token_api')),
         ]
     ],
+    'backend_refresh_token' => [
+        'method' => 'POST',
+        'url' => 'http://localhost:8080/auth/refresh',
+        'headers' => [
+            'User-Agent' => 'Backend-PHP',
+            'Content-Type' => 'application/json',
+            'Accept' => 'application/json',
+            'X-Api-Token' => encryptData(config('app.token_api')),
+        ]
+    ],
     'backend_profile' => [
         'method' => 'POST',
         'url' => 'http://localhost:8080/user/index',
@@ -38,7 +48,7 @@ return [
         ]
     ],
 
-    
+
     // Client - Webhook
     'microdata_client_web' => [
         'method' => 'POST',

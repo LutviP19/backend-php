@@ -37,6 +37,10 @@ return \FastRoute\simpleDispatcher(function (RouteCollector $r) {
         $r->addRoute(['POST'], '/login', function ($request) {
             return  (new \App\Controllers\ServerApi\Auth\AuthController())->loginAction($request, getRequestData($request));
         });
+
+        $r->addRoute(['POST'], '/refresh', function ($request) {
+            return  (new \App\Controllers\ServerApi\Auth\AuthController())->refreshAction($request, getRequestData($request));
+        });
     });
 
     // User Controller

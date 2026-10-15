@@ -138,4 +138,118 @@ class AuthController extends ServerApiController
         }
     }
 
+    /**
+     * refreshAction function
+     *
+     * @return response
+     */
+    public function refreshAction($request, array $data)
+    {
+
+        $requestData = [
+            'attributes' => $data['attributes'],
+            'jsonData' => $data['jsonData'],
+            'requestQuery' => $data['requestQuery']
+        ];
+        $jsonData = $data['jsonData'];
+
+        // Set default output
+        $status = $callback = false;
+        $output = $headers = [];
+        $message = $tokenJwt =  '';
+        $tokenAuth = [];
+
+        try {
+
+            // Validate Input
+            $validator = new Validator();
+            $validator->validate($jsonData, [
+                'email' => 'required|email',
+                'password'  => 'required|min:8|max:100',
+            ]);
+            $errors = \App\Core\Support\Session::get('errors');
+
+
+            if ($errors) {
+                $statusCode = 422;
+                $callback = false;
+                $message = 'Validation errors.';
+            } else {
+
+                // Filter Input
+                $jsonData = $this->filter->filter($jsonData, [
+                    'email' => 'trim|sanitize_string',
+                    'password'  => 'trim|sanitize_string',
+                ]);
+
+                // Sanitize Input
+                $payload = $this->filter->sanitize($jsonData, ['email', 'password']);
+
+                // Default status
+                $statusCode = 203;
+                $errors = ['auth' => 'Invalid credentials.'];
+                $message = 'Credentials errors.';
+
+                $email = readJson('email', $payload, $payload['email']);
+                $password = readJson('password', $payload, $payload['password']);
+
+                $user = User::getUserByEmail($email);
+                $callback = $this->checkCredentials($user, $password);
+            }
+
+            // // Middleware
+            // $this->setRatelimiter('refresh_token_request', 1200, 10);
+
+            if ($callback && isset($user->ulid)) {
+
+                // New-BaseAuth
+                $tokenAuth = $this->setLoginSession($user, true);
+                if ($this->activeClientMiddleware && false === $tokenAuth) {
+
+                    $statusCode = 401;
+                    return $this->SetOpenSwooleResponse($status, $statusCode, ['auth' => 'Client not found!'], 'Invalid Client!');
+                }
+
+                // Set cookie
+                $sessionName = $this->sessionName;
+                $sessionId = Session::get('sessionKeyApi');
+                $sessionExp = config('session.exptime');
+
+                // Initialize array $headers $this->activeClientMiddleware
+                if ($sessionId !== "") {
+                    $cookies = [];
+
+                    $cookies[] = "{$this->sessionName}={$sessionId}; Max-Age={$sessionExp}; Path=/; SameSite=Lax; HttpOnly";
+                    $prefixKey = encryptData(sessionKeyFormat($user->ulid, $this->sessionId));
+                    $cookies[]  = "sessionKeyApi={$prefixKey}; Max-Age={$sessionExp}; Path=/; SameSite=Lax; HttpOnly";
+
+                    $headers = [
+                        'Set-Cookie' => $cookies
+                    ];
+                }
+
+                $status = true;
+                $statusCode = 201;
+                $output = [
+                            'token' => $tokenAuth,
+                            'account' => Session::all(['user_id']),
+                            // 'user_id' => encryptData(Session::get('user_id')),
+                            // 'client_token' => Session::get('client_token'),
+                            // 'api_token' => encryptData(config('app.token_api')),
+                            'sessid' => decryptData(Session::get('sessionKeyApi')),
+                            // 'all' => $_SESSION,
+                        ];
+
+                return $this->SetOpenSwooleResponse($status, $statusCode, $output, '', $headers);
+            } else {
+
+                return $this->SetOpenSwooleResponse($status, $statusCode, $errors, $message);
+            }
+        } catch (Exception $exception) {
+
+            $statusCode = 429;
+            return $this->SetOpenSwooleResponse($status, $statusCode, ['exception', $exception->getMessage()], 'Exception');
+        }
+    }
+
 }

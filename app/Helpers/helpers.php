@@ -528,23 +528,34 @@ function url($uri = '')
     return config('app.url')."/{$uri}";
 }
 
+/**
+ * Converting the number of days into seconds.
+ * 
+ * @param int|float $days Number of days
+ * @return int Total seconds
+ */
+function days_to_seconds(int|float $days): int
+{
+    return (int) ($days * 86400); // 1 day = 86,400 seconds
+}
+
 function cacheContent($method, $id, $content = null, $expiry = 3600)
 {
     if (isSwoole()) {
         if ($method === 'set') {
-            (new \App\Core\Support\CacheSwoole())->set($id, $content, $expiry);
+            (new \App\Core\Support\CacheSwoole($expiry))->set($id, $content, $expiry);
         }
 
         if ($method === 'get') {
-            return (new \App\Core\Support\CacheSwoole())->get($id);
+            return (new \App\Core\Support\CacheSwoole($expiry))->get($id);
         }
     } else {
         if ($method === 'set') {
-            (new \App\Core\Support\Cache())->set($id, $content, $expiry);
+            (new \App\Core\Support\Cache($expiry))->set($id, $content, $expiry);
         }
 
         if ($method === 'get') {
-            return (new \App\Core\Support\Cache())->get($id);
+            return (new \App\Core\Support\Cache($expiry))->get($id);
         }
     }
 
@@ -616,6 +627,24 @@ function setupRedisConnection()
 
         return $redis;
     }
+}
+
+/**
+ * Get the remaining expired time (TTL) of a key in Redis in seconds.
+ * 
+ * @param string $key The name of the Redis key to check (example: "token_blacklist:01M4Z5K0...")
+ * @return int Returns the remaining seconds, or -1 if the key does not have an expiration, -2 if the key is not found.
+ */
+function getKeyTllFromRedis(string $key): int
+{
+    $redis = setupRedisConnection();
+
+    if (!$redis->exists($key)) {
+        return 0;
+    }
+    
+    // The TTL command returns the remaining active seconds
+    return (int) $redis->ttl($key);
 }
 
 function getDataFromRedis($id, $prefix = null)

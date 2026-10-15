@@ -41,6 +41,7 @@ class Session
             "secret",
             "authId",
             "tokenAuth",
+            "tokenAuthRefresh",
             "gnr",
             "_previous_uri",
             "_old_input",

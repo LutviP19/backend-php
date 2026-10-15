@@ -33,7 +33,7 @@ class AuthController extends ApiController
     {
         parent::__construct();
 
-        $this->rateLimit = false;
+        $this->rateLimit = true;
     }
 
     /**
@@ -106,6 +106,146 @@ class AuthController extends ApiController
             if ($callback && !empty($user)) {
 
                 $tokenAuthValid = $this->setLoginSession($user);
+                if (false === $tokenAuthValid) {
+                    return endResponse(
+                        $this->getOutput(false, 401, [
+                          'auth' => 'Client not found!',
+
+                        ], 'Invalid Client!'),
+                        401
+                    );
+                }
+                // exit_response($_SESSION, 200);
+
+                // Set cookie
+                $sessionName = $this->sessionName;
+                $sessionId = Session::get('sessionKey');
+                $sessionExp = config('session.exptime');
+
+                // Cache session data by uid
+                if (\isSwoole()) {
+                    $prefixKey = encryptData(sessionKeyFormat((Session::get('uid') ?? $user->ulid), $this->sessionId));
+                    $headers[] = ['Set-Cookie' => "sessionKey={$prefixKey}; Max-Age={$sessionExp}; Path=/; SameSite=Lax;"];
+                } else {
+                    $headers[] = ['Set-Cookie' => "{$sessionName}={$sessionId}; Max-Age={$sessionExp}; Path=/; SameSite=Lax;"];
+                }
+
+                return endResponse(
+                    $this->getOutput(true, 201, [
+                            'auth_token' => $tokenAuthValid,
+                            'account' => Session::all(),
+                            // 'client_token' => Session::get('client_token'),
+                            // 'sessionKey' => $prefixKey,
+                            // 'jwt_secret' =>  Session::get('secret')
+                    ]),
+                    201,
+                    $headers
+                );
+
+            } else {
+
+                return endResponse(
+                    $this->getOutput(false, $statusCode, [
+                        $errors
+                   ]),
+                    $statusCode
+                );
+            }
+        } catch (Exception $exception) {
+
+            return endResponse(
+                $this->getOutput(false, 429, [
+                  'exception', $exception->getMessage(),
+               ]),
+                429
+            );
+        }
+    }
+
+    /**
+     * refresh token function
+     *
+     * @param  Request  $request
+     * @param  Response $response
+     *
+     * @return response
+     */
+    public function refresh(Request $request, Response $response)
+    {
+        try {
+            $headers = [];
+            $validator = new Validator();
+            $validator->validate($this->jsonData, [
+                'email' => 'required|email',
+                'password'  => 'required|min:8|max:100',
+            ]);
+            $errors = \App\Core\Support\Session::get('errors');
+            // \App\Core\Support\Log::debug($errors, 'WebAuth.login.$errors');
+
+            if ($errors) {
+
+                $statusCode = 422;
+                $callback = false;
+            } else {
+
+                // Filter Input
+                $jsonData = $this->filter->filter($this->jsonData, [
+                    'email' => 'trim|sanitize_string',
+                    'password'  => 'trim|sanitize_string',
+                ]);
+
+                // Sanitize Input
+                $payload = $this->filter->sanitize($jsonData, ['email', 'password']);
+
+                $statusCode = 203;
+                $errors = ['auth' => 'Invalid credentials'];
+
+                $email = readJson('email', $payload);
+                $password = readJson('password', $payload);
+                $callback = false;
+                $user = [];
+
+                // Call Api Server
+                $streamer = new NativeCurlStreamer();
+                $singleTask = App::externalApi('backend_refresh_token', [
+                    'body' => ['email' => $email, 'password' => $password]
+                ]);
+                $single = $streamer->singleStream($singleTask);
+
+                if ($single['error']) {
+                    exit_response($single['body'], $single['statusCode']);
+                } else {
+                    $data = json_decode((string) $single['body'], true);
+                    $user = (object) readJson('data.account', $data);
+
+                    if ($email === $user->email) {
+                        $callback = true;
+                    }
+                }
+            }
+
+            // Middleware
+            $prefixKeyRefreshToken = "refresh_token:{$user->uid}";
+            $cacheyRefreshToken = cacheContent('get', $prefixKeyRefreshToken);
+            if ($this->rateLimit) {
+                $ttl = getKeyTllFromRedis($prefixKeyRefreshToken);
+                $isFreshOrLongLived = ($ttl > 0 && $ttl > days_to_seconds(6.5));
+                
+                $reqLimit = $isFreshOrLongLived ? 2 : 3;
+                $this->setRatelimiter('refresh_token_request', 1200, $reqLimit);
+            }
+
+            if(Session::has('tokenAuthRefresh')) {
+                $callback = $cacheyRefreshToken === Session::get('tokenAuthRefresh') && 
+                            $cacheyRefreshToken === getBearerToken();
+            } else {
+                $callback = $cacheyRefreshToken === getBearerToken();
+            }
+            // End-Middleware
+
+            if ($callback && !empty($user)) {
+
+                $tokenAuthValid = $this->setLoginSession($user, true);
                 if (false === $tokenAuthValid) {
                     return endResponse(
                         $this->getOutput(false, 401, [

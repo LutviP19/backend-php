@@ -143,12 +143,13 @@ class ApiController extends BaseController
      * setLoginSession function, Set session for login user
      *
      * @param  [object]  $user
+     * @param  [bool]  $isRefresh
      *
      * @return mixed
      */
-    protected function setLoginSession($user)
+    protected function setLoginSession($user, $isRefresh = false)
     {
-        // Simpan ke DB jika belum ada ulid
+        // Save to the DB if there is no ulid
         // $db->query("UPDATE {$this->table} SET ulid) = ? WHERE id = ?", [$newUlid, $user_id]);
 
         $sessionData = [];
@@ -166,7 +167,8 @@ class ApiController extends BaseController
         $userId = $user->ulid ?? $sessionData['uid'] ?? \get_device_fingerprint();
         $sessionData['gnr'] = $gnr;
 
-        // hapus cache by uid
+        // delete cache by uid
+        delCache("refresh_token:{$userId}");
         delCache("client_token:{$userId}");
         delCache("user_abilities:{$userId}");
 
@@ -176,7 +178,7 @@ class ApiController extends BaseController
 
         $sessionData['client_token'] = $clientTokenGen;
 
-        // Hapus cache session di Redis
+        // Delete session cache in Redis
         if (isSwoole()) {
             $sessionKey = sessionKeyFormat($userId);
             delCache($sessionKey);
@@ -202,26 +204,41 @@ class ApiController extends BaseController
 
         // initAuthToken
         $authToken = $this->initAuthToken($sessionData);
-        $tokenAuth = $authToken->generateToken([
-                'uid' => $userId,
-                // "user_permissions" => cacheContent('get', "user_abilities:{$userId}")
-            ]) ?? null;
+        if ($isRefresh) {            
+            $getRefreshToken = getBearerToken();
+            $tokenAuth = $authToken->refreshToken($getRefreshToken, [
+                            'uid' => $userId,
+                            // "user_permissions" => cacheContent('get', "user_abilities:{$userId}")
+                        ]) ?? null;
+        } else {
+            $tokenAuth = $authToken->generateToken([
+                            'uid' => $userId,
+                            // "user_permissions" => cacheContent('get', "user_abilities:{$userId}")
+                        ]) ?? null;
+        }
+        
         $sessionData['tokenAuth'] = $tokenAuth['access_token'] ?? '';
+        $sessionData['tokenAuthRefresh'] = $tokenAuth['refresh_token'] ?? '';
 
-
-        // Persistence berdasarkan Flag isSwoole()
+        // Persistence based on Flag isSwoole()
         if (isSwoole()) {
             $this->sessionId = session_create_id('bp-');
             $prefixKey = sessionKeyFormat($userId, $this->sessionId);
             $sessionData['sessionKey'] = $prefixKey;
+            
+            delCache($prefixKey);
+            cacheContent('set', $prefixKey, $sessionData, config('session.exptime'));
 
-            (new \App\Core\Support\CacheSwoole(config("session.exptime", 7200)))->set($prefixKey, $sessionData, config('session.exptime'));
-
-            // Disimpan ke Context Request Swoole agar dapat diakses di Controller
+            // Stored in the Swoole Request Context so that it can be accessed in the Controller
             if (class_exists('\OpenSwoole\Coroutine')) {
                 \OpenSwoole\Coroutine::getContext()['session'] = $sessionData;
             }
         }
+
+        // Cache refresh Token
+        $refreshTokenTimeout = days_to_seconds($authToken->getRefreshTokenTimeout());
+        $prefixKeyRefreshToken = "refresh_token:{$userId}";
+        cacheContent('set', $prefixKeyRefreshToken, $sessionData['tokenAuthRefresh'], $refreshTokenTimeout);
 
         foreach ($sessionData as $sKey => $sVal) {
             if (Session::has($sKey)) {

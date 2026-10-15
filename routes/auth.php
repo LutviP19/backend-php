@@ -10,6 +10,7 @@
 
 //========== API - v1
 $router->post('/auth/login', 'Api\v1\Auth\AuthController@login');
+$router->post('/auth/refresh', 'Api\v1\Auth\AuthController@refresh');
 $router->post('/auth/uptoken', 'Api\v1\Auth\AuthController@updateToken');
 $router->post('/auth/logout', 'Api\v1\Auth\AuthController@logout');
 

@@ -117,6 +117,14 @@ class BaseAuth
     }
 
     /**
+     * Set timeout refresh token (dalam hari)
+     */
+    public function getRefreshTokenTimeout(): int
+    {
+        return $this->refreshTokenTimeout;
+    }
+
+    /**
      * Shortcut setter untuk durasi token & refresh token sekaligus
      */
     public function setExpiration(int $expTokenInSeconds, int $refreshTokenTimeoutInDays = 7): static
@@ -167,12 +175,12 @@ class BaseAuth
      * @param string $refreshToken Raw token dari request
      * @return array Contains 'access_token' and 'refresh_token'
      */
-    public function refreshToken(?string $refreshToken): array
+    public function refreshToken(?string $refreshToken, ?array $payload = []): array
     {
         return match ($this->driver) {
-            'JWT'       => $this->refreshJwtToken($refreshToken),
-            'Sodium'    => $this->refreshSodiumToken($refreshToken),
-            'Sodium-v4' => $this->refreshSodiumV4Token($refreshToken),
+            'JWT'       => $this->refreshJwtToken($refreshToken, $payload),
+            'Sodium'    => $this->refreshSodiumToken($refreshToken, $payload),
+            'Sodium-v4' => $this->refreshSodiumV4Token($refreshToken, $payload),
             default     => throw new \InvalidArgumentException("Unsupported auth driver: {$this->driver}")
         };
     }
@@ -218,11 +226,13 @@ class BaseAuth
         return $decoded;
     }
 
-    protected function refreshJwtToken(string $refreshToken): array
+    protected function refreshJwtToken(string $refreshToken, ?array $payload = []): array
     {
-        $payload = $this->getJwtDriver()->decode($refreshToken);
-        $this->validateRefreshTokenPayload($payload);
+        $payloadRefresh = $this->getJwtDriver()->decode($refreshToken);
+        $payload = array_merge($payloadRefresh, $payload);
 
+        $this->validateRefreshTokenPayload($payloadRefresh);
+        
         return $this->reissueTokens($payload, $this->getJwtDriver());
     }
 
@@ -276,11 +286,13 @@ class BaseAuth
         return $decoded;
     }
 
-    protected function refreshSodiumToken(string $refreshToken): array
+    protected function refreshSodiumToken(string $refreshToken, array $payload = []): array
     {
-        $payload = $this->getSodiumDriver()->decode($refreshToken);
-        $this->validateRefreshTokenPayload($payload);
+        $payloadRefresh = $this->getSodiumDriver()->decode($refreshToken);
+        $payload = array_merge($payloadRefresh, $payload);
 
+        $this->validateRefreshTokenPayload($payload);
+        
         return $this->reissueTokens($payload, $this->getSodiumDriver());
     }
 
@@ -330,11 +342,13 @@ class BaseAuth
         return $decoded;
     }
 
-    protected function refreshSodiumV4Token(string $refreshToken): array
+    protected function refreshSodiumV4Token(string $refreshToken, ?array $payload): array
     {
-        $payload = $this->getSodiumV4Driver()->decode($refreshToken);
-        $this->validateRefreshTokenPayload($payload);
+        $payloadRefresh = $this->getSodiumV4Driver()->decode($refreshToken);
+        $payload = array_merge($payloadRefresh, $payload);
 
+        $this->validateRefreshTokenPayload($payload);
+        
         return $this->reissueTokens($payload, $this->getSodiumV4Driver());
     }
 
@@ -346,6 +360,9 @@ class BaseAuth
         $isValid = $payload
             && isset($payload['type'], $payload['uid'], $payload['fingerprint'])
             && $payload['type'] === 'refresh';
+
+        // DEBUG
+        write_log('debug', $payload, 'BaseAuth.validateRefreshTokenPayload');
 
         // Fingerprint
         if (isset($payload["uid"]) && isset($payload["fingerprint"])) {
@@ -379,7 +396,7 @@ class BaseAuth
             $identifier = "auth:reissueTokens:".\get_device_fingerprint(extra: $uid);
             $this->setRatelimiter($identifier, 60, 5);
 
-            Gate::unauthorized_response('Invalid or expired Refresh Token.');
+            Gate::unauthorized_response('Failed reissue token, please re-login.');
         }
 
         // Generate new Token via Driver

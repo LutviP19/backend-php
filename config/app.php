@@ -1,8 +1,4 @@
-<?php
-
-// if (!defined('BASEPATH')) {
-//     define('BASEPATH', str_replace('config', '', __DIR__));
-// }
+<?php 
 
 /**
  * Config values for our application.

@@ -7,13 +7,13 @@
  */
 
 if (!defined('BASEPATH')) {
-    // Naik 2 tingkat dari /app/app/Core untuk mencapai /app (Root Proyek)
+    // Naik 2 tingkat untuk mencapai (Root Proyek)
     define('BASEPATH', dirname(dirname(__DIR__)) . DIRECTORY_SEPARATOR);
 }
 
 // Opsional: Jika Anda juga mendefinisikan APPPATH (jalur ke folder app internal)
 if (!defined('APPPATH')) {
-    // Naik 1 tingkat dari /app/app/Core untuk mencapai /app/app
+    // Naik 1 tingkat untuk mencapai /app
     define('APPPATH', dirname(__DIR__) . DIRECTORY_SEPARATOR);
 }
 
@@ -87,7 +87,7 @@ if (! \isSwoole()) { // Ignore OpenSwoole Server
                 $redisHost = config("redis.default.host", "127.0.0.1");
                 $redisPort = config("redis.default.port", 6379);
                 $redisPass = config("redis.default.password");
-                $lifetime  = (int) config("session.lifetime", 120 * 60);
+                $lifetime  = (int) config("session.lifetime", 120) * 60;
 
 
                 $redisPath = "tcp://{$redisHost}:{$redisPort}";
@@ -98,6 +98,7 @@ if (! \isSwoole()) { // Ignore OpenSwoole Server
                 ini_set("session.save_path", $redisPath);
                 ini_set("session.gc_maxlifetime", $lifetime);
             } else {
+                
                 ini_set('session.save_handler', 'files');
                 ini_set('session.save_path', storage_path('framework/sessions'));
             }

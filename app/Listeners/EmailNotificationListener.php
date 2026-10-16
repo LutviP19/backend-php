@@ -28,7 +28,7 @@ class EmailNotificationListener
         $subject = "New Order";
         $bodyText = "This is an message for order!";
         $bodyHtml = "<strong>This is an message for order!</strong>";
-        $attachment = [BASEPATH . 'DEV.txt', BASEPATH . 'DEMO.txt'];
+        $attachment = [base_path('DEV.txt'), base_path('DEMO.txt')];
         $image = [];
 
         for ($i = 1; $i <= 3; $i++) {

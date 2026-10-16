@@ -11,7 +11,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/bootstrap.php';
 
 // Load All Middleware
-$apiMiddlewarePath = BASEPATH . 'servers/middleware/websocket/*.php';
+$apiMiddlewarePath = base_path('servers/middleware/websocket/*.php');
 foreach (glob($apiMiddlewarePath) as $filePath) {
     if (is_file($filePath)) {
         require_once $filePath;
@@ -84,7 +84,7 @@ $server->on('Task', function (Server $server, \OpenSwoole\Server\Task $task) {
     if (($data['action'] ?? '') === 'cron_maintenance') {
         Coroutine::sleep(2); // Heavy processing
         // Run included php file
-        require_once BASEPATH . 'cron/cleanTmp.php';
+        require_once base_path('cron/cleanTmp.php');
         echo "[TASK] Maintenance cron finished successfully.\n";
     }
 

@@ -37,9 +37,6 @@ date_default_timezone_set(env('APP_TIMEZONE', 'Asia/Jakarta'));
 //Starting the session will be the first we do.
 ini_set('session.save_handler', env('SESSION_DRIVER', 'files'));
 if (env('SESSION_DRIVER') === "redis") {
-    // ini_set('session.save_path', "tcp://" . env('REDIS_HOST') . ":" . env('REDIS_PORT') . "?auth" . env('REDIS_PASSWORD'));
-    // ini_set('session.gc_maxlifetime', (env('SESSION_LIFETIME', 120) * 60)); // Set default to 2 hours
-
     $redisHost = config("redis.default.host", "127.0.0.1");
     $redisPort = config("redis.default.port", 6379);
     $redisPass = config("redis.default.password");
@@ -54,7 +51,6 @@ if (env('SESSION_DRIVER') === "redis") {
     ini_set("session.save_path", $redisPath);
     ini_set("session.gc_maxlifetime", $lifetime);
 } else {
-    // ini_set('session.save_path', BASEPATH . 'storage/framework/sessions');
 
     ini_set('session.save_handler', 'files');
     ini_set('session.save_path', storage_path('framework/sessions'));

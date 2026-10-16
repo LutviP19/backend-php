@@ -24,8 +24,6 @@ class ValidateClient
     {
         $this->clientId = $clientId;
         $this->columnId = $columnId;
-        // $this->time_to_expire = (env('SESSION_LIFETIME', 120) * 60);
-        // 1. Simpan nilai ini dalam satuan DETIK murni (120 menit * 60 = 7200 detik)
         $this->time_to_expire = (int) config("session.exptime", 7200);
 
         $this->hash = new Hash();

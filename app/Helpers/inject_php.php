@@ -904,8 +904,8 @@ function bp_session_regenerate_id($oldSessionId = null)
     // 6. Siapkan Header Cookie Baru yang Aman (Sesuai parameter bawaan PHP/aplikasi)
     $sessionName = session_name();
     $cookie = session_get_cookie_params();
-    $sessionExp = (int)env('SESSION_LIFETIME', 120) * 60;
-
+    $sessionExp = (int) config("session.lifetime", 120) * 60;
+    
     // Mulai susun string cookie
     $cookieString = "{$sessionName}={$new_session_id}; Max-Age={$sessionExp}; Path={$cookie['path']};";
 

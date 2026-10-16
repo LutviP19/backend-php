@@ -11,7 +11,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/bootstrap.php';
 
 // Load All Middleware
-$apiMiddlewarePath = BASEPATH . '/servers/middleware/api/*.php';
+$apiMiddlewarePath = base_path('servers/middleware/api/*.php');
 foreach (glob($apiMiddlewarePath) as $filePath) {
     if (is_file($filePath)) {
         require_once $filePath;

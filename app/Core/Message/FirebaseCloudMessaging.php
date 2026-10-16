@@ -4,7 +4,7 @@ namespace App\Core\Message;
 
 class FirebaseCloudMessaging
 {
-    protected $config_path = BASEPATH . '/config/service-account.json';
+    protected $config_path = BASEPATH . 'config/service-account.json';
     protected $config;
 
 

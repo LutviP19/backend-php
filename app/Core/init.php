@@ -7,12 +7,18 @@
  */
 
 if (!defined('BASEPATH')) {
-    define('BASEPATH', __DIR__ . '/../..');
+    // Naik 2 tingkat dari /app/app/Core untuk mencapai /app (Root Proyek)
+    define('BASEPATH', dirname(dirname(__DIR__)) . DIRECTORY_SEPARATOR);
 }
 
+// Opsional: Jika Anda juga mendefinisikan APPPATH (jalur ke folder app internal)
+if (!defined('APPPATH')) {
+    // Naik 1 tingkat dari /app/app/Core untuk mencapai /app/app
+    define('APPPATH', dirname(__DIR__) . DIRECTORY_SEPARATOR);
+}
 
 if (!defined("BASEPATH_FFI")) {
-    define("BASEPATH_FFI", BASEPATH . "/bin/ffi");
+    define("BASEPATH_FFI", BASEPATH . DIRECTORY_SEPARATOR . "bin" . DIRECTORY_SEPARATOR . "ffi" . DIRECTORY_SEPARATOR);
 }
 
 /* ----------------------------- Default settings START -------------------------------- */
@@ -81,7 +87,7 @@ if (! \isSwoole()) { // Ignore OpenSwoole Server
                 $redisHost = config("redis.default.host", "127.0.0.1");
                 $redisPort = config("redis.default.port", 6379);
                 $redisPass = config("redis.default.password");
-                $lifetime  = (int) config("session.lifetime", 120) * 60;
+                $lifetime  = (int) config("session.lifetime", 120 * 60);
 
 
                 $redisPath = "tcp://{$redisHost}:{$redisPort}";

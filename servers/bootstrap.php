@@ -1,11 +1,14 @@
 <?php
 
 define('APP_START', microtime(true));
-define('BASEPATH', __DIR__ . '/..');
 
+if (!defined('BASEPATH')) {
+    // Naik 1 tingkat untuk mencapai (Root Proyek)
+    define('BASEPATH', dirname(__DIR__) . DIRECTORY_SEPARATOR);
+}
 
 if (!defined("BASEPATH_FFI")) {
-    define("BASEPATH_FFI", BASEPATH . "/bin/ffi");
+    define("BASEPATH_FFI", BASEPATH . DIRECTORY_SEPARATOR . "bin" . DIRECTORY_SEPARATOR . "ffi" . DIRECTORY_SEPARATOR);
 }
 
 // only level Deprecated & User Deprecated
@@ -13,7 +16,7 @@ if (!defined("BASEPATH_FFI")) {
 error_reporting(E_ALL);
 ini_set("display_errors", 1);
 
-require_once __DIR__ . '/../vendor/autoload.php';
+require_once BASEPATH . 'vendor/autoload.php';
 
 /**
  * Bootstrap the Application.
@@ -26,8 +29,8 @@ load_env();
 // Register the configuration to the application.
 use App\Core\Support\App;
 
-App::register('config', require BASEPATH . '/config/app.php');
-App::register("routing_external_api", require BASEPATH . "/routes/external-api.php");
+App::register('config', require BASEPATH . 'config/app.php');
+App::register("routing_external_api", require BASEPATH . "routes/external-api.php");
 
 date_default_timezone_set(env('APP_TIMEZONE', 'Asia/Jakarta'));
 
@@ -51,7 +54,10 @@ if (env('SESSION_DRIVER') === "redis") {
     ini_set("session.save_path", $redisPath);
     ini_set("session.gc_maxlifetime", $lifetime);
 } else {
-    ini_set('session.save_path', BASEPATH . '/storage/framework/sessions');
+    // ini_set('session.save_path', BASEPATH . 'storage/framework/sessions');
+
+    ini_set('session.save_handler', 'files');
+    ini_set('session.save_path', storage_path('framework/sessions'));
 }
 
 // // Set a custom session name

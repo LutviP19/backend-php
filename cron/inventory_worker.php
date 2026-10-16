@@ -1,7 +1,7 @@
 <?php
-// Load Composer & Framework Core Anda
-require_once __DIR__ . '/../vendor/autoload.php';
-require_once __DIR__ . '/../core/bootstrap.php'; // Sesuaikan dengan cara framework Anda loading
+declare(strict_types=1);
+
+require_once 'bootstrap.php';
 
 use App\Services\AIService;
 

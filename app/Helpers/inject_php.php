@@ -12,7 +12,7 @@ if (!function_exists("load_env")) {
     function load_env($path = null)
     {
         if ($path === null) {
-            $path = BASEPATH . DIRECTORY_SEPARATOR . ".env";
+            $path = BASEPATH . ".env";
         }
 
         if (!file_exists($path)) {

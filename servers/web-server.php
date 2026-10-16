@@ -34,7 +34,7 @@ $server = new Server("127.0.0.1", 8009);
 // Register instance server ke Container saat server startup
 App::register(Server::class, $server);
 // Register events config
-App::register('events', require BASEPATH . "/routes/events.php");
+App::register('events', require BASEPATH . "routes/events.php");
 
 $server->set([
     'worker_num'            => 2,
@@ -128,7 +128,7 @@ $server->on('WorkerStop', function ($server, int $workerId) {
 });
 
 // Pre-load router ke memory 1x
-$router = Router::load(BASEPATH . '/routes/routes.php');
+$router = Router::load(BASEPATH . 'routes/routes.php');
 
 $server->on('Request', function (OpenSwooleRequest $request, OpenSwooleResponse $response) use ($router) {
     global $server, $clientInfo, $ignoredUri, $sessionId, $sessionName;
@@ -145,7 +145,7 @@ $server->on('Request', function (OpenSwooleRequest $request, OpenSwooleResponse 
     $headers = getallheaders();
 
     $uri = $request->server['request_uri'] ?? '/';
-    $publicDir = realpath(BASEPATH . '/public');
+    $publicDir = realpath(BASEPATH . 'public');
     $filePath  = $publicDir . $uri;
 
     // -------------------------------------------------------------

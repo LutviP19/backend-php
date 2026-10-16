@@ -1,8 +1,8 @@
 <?php
 
-if (!defined('BASEPATH')) {
-    define('BASEPATH', str_replace('config', '', __DIR__));
-}
+// if (!defined('BASEPATH')) {
+//     define('BASEPATH', str_replace('config', '', __DIR__));
+// }
 
 /**
  * Config values for our application.
@@ -25,7 +25,7 @@ return [
         'path' => BASEPATH,
         'env' => env('APP_ENV', 'production'),
         'debug' => (bool) env('APP_DEBUG', false),
-        'logdir' => BASEPATH . '/storage/logs/',
+        'logdir' => BASEPATH . 'storage/logs/',
         'ignore_port' => [8009, 8080, 9501, 9502], // OpenSwoole Server port
         'cache_driver' => env('CACHE_DRIVER', 'files'),
     ],

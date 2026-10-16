@@ -11,7 +11,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/bootstrap.php';
 
 // Load All Middleware
-$apiMiddlewarePath = BASEPATH . '/servers/middleware/websocket/*.php';
+$apiMiddlewarePath = BASEPATH . 'servers/middleware/websocket/*.php';
 foreach (glob($apiMiddlewarePath) as $filePath) {
     if (is_file($filePath)) {
         require_once $filePath;
@@ -34,7 +34,7 @@ $server = new Server($serverip, $serverport);
 // Register instance server ke Container saat server startup
 App::register(Server::class, $server);
 // Register events config
-App::register('events', require BASEPATH . "/routes/events.php");
+App::register('events', require BASEPATH . "routes/events.php");
 
 $server->set([
     'worker_num'            => 2,
@@ -84,7 +84,7 @@ $server->on('Task', function (Server $server, \OpenSwoole\Server\Task $task) {
     if (($data['action'] ?? '') === 'cron_maintenance') {
         Coroutine::sleep(2); // Heavy processing
         // Run included php file
-        require_once BASEPATH . '/cron/cleanTmp.php';
+        require_once BASEPATH . 'cron/cleanTmp.php';
         echo "[TASK] Maintenance cron finished successfully.\n";
     }
 

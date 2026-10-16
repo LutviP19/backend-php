@@ -5,9 +5,7 @@
  *  main external API endpoints configurations
  */
 
-if (!defined('BASEPATH')) {
-    define('BASEPATH', str_replace('/routes', '', __DIR__));
-}
+
 
 /**
  * Config values for our external API endpoints and Setup basic Headers.

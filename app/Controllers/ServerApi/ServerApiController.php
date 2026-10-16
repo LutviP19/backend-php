@@ -153,12 +153,13 @@ class ServerApiController extends BaseController
             $prefixKey = sessionKeyFormat($userId, $this->sessionId);
             $sessionData['sessionKeyApi'] = $prefixKey;
 
+            delCache($prefixKey);
             cacheContent('set', $prefixKey, $sessionData, config('session.exptime'));
 
-            // Cache refresh Token
-            delCache("refresh_token:{$userId}");
+            // Cache refresh Token            
             $refreshTokenTimeout = days_to_seconds($authToken->getRefreshTokenTimeout());
             $prefixKeyRefreshToken = "refresh_token:{$userId}";
+            delCache("refresh_token:{$userId}");
             cacheContent('set', $prefixKeyRefreshToken, $sessionData['tokenAuthRefresh'], $refreshTokenTimeout);
 
             // Stored in the Swoole Request Context so that it can be accessed in the Controller

@@ -167,8 +167,7 @@ class ApiController extends BaseController
         $userId = $user->ulid ?? $sessionData['uid'] ?? \get_device_fingerprint();
         $sessionData['gnr'] = $gnr;
 
-        // delete cache by uid
-        delCache("refresh_token:{$userId}");
+        // delete cache by uid        
         delCache("client_token:{$userId}");
         delCache("user_abilities:{$userId}");
 
@@ -238,6 +237,7 @@ class ApiController extends BaseController
         // Cache refresh Token
         $refreshTokenTimeout = days_to_seconds($authToken->getRefreshTokenTimeout());
         $prefixKeyRefreshToken = "refresh_token:{$userId}";
+        delCache("refresh_token:{$userId}");
         cacheContent('set', $prefixKeyRefreshToken, $sessionData['tokenAuthRefresh'], $refreshTokenTimeout);
 
         foreach ($sessionData as $sKey => $sVal) {

@@ -33,7 +33,7 @@ App::register(Server::class, $server);
 // Menghindari Reflection Failure
 App::register(\OpenSwoole\Http\Server::class, $server);
 // Register events config
-App::register('events', require BASEPATH . "/routes/events.php");
+App::register('events', require BASEPATH . "routes/events.php");
 
 // Konfigurasi Server
 $server->set([

@@ -1,8 +1,7 @@
 <?php
+declare(strict_types=1);
 
-if (!defined('BASEPATH')) {
-    define('BASEPATH', __DIR__ . '/..');
-}
+require_once 'bootstrap.php';
 
 
 function cleanTmpFiles($tmpDir, $daysOld = 3)

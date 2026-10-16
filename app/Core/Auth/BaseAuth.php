@@ -361,9 +361,6 @@ class BaseAuth
             && isset($payload['type'], $payload['uid'], $payload['fingerprint'])
             && $payload['type'] === 'refresh';
 
-        // DEBUG
-        write_log('debug', $payload, 'BaseAuth.validateRefreshTokenPayload');
-
         // Fingerprint
         if (isset($payload["uid"]) && isset($payload["fingerprint"])) {
             $fingerprint = get_device_fingerprint(false, $payload["uid"]);

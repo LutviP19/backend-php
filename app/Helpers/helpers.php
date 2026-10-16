@@ -424,15 +424,27 @@ function checkValidJSON($rawBody): bool
 }
 
 /**
+ * default base path app
+ *
+ * @param  string $to_path
+ *
+ * @return string
+ */
+function base_path($toPath)
+{
+    return BASEPATH . $toPath;
+}
+
+/**
  * default database path for sqlite
  *
  * @param  string $key
  *
  * @return string
  */
-function database_path($db_name)
+function database_path($dbFileName)
 {
-    return BASEPATH . 'storage/database/' . $db_name;
+    return BASEPATH . 'storage/database/' . $dbFileName;
 }
 
 /**

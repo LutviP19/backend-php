@@ -4,12 +4,14 @@ if (!defined('APP_START')) {
     define('APP_START', microtime(true));
 }
 
+
 if (!defined('BASEPATH')) {
-    define('BASEPATH', __DIR__ . '/..');
+    // Naik 1 tingkat untuk mencapai (Root Proyek)
+    define('BASEPATH', dirname(__DIR__) . DIRECTORY_SEPARATOR);
 }
 
 if (!defined("BASEPATH_FFI")) {
-    define("BASEPATH_FFI", BASEPATH . "/bin/ffi");
+    define("BASEPATH_FFI", BASEPATH . DIRECTORY_SEPARATOR . "bin" . DIRECTORY_SEPARATOR . "ffi" . DIRECTORY_SEPARATOR);
 }
 
 // only level Deprecated & User Deprecated
@@ -21,7 +23,7 @@ ini_set('display_startup_errors', 1);
 /**
  * Require the composer autoload File.
  */
-require_once BASEPATH . '/vendor/autoload.php';
+require_once BASEPATH . 'vendor/autoload.php';
 
 /**
  * Bootstrap the Application.
@@ -33,8 +35,8 @@ load_env();
 
 // Register the configuration to the application.
 use App\Core\Support\App;
-App::register('config', require BASEPATH . '/config/app.php');
-App::register("routing_external_api", require BASEPATH . "/routes/external-api.php");
+App::register('config', require BASEPATH . 'config/app.php');
+App::register("routing_external_api", require BASEPATH . "routes/external-api.php");
 
 date_default_timezone_set(env('APP_TIMEZONE', 'Asia/Jakarta'));
 

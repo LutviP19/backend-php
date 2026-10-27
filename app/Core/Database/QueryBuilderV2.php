@@ -37,9 +37,9 @@ class QueryBuilderV2
     protected bool $withTrashed = false;
     protected bool $onlyTrashed = false;
 
-    public function __construct(PDO $pdo)
+    public function __construct(?PDO $pdo = null)
     {
-        $this->pdo = $pdo;
+        $this->pdo = $pdo ?? Connection::make(config('default_db'));
         $this->driver = strtolower($this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME));
     }
 
@@ -195,10 +195,10 @@ class QueryBuilderV2
     {
         // Use ILIKE for PostgreSQL, LIKE for MySQL/MariaDB
         $operator = ($this->driver === 'pgsql') ? 'ILIKE' : 'LIKE';
-        
+
         // (Assuming you use named placeholders like :w_0 in the previous example)
         $placeholder = ':w_' . count($this->bindings);
-        
+
         $this->wheres[] = [
             'type'     => 'basic',
             'column'   => $this->quoteIdentifier($column),
@@ -341,7 +341,11 @@ class QueryBuilderV2
         $sqlConditions = [];
 
         foreach ($this->wheres as $index => $where) {
-            $condition = sprintf('%s %s %s', $where['column'], $where['operator'], $where['value']);
+            if (is_array($where) && isset($where['column'], $where['operator'], $where['value'])) {
+                $condition = sprintf('%s %s %s', $where['column'], $where['operator'], $where['value']);
+            } else {
+                $condition = is_string($where) ? $where : '';
+            }
 
             if ($index === 0) {
                 // The first condition is without AND/OR affixes
@@ -407,7 +411,9 @@ class QueryBuilderV2
         $this->limitValue   = $previousLimit;
         $this->offsetValue  = $previousOffset;
 
-        return $result->aggregate ?? null;
+        return is_array($result)
+            ? ($result['aggregate'] ?? null)
+            : ($result?->aggregate ?? null);
     }
 
     public function count(string $column = '*'): int
@@ -618,6 +624,8 @@ class QueryBuilderV2
     {
         // 1. Make sure $this->pdo is not null (take fallback if it is not already set)
         $pdo = $this->pdo ?? static::resolveDefaultPdo();
+
+        // write_log('debug', $sql, 'app/Core/Database/QueryBuilderV2.php');
 
         // 2. Execute the query directly on the PDO instance
         $stmt = $pdo->prepare($sql);

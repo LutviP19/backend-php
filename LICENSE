@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2025 Lutvi
+Copyright (c) 2025 LutviP19 <lutvip19@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -9,6 +9,17 @@ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
 
+LEGAL NOTICE & ATTRIBUTION REQUIREMENT:
+------------------------------------------------------------------------
+   MANDATORY AUTHORSHIP PRESERVATION (@author TAGS):
+   NOTICE IS HEREBY GIVEN THAT removing, altering, hiding, or otherwise 
+   suppressing any '@author' tags, credits, or original authorship annotations 
+   located anywhere within the source code files, documentation, headers, or 
+   module structures of this framework is STRICTLY PROHIBITED and constitutes 
+   an illegal violation of intellectual property terms and licensing compliance. 
+   All derivative works and distributions must retain these original attribution 
+   tags intact.
+========================================================================
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
 
@@ -19,3 +30,4 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
